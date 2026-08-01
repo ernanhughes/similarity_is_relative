@@ -1,0 +1,40 @@
+{
+  "checkpoint_id": "e00-operator-matrix-checkpoint-v1",
+  "experiment_id": "e00-operator-matrix",
+  "status": "VERIFIED_POINT_ESTIMATES",
+  "verification_status": "PASS",
+  "claim_promotion_allowed": false,
+  "verified_regimes": 6,
+  "verified_method_sets": 40,
+  "source_manifest_sha256": "8558e1847918b08eb0db9ce512c4bcfb4e94e4a1f7dc4a222cdd2b99cd2c6220",
+  "operator_matrix_sha256": "c25202e5842b79073ae27ab2edb5068a12846a57bcaa47cfc8d3be30436ce235",
+  "selected_point_estimates": {
+    "axis_linear": {
+      "raw_cosine_spearman": 0.07791726623920461,
+      "raw_euclidean_spearman": 0.0944440886093566,
+      "diagonal_ridge_metric_spearman": 0.9765516541028103,
+      "rank1_ridge_projection_spearman": 0.9766015477735254
+    },
+    "rotated_linear": {
+      "raw_cosine_spearman": 0.08132509583863248,
+      "raw_euclidean_spearman": 0.10534183844091474,
+      "diagonal_ridge_metric_spearman": 0.17710173191373102,
+      "rank1_ridge_projection_spearman": 0.9767556920648028
+    },
+    "absent": {
+      "maximum_reported_spearman_across_methods": 0.008105592953419857,
+      "triplet_accuracy_range": [0.5000436958766982, 0.5059903074600779]
+    },
+    "nonlinear_xor": {
+      "average_precision_range": [0.5033278119148165, 0.5066703621706184],
+      "triplet_accuracy_range": [0.49988224022993094, 0.5028162548401262]
+    }
+  },
+  "provisional_interpretation": [
+    "Default cosine and Euclidean geometry do not expose the known synthetic linear relation strongly.",
+    "A diagonal supervised metric is strongly basis-dependent.",
+    "A learned rank-one direction preserves strong recoverability after orthogonal rotation.",
+    "The currently implemented linear methods remain near chance for absent and XOR relations."
+  ],
+  "publication_boundary": "These are verified deterministic point estimates, not promoted scientific claims. Permutation nulls, bootstrap confidence intervals, confirmatory seeds and certification remain required."
+}

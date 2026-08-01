@@ -60,9 +60,9 @@ The baseline behaved in the direction the synthetic contract predicted:
 | Absent relation | 0.0033 | 0.5042 | no fabricated linear signal |
 | Correlated nuisance | 0.2944 | 0.6309 | broad ordering partly survived, local retrieval collapsed under shift |
 
-This is not yet a RELATE result. It is a baseline audit.
+This was not yet a RELATE result. It was a baseline audit.
 
-It establishes that the harness can distinguish a strong linear signal, a weaker one, a nonlinear relation inaccessible to the chosen model family, an absent relation and a shortcut that fails when the distribution changes.
+It established that the harness can distinguish a strong linear signal, a weaker one, a nonlinear relation inaccessible to the chosen model family, an absent relation and a shortcut that fails when the distribution changes.
 
 It also exposed a problem in our own evaluation.
 
@@ -86,41 +86,126 @@ The revised contract therefore separates target types:
 
 This refinement matters because the repository is not designed to protect the hypothesis from failure. It is designed to make failure legible—including failure in the experiment itself.
 
-## What this checkpoint does and does not establish
+## The operator matrix
 
-The checkpoint supports a narrow statement:
+The next checkpoint stopped asking only whether a ridge probe could predict the hidden scalar. It compared several actual retrieval geometries over the same frozen vectors:
 
-> The deterministic synthetic generator, artifact identities, ridge baseline and independent metric verification ran successfully, and their behaviour matched the known linear, nonlinear, absent-signal and shortcut boundaries of the generated data.
+- raw cosine distance;
+- raw Euclidean distance;
+- ridge predicted-value distance;
+- a diagonal ridge-weighted metric;
+- a rank-one projection along the learned ridge direction;
+- conventional supervised PLS projections at ranks four and sixteen.
 
-It does not show that:
+The runner did not regenerate the data. It consumed the frozen arrays from the first checkpoint, reconstructed the exact original splits, checked all source hashes and then performed exhaustive retrieval. An independent verifier reran all 40 method/regime combinations and reproduced the complete metric tree.
 
-- diagonal weighting survives rotation;
-- low-rank similarity operators add value beyond ridge prediction;
-- RELATE can compose independently learned relations;
-- the system can yet certify or abstain reliably;
-- any result transfers to protein or sentence embeddings.
+The verified operator matrix has SHA-256 identity:
 
-Those remain registered tests.
+`c25202e5842b79073ae27ab2edb5068a12846a57bcaa47cfc8d3be30436ce235`
 
-## Next
+## A relation can be present without appearing in the default geometry
 
-The next stage completes the E00 operator matrix:
+The clearest contrast appears in the two strong linear regimes.
 
-1. exact raw cosine and Euclidean retrieval;
-2. diagonal Mahalanobis distance;
-3. rank-1, rank-4 and rank-16 operators;
-4. a nonlinear probe for the XOR boundary;
-5. label-permutation and random-operator nulls;
-6. paired bootstrap confidence intervals;
-7. the first supported, unsupported or insufficient-evidence decision.
+| Method | Axis-aligned Spearman | Rotated Spearman |
+|---|---:|---:|
+| Raw cosine | 0.0779 | 0.0813 |
+| Raw Euclidean | 0.0944 | 0.1053 |
+| Diagonal ridge metric | 0.9766 | 0.1771 |
+| Rank-one ridge projection | 0.9766 | 0.9768 |
+| PLS rank 4 | 0.4257 | 0.4367 |
+| PLS rank 16 | 0.1924 | 0.2075 |
 
-Only then can the synthetic experiment promote a scientific claim rather than an implementation checkpoint.
+The raw vector geometry barely exposed the relation even though the relation was known to exist.
+
+A supervised rank-one direction recovered it almost perfectly in both bases.
+
+That is the first important provisional conclusion from the programme:
+
+> Information can be strongly recoverable from a frozen representation while remaining largely invisible to its default cosine or Euclidean neighbourhood.
+
+The wording matters. This does not mean that every embedding contains every relation. It means that, in this controlled synthetic case, absence from the default neighbourhood was not evidence of absence from the representation.
+
+## Coordinates were not the relation
+
+The diagonal metric created the more revealing contrast.
+
+It reached a Spearman correlation of `0.9766` when the signal happened to align with a native coordinate. After an orthogonal rotation—one that preserved all information—it fell to `0.1771`.
+
+The rank-one projection remained at `0.9768` after the same rotation.
+
+The point estimates therefore support a second provisional conclusion:
+
+> The useful relation behaved like a direction or subspace, not like a stable semantic coordinate.
+
+This is exactly why assigning human meaning to raw embedding dimensions is dangerous. A coordinate can look decisive in one basis and cease to be decisive after a mathematically equivalent rotation.
+
+A method that treats embedding dimensions as inherently meaningful can succeed for accidental reasons.
+
+## The controls did not light up
+
+The absent relation remained near chance across the complete method set. The largest reported Spearman value was only `0.0081`, and triplet accuracy stayed between approximately `0.5000` and `0.5060`.
+
+The implemented linear methods also remained near chance on XOR. Average precision stayed between approximately `0.5033` and `0.5067`, while triplet accuracy stayed between `0.4999` and `0.5028`.
+
+These controls matter because a method that appears powerful on every regime is not discovering relational structure. It is probably exploiting the evaluation.
+
+At this checkpoint, the machinery distinguishes known linear recoverability from absent and nonlinear boundaries rather than manufacturing universal success.
+
+## More dimensions were not automatically better
+
+The PLS baselines produced another useful warning.
+
+Rank four outperformed rank sixteen on both strong linear regimes. Adding components made the projected Euclidean geometry worse rather than better.
+
+This is not mysterious. A supervised projection can contain directions that help some fitting objective while degrading the distance geometry used for retrieval.
+
+The result cautions against treating operator rank as a simple capacity dial:
+
+> A larger relational space is not necessarily a better relational space.
+
+That observation will matter later when we compare primitive operators and attempt composition. Additional degrees of freedom must earn their place through held-out relational performance, not through model size alone.
+
+## Where this leaves the hypothesis
+
+E00.2 is complete as a verified deterministic point-estimate stage.
+
+It supports the following provisional observations:
+
+1. raw cosine and Euclidean distance can fail to expose a known relation present in a frozen representation;
+2. a diagonal metric can succeed because of accidental basis alignment;
+3. a learned direction can retain recoverability after an information-preserving rotation;
+4. the current linear methods remain near chance on absent and nonlinear controls;
+5. increasing low-rank operator dimensionality does not automatically improve relational retrieval.
+
+It still does not permit a formal “we found” claim under the repository’s publication rule.
+
+The current run uses one deterministic seed and point estimates. It has not yet established:
+
+- performance relative to label-permutation and matched random-operator nulls;
+- paired bootstrap confidence intervals;
+- stability across confirmatory seeds;
+- a successful nonlinear control for XOR;
+- calibrated supported, unsupported or unstable decisions;
+- any transfer beyond synthetic vectors.
+
+## Next: nulls, uncertainty and certification
+
+The next stage is E00.3.
+
+It will ask whether the visible contrasts survive deliberate attempts to explain them away. That means adding permutation nulls, matched random operators, paired bootstrap intervals, confirmatory seeds and a nonlinear XOR diagnostic.
+
+Only after those tests can the project decide whether to promote its first scientific claim:
+
+> A relation can be recoverable from a frozen representation even when default similarity fails to expose it, and the recoverable object is a direction or subspace rather than a semantically stable raw coordinate.
+
+Until then, that sentence remains a candidate conclusion rather than a published finding.
 
 ## Publication status
 
 - Research hypothesis: recorded
-- Synthetic contract: frozen and refined
-- Generator, ridge baseline and independent verifier: locally verified
-- Target-specific metric contract: implemented; canonical rerun required
-- Complete E00 operator suite: pending
-- Claims of RELATE recoverability, composition or abstention: not yet permitted
+- Synthetic generator and baseline checkpoint: verified
+- Target-specific metric contract: verified
+- E00.2 operator matrix: verified across 6 regimes and 40 method sets
+- E00.3 nulls, uncertainty and certification: pending
+- Promoted claims of RELATE recoverability, composition or abstention: not yet permitted

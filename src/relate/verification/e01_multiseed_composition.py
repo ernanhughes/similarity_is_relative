@@ -1,4 +1,4 @@
-"""Deterministic replay verifier for E01.1 relational conjunction."""
+"""Deterministic replay verifier for E01.2a."""
 
 from __future__ import annotations
 
@@ -8,10 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from relate.experiments.e01_relational_conjunction import (
-    RelationalConjunctionConfig,
-    run,
-)
+from relate.experiments.e01_multiseed_composition import MultiSeedCompositionConfig, run
 
 
 def _compare(expected: Any, observed: Any, path: str, errors: list[str]) -> None:
@@ -39,27 +36,28 @@ def _compare(expected: Any, observed: Any, path: str, errors: list[str]) -> None
 
 def verify(result_path: Path, output_path: Path) -> dict[str, Any]:
     recorded = json.loads(result_path.read_text(encoding="utf-8"))
+    with tempfile.TemporaryDirectory(prefix="relate-e01-multiseed-") as temporary:
+        reproduced = run(Path(temporary), MultiSeedCompositionConfig())
+    left = dict(recorded)
+    right = dict(reproduced)
+    left.pop("result_sha256", None)
+    right.pop("result_sha256", None)
     errors: list[str] = []
-    with tempfile.TemporaryDirectory(prefix="relate-e01-relational-") as temporary:
-        reproduced = run(Path(temporary), RelationalConjunctionConfig())
-    comparable_recorded = dict(recorded)
-    comparable_reproduced = dict(reproduced)
-    comparable_recorded.pop("result_sha256", None)
-    comparable_reproduced.pop("result_sha256", None)
-    _compare(comparable_recorded, comparable_reproduced, "result", errors)
-    gate = recorded.get("gate", {})
+    _compare(left, right, "result", errors)
     report = {
-        "experiment_id": "e01-relational-conjunction",
+        "experiment_id": recorded.get("experiment_id"),
         "verification_class": "DETERMINISTIC_REPLAY",
         "status": "PASS" if not errors else "FAIL",
         "errors": errors,
-        "verified_compounds": len(recorded.get("compounds", {})),
+        "verified_seeds": len(recorded.get("seeds", {})),
+        "verified_compounds": len(recorded.get("aggregate", {})),
         "verified_decisions": len(recorded.get("decisions", {})),
-        "gate_passed": bool(gate.get("passed", False)),
-        "claim_promotion_allowed": bool(gate.get("claim_promotion_allowed", False)),
+        "gate_passed": bool(recorded.get("gate", {}).get("passed", False)),
+        "claim_promotion_allowed": bool(
+            recorded.get("gate", {}).get("claim_promotion_allowed", False)
+        ),
         "result_sha256": recorded.get("result_sha256"),
         "decision_tree_sha256": recorded.get("decision_tree_sha256"),
-        "note": "Replay verification is independent of the scientific gate outcome.",
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -73,14 +71,10 @@ def main() -> None:
     parser.add_argument(
         "--result",
         type=Path,
-        default=Path(
-            "runs/e01/relational-conjunction-seed-307/relational-conjunction-result-with-hash.json"
-        ),
+        default=Path("runs/e01/multiseed-composition/multiseed-composition-result-with-hash.json"),
     )
     parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("runs/e01/relational-conjunction-seed-307/verification.json"),
+        "--output", type=Path, default=Path("runs/e01/multiseed-composition/verification.json")
     )
     args = parser.parse_args()
     print(json.dumps(verify(args.result, args.output), indent=2, sort_keys=True))

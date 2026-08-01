@@ -21,9 +21,7 @@ def test_recursion_error_isolated_and_counted(monkeypatch) -> None:
         return [row["code"] for row in batch], Counter()
 
     monkeypatch.setattr(resilient, "_build_records", fake_build_records)
-    records, reasons = resilient.build_records_resilient(
-        rows, _Tokenizer(), OptionBConfig()
-    )
+    records, reasons = resilient.build_records_resilient(rows, _Tokenizer(), OptionBConfig())
 
     assert records == ["good", "also-good"]
     assert reasons == Counter({"ast_recursion_limit": 1})

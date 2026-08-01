@@ -22,9 +22,7 @@ from relate.experiments.option_b_real_code import (
 
 DATASET_ID = "code-search-net/code_search_net"
 REQUIRED_SPLITS = ("train", "validation", "test")
-DEFAULT_IDENTITY = Path(
-    "artifacts/canonical/option-b/option-b-external-identity-v1.json"
-)
+DEFAULT_IDENTITY = Path("artifacts/canonical/option-b/option-b-external-identity-v1.json")
 DEFAULT_OUTPUT = Path("runs/option-b/selection")
 
 
@@ -124,7 +122,9 @@ def prepare_selection(
             from datasets import load_dataset
             from transformers import AutoTokenizer
         except ImportError as error:  # pragma: no cover - full runtime only
-            raise RuntimeError("install Option B dependencies with pip install -e '.[option-b]'") from error
+            raise RuntimeError(
+                "install Option B dependencies with pip install -e '.[option-b]'"
+            ) from error
         if tokenizer is None:
             tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, revision=model_revision)
         if dataset_by_split is None:
@@ -156,8 +156,7 @@ def prepare_selection(
         "test": config.test_limit,
     }
     selected = {
-        split: deterministic_limit(deduplicated[split], limits[split])
-        for split in REQUIRED_SPLITS
+        split: deterministic_limit(deduplicated[split], limits[split]) for split in REQUIRED_SPLITS
     }
 
     artifact_hashes: dict[str, Any] = {}
@@ -192,9 +191,7 @@ def prepare_selection(
             "model_revision": model_revision,
             "dataset_revision": dataset_revision,
             "fixture_matrix_sha256": identity["fixture"]["matrix_sha256"],
-            "pooling_implementation_sha256": identity[
-                "pooling_implementation_sha256"
-            ],
+            "pooling_implementation_sha256": identity["pooling_implementation_sha256"],
         },
         "config": asdict(config),
         "source_rows": source_counts,

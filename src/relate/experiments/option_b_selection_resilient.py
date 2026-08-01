@@ -15,6 +15,8 @@ from relate.experiments import option_b_selection as selection
 from relate.experiments.option_b_real_code import (
     FunctionRecord,
     OptionBConfig,
+)
+from relate.experiments.option_b_real_code import (
     build_records as _build_records,
 )
 
@@ -39,12 +41,8 @@ def build_records_resilient(
         if len(rows) == 1:
             return [], Counter({"ast_recursion_limit": 1})
         midpoint = len(rows) // 2
-        left_records, left_reasons = build_records_resilient(
-            rows[:midpoint], tokenizer, config
-        )
-        right_records, right_reasons = build_records_resilient(
-            rows[midpoint:], tokenizer, config
-        )
+        left_records, left_reasons = build_records_resilient(rows[:midpoint], tokenizer, config)
+        right_records, right_reasons = build_records_resilient(rows[midpoint:], tokenizer, config)
         return left_records + right_records, left_reasons + right_reasons
 
 

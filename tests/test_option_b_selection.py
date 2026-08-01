@@ -53,9 +53,7 @@ def test_selection_is_deterministic_and_removes_cross_split_duplicates(tmp_path:
             _row("repo-a", "train_a", "def train_a(x):\n    return one(x)\n"),
             _row("repo-a", "duplicate", duplicate),
         ],
-        "validation": [
-            _row("repo-b", "validation_a", "def validation_a(x):\n    return two(x)\n")
-        ],
+        "validation": [_row("repo-b", "validation_a", "def validation_a(x):\n    return two(x)\n")],
         "test": [
             _row("repo-c", "test_a", "def test_a(x):\n    return three(x)\n"),
             _row("repo-c", "duplicate", duplicate),

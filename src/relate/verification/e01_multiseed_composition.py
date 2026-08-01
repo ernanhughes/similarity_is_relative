@@ -19,7 +19,7 @@ def _compare(expected: Any, observed: Any, path: str, errors: list[str]) -> None
         for key in sorted(expected):
             _compare(expected[key], observed[key], f"{path}.{key}", errors)
         return
-    if isinstance(expected, list) and isinstance(observed, list):
+    if isinstance(expected, (list, tuple)) and isinstance(observed, (list, tuple)):
         if len(expected) != len(observed):
             errors.append(f"{path}: length mismatch")
             return

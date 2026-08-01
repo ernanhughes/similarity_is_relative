@@ -86,7 +86,7 @@ def calls(obj):
         ("def f(ctx):\n    with ctx:\n        work()\n", 1.0, 1.0),
         ("async def f(ctx):\n    async with ctx:\n        work()\n", 1.0, 1.0),
         (
-            "def f(x):\n    match x:\n        case 0:\n            return 0\n        case _:\n            return 1\n",
+            "def f(x):\n    match x:\n        case 0:\n            return 0\n        case _:\n            return 1\n",  # NOQA E501
             2.0,
             1.0,
         ),

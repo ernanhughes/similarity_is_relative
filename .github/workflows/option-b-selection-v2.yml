@@ -1,0 +1,55 @@
+name: Option B canonical selection v2
+
+on:
+  push:
+    branches:
+      - agent/option-b-canonical-selection-v2
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  canonical-selection-v2:
+    if: ${{ github.event_name == 'pull_request' || !contains(github.event.head_commit.message, '[skip selection v2]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/option-b-canonical-selection-v2
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install Option B dependencies
+        run: pip install -e '.[dev,option-b]'
+      - name: Run tests and lint
+        run: |
+          pytest -q
+          ruff check .
+      - name: Run independent canonical selections
+        env:
+          TOKENIZERS_PARALLELISM: 'false'
+          PYTHONHASHSEED: '0'
+        run: |
+          rm -rf runs/option-b/selection-v2-a runs/option-b/selection-v2-b
+          python -m relate.experiments.option_b_selection_v2 --output-dir runs/option-b/selection-v2-a
+          python -m relate.experiments.option_b_selection_v2 --output-dir runs/option-b/selection-v2-b
+          python scripts/verify_option_b_selection_v2.py \
+            --run-a runs/option-b/selection-v2-a \
+            --run-b runs/option-b/selection-v2-b \
+            --v1 artifacts/canonical/option-b/selection \
+            --canonical artifacts/canonical/option-b/selection
+      - name: Commit canonical v2 evidence
+        if: github.event_name == 'pull_request'
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add artifacts/canonical/option-b/selection docs/audits/option-b-pre-embedding-review-and-remediation-2026-08-01.md docs/research/option-b-canonical-row-selection-v2-complete-2026-08-01.md
+          git diff --cached --quiet && exit 1
+          git commit -m 'Publish Option B canonical selection v2 [skip selection v2]'
+          git push origin HEAD:agent/option-b-canonical-selection-v2

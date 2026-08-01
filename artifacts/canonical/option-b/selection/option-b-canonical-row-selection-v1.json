@@ -1,0 +1,119 @@
+{
+  "artifacts": {
+    "test": {
+      "primitive_table": {
+        "path": "runs/option-b/selection-a/option-b-primitives-test-v1.jsonl",
+        "rows": 4000,
+        "sha256": "df98c6279498a1eb29d96816a33c80f061796c6a06b477ef52f0318118debb58"
+      },
+      "selected_manifest": {
+        "path": "runs/option-b/selection-a/option-b-selected-test-v1.jsonl",
+        "rows": 4000,
+        "sha256": "e3eb77c45deb74d8e96c8582e097aa241e19e0ac89ac8b99e42f4a29ffd618e7"
+      }
+    },
+    "train": {
+      "primitive_table": {
+        "path": "runs/option-b/selection-a/option-b-primitives-train-v1.jsonl",
+        "rows": 20000,
+        "sha256": "89a1b745942faf176b0650234115cfc2de67c5cfb5f736efbe7f6444719d9f36"
+      },
+      "selected_manifest": {
+        "path": "runs/option-b/selection-a/option-b-selected-train-v1.jsonl",
+        "rows": 20000,
+        "sha256": "73f2cf89d96e1b80af50306a46e65d6f090c8b54e1baa91416e8147d31220c30"
+      }
+    },
+    "validation": {
+      "primitive_table": {
+        "path": "runs/option-b/selection-a/option-b-primitives-validation-v1.jsonl",
+        "rows": 4000,
+        "sha256": "8b265eb7892cdcc725870697b6dd3bb34fc6acd36e50941f282f98201903fdc7"
+      },
+      "selected_manifest": {
+        "path": "runs/option-b/selection-a/option-b-selected-validation-v1.jsonl",
+        "rows": 4000,
+        "sha256": "3dab1c99f1443340336bbedceac60995267163abe9b5b4283bdd5d023b6eb2f9"
+      }
+    }
+  },
+  "config": {
+    "bootstrap_repetitions": 2000,
+    "continuation_gap": 0.1,
+    "max_pairs_per_query": 128,
+    "max_rank_separation": 25,
+    "max_tokens": 256,
+    "min_rank_separation": 5,
+    "min_tokens": 32,
+    "ridge_alphas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "test_limit": 4000,
+    "train_limit": 20000,
+    "validation_limit": 4000
+  },
+  "cross_split_deduplication": {
+    "cross_split_ast_count": 0,
+    "removed_by_split": {
+      "test": 0,
+      "train": 0,
+      "validation": 0
+    }
+  },
+  "eligible_after_cross_split_deduplication": {
+    "test": 9578,
+    "train": 179659,
+    "validation": 9909
+  },
+  "eligible_before_cross_split_deduplication": {
+    "test": 9578,
+    "train": 179659,
+    "validation": 9909
+  },
+  "exclusions": {
+    "test": {
+      "ast_ineligible": 228,
+      "token_length": 12370
+    },
+    "train": {
+      "ast_ineligible": 4011,
+      "ast_recursion_limit": 1,
+      "token_length": 228507
+    },
+    "validation": {
+      "ast_ineligible": 290,
+      "token_length": 12908
+    }
+  },
+  "identity": {
+    "dataset_revision": "bd0cf261e357a3eb5c8fba490d23ec1a1cd59555",
+    "fixture_matrix_sha256": "300b75891b2a498f17e774d27baf3ce432082a55cd1fc2401b003c8b5f4e5f46",
+    "model_revision": "3b0952feddeffad0063f274080e3c23d75e7eb39",
+    "path": "artifacts/canonical/option-b/option-b-external-identity-v1.json",
+    "pooling_implementation_sha256": "9ac3a71225bcae6bbaf7e4c01788f6a85914b22f0edb054202f00707f3b1cbf5"
+  },
+  "next_allowed_action": "CANONICAL_EMBEDDING_EXTRACTION",
+  "prohibited_actions": [
+    "scientific metric evaluation",
+    "threshold changes",
+    "query changes",
+    "second model or language"
+  ],
+  "scientific_result_observed": false,
+  "selected_rows": {
+    "test": 4000,
+    "train": 20000,
+    "validation": 4000
+  },
+  "selection_id": "option-b-canonical-row-selection-v1",
+  "source_rows": {
+    "test": 22176,
+    "train": 412178,
+    "validation": 23107
+  },
+  "status": "CANONICAL_ROW_SELECTION_COMPLETE"
+}

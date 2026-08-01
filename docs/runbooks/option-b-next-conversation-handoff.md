@@ -111,7 +111,7 @@ Do not proceed into later stages in the same PR.
 ## Copyable prompt
 
 ```text
-We are continuing work on the GitHub repository er thanhughes/similarity_is_relative.
+We are continuing work on the GitHub repository ernanhughes/similarity_is_relative.
 
 Use the current main branch as the authoritative source. Before changing code, read:
 
@@ -131,5 +131,3 @@ Do not alter the frozen model, language, query, raw baselines, 0.10 threshold, o
 
 Run relevant tests and open a draft PR with exact scope, validation, artifact consequences, and the next permitted action.
 ```
-
-Note: the repository owner is `ernanhughes`; correct any accidental transcription variation in the copyable prompt before use.

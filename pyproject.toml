@@ -18,6 +18,12 @@ dev = [
   "pytest>=8.3",
   "ruff>=0.6",
 ]
+option-b = [
+  "torch>=2.4",
+  "transformers>=4.45",
+  "tokenizers>=0.20",
+  "datasets>=3.0",
+]
 
 [project.scripts]
 relate-e00 = "relate.experiments.e00:main"
@@ -36,6 +42,7 @@ relate-verify-e01-relational = "relate.verification.e01_relational_conjunction:m
 relate-e01-multiseed = "relate.experiments.e01_multiseed_composition:main"
 relate-verify-e01-multiseed = "relate.verification.e01_multiseed_composition:main"
 relate-audit-e01 = "relate.audits.e01_independent_recomputation:main"
+relate-option-b = "relate.experiments.option_b_real_code:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

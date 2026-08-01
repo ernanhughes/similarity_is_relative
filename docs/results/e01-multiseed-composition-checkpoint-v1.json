@@ -1,0 +1,67 @@
+{
+  "checkpoint_id": "e01-multiseed-composition-checkpoint-v1",
+  "experiment_id": "e01-multiseed-composition-confirmation",
+  "stage": "E01.2a",
+  "scope": "registered synthetic weighted product-space composition only",
+  "seeds": [401, 433, 467, 503, 557],
+  "verification": {
+    "status": "PASS",
+    "verification_class": "DETERMINISTIC_REPLAY",
+    "errors": [],
+    "verified_seeds": 5,
+    "verified_compounds": 4,
+    "verified_decisions": 4
+  },
+  "gate": {
+    "passed": true,
+    "claim_promotion_allowed": false,
+    "note": "E01.2a confirms weighted product-space composition only; support-aware and non-additive gates remain pending."
+  },
+  "decisions": {
+    "a2_b": "SUPPORTED_MULTI_SEED",
+    "a3_c": "SUPPORTED_MULTI_SEED",
+    "a_b2_c3": "SUPPORTED_MULTI_SEED",
+    "b2_c": "SUPPORTED_MULTI_SEED"
+  },
+  "aggregate": {
+    "a2_b": {
+      "mean_composed": 0.9256259495544551,
+      "minimum_composed": 0.9245594083937942,
+      "composed_ci95": [0.9249589495056536, 0.9263598818446935],
+      "scalar_margin_ci95": [0.15625019404799043, 0.16255680928621036],
+      "wrong_alignment_margin_ci95": [0.08210903065697617, 0.08453493439096083],
+      "success_count": 5
+    },
+    "a3_c": {
+      "mean_composed": 0.9242506090678354,
+      "minimum_composed": 0.9232772970431644,
+      "composed_ci95": [0.9235782905436046, 0.9249120018966849],
+      "scalar_margin_ci95": [0.12454271534256214, 0.12587236858096224],
+      "wrong_alignment_margin_ci95": [0.14415282881066943, 0.1459209139006289],
+      "success_count": 5
+    },
+    "a_b2_c3": {
+      "mean_composed": 0.9284694603096602,
+      "minimum_composed": 0.927971970216767,
+      "composed_ci95": [0.9281646460686253, 0.928744826907001],
+      "scalar_margin_ci95": [0.2163854982658064, 0.21932493355918403],
+      "wrong_alignment_margin_ci95": [0.036824422905994636, 0.03816233603092338],
+      "success_count": 5
+    },
+    "b2_c": {
+      "mean_composed": 0.9255643124333496,
+      "minimum_composed": 0.9248394249156623,
+      "composed_ci95": [0.9250379538088389, 0.9261361974173955],
+      "scalar_margin_ci95": [0.15671772389520994, 0.16377449265234248],
+      "wrong_alignment_margin_ci95": [0.08173223588579762, 0.08396903584536233],
+      "success_count": 5
+    }
+  },
+  "evidence_identities": {
+    "result_sha256": "b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168",
+    "decision_tree_sha256": "321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48",
+    "config_sha256": "178711153b2b9115ed8f3abf384e33a2d4c11a6db6e5f962889c0cea6f320d81",
+    "compound_definitions_sha256": "4bd20892449b7630df3fb8557d49595b8129d6bbfbcc6a432a26723d0d134d08"
+  },
+  "interpretation": "Across five fresh synthetic seeds, independently predicted primitive coordinates supported all four preregistered weighted product-space queries and exceeded the strongest included scalar and wrong-alignment controls. This is a replicated synthetic score-fusion result, not evidence of a novel RELATE algorithm or support-aware composition."
+}

@@ -32,6 +32,15 @@ def _fixture(tmp_path: Path):
     identity = {
         "identity_id": "option-b-embedding-identity-v2",
         "status": "EMBEDDING_IDENTITY_V2_COMPLETE",
+        "model": {"repo_id": "microsoft/codebert-base", "revision": "rev"},
+        "embedding_implementation_sha256": "a" * 64,
+        "tokenization_config_sha256": "b" * 64,
+        "tokenization_config": {
+            "padding": "max_length",
+            "pooling_policy": "attention-mask mean pooling",
+            "output_dtype": "float32",
+            "max_length": 256,
+        },
     }
     _write_json(identity_path, identity)
 
@@ -98,7 +107,12 @@ def _write_run(
             "model": {"repo_id": "microsoft/codebert-base", "revision": "rev"},
             "embedding_implementation_sha256": "a" * 64,
             "tokenization_config_sha256": "b" * 64,
-            "tokenization_config": {"padding": "max_length"},
+            "tokenization_config": {
+                "padding": "max_length",
+                "pooling_policy": "attention-mask mean pooling",
+                "output_dtype": "float32",
+                "max_length": 256,
+            },
             "pooling_policy": "attention-mask mean pooling",
             "output_dtype": "float32",
             "max_length": 256,

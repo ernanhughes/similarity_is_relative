@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 from sklearn.linear_model import Ridge
@@ -242,7 +243,7 @@ def fit_predicted_executor_contract(
         "candidate_prediction_protocol": "deterministic balanced out-of-fold",
         "prediction_rounding": "forbidden",
         "next_allowed_action": "EMBEDDING_IDENTITY_V2",
-        "canonical_probe_fitting_performed": False,
+        "probe_fit_scope": "train labels only; validation selects alpha; test labels absent",
     }
 
     def vectors(values: np.ndarray, role: str) -> PredictedPrimitiveVectors:
@@ -275,6 +276,10 @@ def predicted_executor_distance(
         raise ValueError("query vectors must have the test-query prediction role")
     if candidates.role != TRAIN_CANDIDATE_ROLE:
         raise ValueError("candidate vectors must have the train-candidate prediction role")
+    if array_hash(queries.values) != queries.prediction_sha256:
+        raise ValueError("query prediction values no longer match their hash")
+    if array_hash(candidates.values) != candidates.prediction_sha256:
+        raise ValueError("candidate prediction values no longer match their hash")
     if queries.bundle_sha256 != candidates.bundle_sha256:
         raise ValueError("query and candidate predictions must come from the same fitted bundle")
     return np.max(

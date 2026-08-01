@@ -23,7 +23,7 @@ def test_array_hash_includes_shape() -> None:
     assert array_hash(values) != array_hash(values.reshape(2, 4))
 
 
-def test_perfect_scalar_predictions_score_perfectly() -> None:
+def test_perfect_continuous_predictions_score_perfectly() -> None:
     candidates = np.linspace(-2.0, 2.0, 101)
     queries = np.array([-1.25, -0.1, 0.75, 1.6])
     metrics = evaluate_scalar_retrieval(
@@ -33,19 +33,22 @@ def test_perfect_scalar_predictions_score_perfectly() -> None:
         predicted_queries=queries.copy(),
         k=10,
         ks=(10, 25, 50),
+        target_kind="continuous",
     )
 
+    assert metrics["target_kind"] == "continuous"
     assert metrics["spearman"] == 1.0
     assert metrics["triplet_accuracy"] == 1.0
     assert metrics["oracle_neighbor_predicted_rank_median"] <= 10
     assert metrics["oracle_neighbor_predicted_rank_p90"] <= 10
     for value in ("10", "25", "50"):
         assert metrics["recall_at"][value] == 1.0
+        assert np.isclose(metrics["neighbor_regret_at"][value], 0.0)
         assert np.isclose(metrics["relative_neighbor_error_at"][value], 1.0)
         assert np.isclose(metrics["ndcg_at"][value], 1.0)
 
 
-def test_metrics_report_near_miss_quality_beyond_exact_overlap() -> None:
+def test_continuous_metrics_report_near_miss_quality() -> None:
     candidates = np.linspace(0.0, 1.0, 200)
     queries = np.array([0.2, 0.5, 0.8])
     shifted_predictions = candidates + 0.015
@@ -56,12 +59,56 @@ def test_metrics_report_near_miss_quality_beyond_exact_overlap() -> None:
         predicted_queries=queries,
         k=10,
         ks=(10, 25),
+        target_kind="continuous",
     )
 
     assert 0.0 < metrics["recall_at"]["10"] < 1.0
     assert metrics["ndcg_at"]["10"] > metrics["recall_at"]["10"]
-    assert metrics["relative_neighbor_error_at"]["10"] >= 1.0
+    assert metrics["neighbor_regret_at"]["10"] > 0.0
+    assert metrics["within_tolerance_at"]["10"] > 0.0
     assert metrics["triplet_accuracy"] > 0.9
+
+
+def test_binary_metrics_do_not_emit_scalar_only_fields() -> None:
+    candidates = np.array([0.0, 1.0] * 50)
+    queries = np.array([0.0, 1.0])
+    predicted_candidates = np.linspace(0.0, 1.0, len(candidates))
+    predicted_queries = queries.copy()
+    metrics = evaluate_scalar_retrieval(
+        candidate_values=candidates,
+        query_values=queries,
+        predicted_candidates=predicted_candidates,
+        predicted_queries=predicted_queries,
+        k=10,
+        ks=(10, 25),
+        target_kind="binary",
+    )
+
+    assert metrics["target_kind"] == "binary"
+    assert "ndcg_at" not in metrics
+    assert "relative_neighbor_error_at" not in metrics
+    assert "within_tolerance_at" not in metrics
+    assert set(metrics["class_precision_at"]) == {"10", "25"}
+    assert set(metrics["class_recall_at"]) == {"10", "25"}
+    assert 0.0 <= metrics["average_precision"] <= 1.0
+
+
+def test_zero_oracle_distance_does_not_create_huge_ratio() -> None:
+    candidates = np.array([0.0] * 50 + [1.0] * 50)
+    queries = np.array([0.0])
+    metrics = evaluate_scalar_retrieval(
+        candidate_values=candidates,
+        query_values=queries,
+        predicted_candidates=np.linspace(0.0, 1.0, 100),
+        predicted_queries=np.array([0.5]),
+        k=10,
+        ks=(10,),
+        target_kind="continuous",
+    )
+
+    assert metrics["oracle_mean_distance_at"]["10"] == 0.0
+    assert metrics["relative_neighbor_error_at"]["10"] is None
+    assert metrics["neighbor_regret_at"]["10"] >= 0.0
 
 
 def test_e00_is_deterministic_and_verifiable(tmp_path: Path) -> None:

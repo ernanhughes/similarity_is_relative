@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 
 from relate.experiments.e00 import (
+    BINARY_REGIMES,
     REGIMES,
     Config,
     array_hash,
@@ -36,10 +37,7 @@ def _compare_metric_tree(
             errors.append(f"unexpected recomputed metric: {path}.{unexpected}")
         for key in sorted(recorded_keys & recomputed_keys):
             _compare_metric_tree(
-                recorded[key],
-                recomputed[key],
-                f"{path}.{key}",
-                errors,
+                recorded[key], recomputed[key], f"{path}.{key}", errors
             )
         return
 
@@ -107,6 +105,9 @@ def verify(run_directory: Path) -> dict[str, object]:
             predicted_queries=predictions[test],
             k=config.retrieval_k,
             ks=tuple(config.retrieval_ks),
+            target_kind="binary" if regime in BINARY_REGIMES else "continuous",
+            tolerance_fraction=config.scalar_tolerance_fraction,
+            relative_error_minimum_denominator=config.relative_error_minimum_denominator,
         )
         _compare_metric_tree(
             recorded["ridge_predicted_distance"],
@@ -124,7 +125,7 @@ def verify(run_directory: Path) -> dict[str, object]:
         "verified_metric_sets": verified_metrics,
         "claim_promotion_allowed": False,
         "note": (
-            "E00 verifies deterministic generation, artifact identity, and enhanced "
+            "E00 verifies deterministic generation, artifact identity, and target-specific "
             "ridge retrieval metrics only. The registered operator suite remains incomplete."
         ),
     }

@@ -1,0 +1,123 @@
+{
+  "artifact_identities": {
+    "absent": {
+      "x_sha256": "accb53f8fd31ae4da4c1473ae857b361d1dd796ce2f21815f1682120e8287d59",
+      "y_sha256": "15a989db0a329f251ab43d91340dd108ba38ee70f327e1e5835db601d8473c25"
+    },
+    "axis_linear": {
+      "x_sha256": "160c0af8f23bf9d8b9f94655612d47b29e22676100019dfeac0d1ab65bd5c67a",
+      "y_sha256": "e0836555ef55fd4347a472060dad681d00e11976db25213f73063e4a2afa9174"
+    },
+    "correlated_nuisance": {
+      "x_sha256": "e7110d04d65c00bc21466bea5112e20f709bac773bd0a184a0ebe2b2e00903d2",
+      "y_sha256": "944e55c1615f6efa86ae75a143b351c23189383b8a16f95dc15ff7a8d41a8083"
+    },
+    "nonlinear_xor": {
+      "x_sha256": "e4096444ec31a4622b308d2c764bf911e02b39afb7cce11fefd3271028c7c56b",
+      "y_sha256": "173104564aba6b75dde81f482981fe50da599cceb7bc2968e6d8e9d1985a6a00"
+    },
+    "rotated_linear": {
+      "x_sha256": "2b919b721765f0e4c86047eb1f1ca37af7825cca7ea7f93e0bbc5f36a375dbe5",
+      "y_sha256": "a16f9b8f7a96630cf772a99dde324aca825501316700a9b3d21cc97fc003c768"
+    },
+    "weak_linear": {
+      "x_sha256": "7dd90e45468a86356fe2649c1171a7137e7162c3f0267ea297f26904850adfbc",
+      "y_sha256": "459b92daba7cff10c96ca495edb2efc3488689c135df888600e551b6a8fbf001"
+    }
+  },
+  "baseline_summary": {
+    "absent": {
+      "ndcg_at_10": 0.4162938094769231,
+      "neighbor_regret_at_10": 1.1243531468737733,
+      "recall_at_10": 0.0034146341463414634,
+      "spearman": 0.003304597542609038,
+      "target_kind": "continuous",
+      "triplet_accuracy": 0.5041769285771034,
+      "within_tolerance_at_10": 0.028292682926829273
+    },
+    "axis_linear": {
+      "ndcg_at_10": 0.890386571716414,
+      "neighbor_regret_at_10": 0.1069708553628331,
+      "recall_at_10": 0.06012195121951219,
+      "spearman": 0.9766015477735254,
+      "target_kind": "continuous",
+      "triplet_accuracy": 0.9333548502423136,
+      "within_tolerance_at_10": 0.2712195121951219
+    },
+    "correlated_nuisance": {
+      "ndcg_at_10": 0.428508766538806,
+      "neighbor_regret_at_10": 1.0340704014485718,
+      "recall_at_10": 0.0029268292682926834,
+      "spearman": 0.2944349931350182,
+      "target_kind": "continuous",
+      "triplet_accuracy": 0.6308761023277984,
+      "within_tolerance_at_10": 0.02231707317073171
+    },
+    "nonlinear_xor": {
+      "average_precision": 0.5066703621706184,
+      "class_precision_at_10": 0.5071951219512195,
+      "class_recall_at_10": 0.004130425906997158,
+      "neighbor_regret_at_10": 0.49280487804878054,
+      "recall_at_10": 0.003414634146341464,
+      "spearman": 0.006599684532666743,
+      "target_kind": "binary",
+      "triplet_accuracy": 0.5028162548401262
+    },
+    "rotated_linear": {
+      "ndcg_at_10": 0.8899964285792656,
+      "neighbor_regret_at_10": 0.10861080153674418,
+      "recall_at_10": 0.07390243902439024,
+      "spearman": 0.9767556920648028,
+      "target_kind": "continuous",
+      "triplet_accuracy": 0.9386718439659967,
+      "within_tolerance_at_10": 0.2702439024390244
+    },
+    "weak_linear": {
+      "ndcg_at_10": 0.668517149210236,
+      "neighbor_regret_at_10": 0.11224303195030269,
+      "recall_at_10": 0.017195121951219514,
+      "spearman": 0.7416941076335927,
+      "target_kind": "continuous",
+      "triplet_accuracy": 0.7861196075315803,
+      "within_tolerance_at_10": 0.07414634146341463
+    }
+  },
+  "checkpoint_id": "e00-baseline-checkpoint-v1",
+  "claim_promotion_allowed": false,
+  "config": {
+    "dimensions": 64,
+    "noise_standard_deviation": 0.1,
+    "relative_error_minimum_denominator": 1e-08,
+    "retrieval_k": 10,
+    "retrieval_ks": [
+      10,
+      25,
+      50,
+      100
+    ],
+    "samples": 4096,
+    "scalar_tolerance_fraction": 0.05,
+    "seed": 17,
+    "train_fraction": 0.6,
+    "validation_fraction": 0.2
+  },
+  "decision": "CONTINUE_TO_OPERATOR_SUITE",
+  "experiment_id": "e00-synthetic-recoverability",
+  "git_branch": "checkpoint/e00-baseline-finalization",
+  "git_commit_before_publication": "a42ddaaead8172565915942e35c3d1fe353342a7",
+  "manifest_sha256": "8558e1847918b08eb0db9ce512c4bcfb4e94e4a1f7dc4a222cdd2b99cd2c6220",
+  "publication_boundary": "This checkpoint verifies the E00 ridge baseline machinery only. It does not support a RELATE recoverability, composition, or abstention claim.",
+  "recorded_at_utc": "2026-08-01T09:44:05.671391+00:00",
+  "result_sha256": "d6f4ebaaae7eab573dc09998824d9bad6aa68724d6371f6adf844ea2211e9c0e",
+  "rotation_sha256": "86477b2c1192335c3bd5d97ea5782b10ca86dc8832f27e603debdc502f312242",
+  "scientific_status": "E00_INCOMPLETE",
+  "split_hashes": {
+    "test": "2605def3f4adb3b11ae1e3109f3784d3f04505d644a4461660eaa331dd533abd",
+    "train": "061f91fb0135ced8bdcf35d266d111044e7fc91586d2a4afb4cb2af4ef1970ea",
+    "validation": "7c468d51311331ee90f378d03a94aa1574fcc87868f410a5a7f4efe0234a66e0"
+  },
+  "status": "BASELINE_VERIFIED",
+  "verification_sha256": "d9178ba52e0854d1fa41d52db4e2959fbc4aa3c97d7c7850608dc5b7d8d2d4d4",
+  "verified_metric_sets": 6,
+  "verified_regimes": 6
+}

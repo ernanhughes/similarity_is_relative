@@ -29,6 +29,8 @@ relate-e00-certify = "relate.experiments.e00_certification:main"
 relate-verify-e00-certification = "relate.verification.e00_certification:main"
 relate-e00-multiseed = "relate.experiments.e00_multiseed:main"
 relate-verify-e00-multiseed = "relate.verification.e00_multiseed:main"
+relate-e01-compose = "relate.experiments.e01_composition:main"
+relate-verify-e01-compose = "relate.verification.e01_composition:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

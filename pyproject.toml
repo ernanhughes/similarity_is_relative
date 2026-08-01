@@ -45,6 +45,7 @@ relate-verify-e01-multiseed = "relate.verification.e01_multiseed_composition:mai
 relate-audit-e01 = "relate.audits.e01_independent_recomputation:main"
 relate-option-b = "relate.experiments.option_b_real_code:main"
 relate-option-b-freeze = "relate.experiments.option_b_identity:main"
+relate-option-b-select = "relate.experiments.option_b_selection:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

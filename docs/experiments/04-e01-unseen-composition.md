@@ -2,7 +2,7 @@
 
 ## Status
 
-Implementation and algebraic-identity validation stage. The canonical seed-211 run passed deterministic replay under the original wording, but the result is not evidence of nontrivial relational-composition generalization.
+Implementation and algebraic-identity validation stage. The canonical seed-211 run passed deterministic replay under the original result schema, but the result is not evidence of nontrivial relational-composition generalization.
 
 ## Motivation
 
@@ -64,19 +64,23 @@ For each weighted target and split:
 - oracle-neighbour predicted-rank median and p90;
 - direct-minus-composed triplet difference, retained under the historical field name `composition_regret`.
 
-## Identity decisions
+## Historical result labels
 
-The runner produces exactly four implementation decisions:
+The executable result schema retains the original labels:
 
-- `IDENTITY_CONFIRMED` when the composed method meets the frozen performance/control thresholds and direct-minus-composed triplet difference is at most `0.05`;
-- `IDENTITY_NOT_CONFIRMED` when composed triplet accuracy is below `0.70` or the direct-minus-composed difference exceeds `0.15`;
-- `IDENTITY_INCONCLUSIVE` otherwise.
+- `SUPPORTED_POINT_ESTIMATE`;
+- `UNSUPPORTED_AT_THRESHOLD`;
+- `INSUFFICIENT_EVIDENCE`.
 
-The stage gate passes only when all four weighted targets are `IDENTITY_CONFIRMED`.
+For this frozen stage, `SUPPORTED_POINT_ESTIMATE` must be interpreted only as:
+
+> the weighted ridge identity and its control thresholds were satisfied at the recorded point estimate.
+
+It must not be interpreted as support for unseen relational composition. The coded `gate.passed` field is an implementation identity gate, not a scientific composition-certification gate.
 
 ## Publication boundary
 
-Even when the identity gate passes:
+Even when the coded gate passes:
 
 - `claim_promotion_allowed` remains `false`;
 - no unseen relational-composition claim is permitted;

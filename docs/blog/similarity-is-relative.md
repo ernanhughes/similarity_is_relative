@@ -209,3 +209,110 @@ Until then, that sentence remains a candidate conclusion rather than a published
 - E00.2 operator matrix: verified across 6 regimes and 40 method sets
 - E00.3 nulls, uncertainty and certification: pending
 - Promoted claims of RELATE recoverability, composition or abstention: not yet permitted
+
+## The experiment passed. The claim did not.
+
+The next stage added the safeguards that the operator matrix lacked: deterministic permutation nulls, query-level bootstrap confidence intervals, an explicit nonlinear diagnostic for XOR, and a frozen decision tree.
+
+This stage produced an important distinction.
+
+The experiment itself passed verification. The independent verifier recomputed all seven decisions without error and confirmed the cryptographic identities of the source manifest, operator matrix, certification artifact, and decision tree.
+
+But the certification gate failed.
+
+That is not a contradiction. It is the point of having a gate.
+
+Five of the seven predeclared decisions behaved as required.
+
+The learned rank-one operator was strongly supported on both the axis-aligned and rotated linear regimes. Its triplet accuracy was approximately 0.933 on the axis-aligned representation and 0.939 after orthogonal rotation. The lower bounds of the 95% bootstrap intervals remained above 0.93, while the corresponding permutation-null thresholds remained close to chance.
+
+The absent relation was correctly rejected. Its rank-one triplet accuracy was approximately 0.504, with a narrow interval around chance, and it did not cross the permutation-null support threshold.
+
+The linear operator family also failed to certify XOR, as it should. Its triplet accuracy remained approximately 0.503, with the bootstrap interval spanning chance.
+
+The correlated-nuisance regime was classified as unstable under distribution shift. Its validation-to-test triplet-accuracy gap was approximately 0.360, with a 95% interval from about 0.343 to 0.377. That comfortably exceeded the predeclared instability threshold of 0.10.
+
+Two decisions, however, did not satisfy the frozen gate.
+
+### The diagonal operator was basis-dependent, but not by enough
+
+The operator matrix had shown a sharp visual contrast between the axis-aligned and rotated diagonal metrics. The certification stage measured that contrast directly.
+
+The axis-minus-rotated diagonal triplet-accuracy difference was approximately 0.375, with a very narrow 95% interval from 0.372 to 0.378.
+
+That is strong evidence of a real basis-dependent degradation.
+
+But the predeclared certification threshold required a difference of at least 0.50.
+
+The result was therefore classified as:
+
+> `INSUFFICIENT_EVIDENCE`
+
+This wording deserves care. The evidence was not statistically weak. The interval was narrow and far from zero. The result failed because the measured effect did not reach the magnitude we had required in advance.
+
+The honest conclusion is therefore narrower than the visual result initially suggested:
+
+> Diagonal weighting degraded substantially after rotation, but the size of that degradation did not meet the predeclared certification threshold.
+
+### The nonlinear XOR probe narrowly missed support
+
+The nonlinear MLP diagnostic achieved an average precision of approximately 0.811 on the XOR relation.
+
+Its 95% bootstrap interval ran from approximately 0.792 to 0.830.
+
+The frozen rule required the lower confidence bound to exceed 0.80.
+
+The point estimate passed that value. The lower bound did not.
+
+The nonlinear decision was therefore also classified as:
+
+> `INSUFFICIENT_EVIDENCE`
+
+Again, this does not mean that the nonlinear model failed to detect useful XOR structure. It means that the evidence was not strong enough, under the rule written before the run, to certify nonlinear-only recovery.
+
+### Why we did not change the thresholds
+
+After seeing the result, it would have been easy to lower the basis-dependence threshold from 0.50 to 0.35, or to judge the XOR probe by its point estimate rather than its confidence bound.
+
+We did neither.
+
+Changing the rule after seeing the outcome would convert a preregistered decision into a post-hoc justification.
+
+The recorded result therefore remains:
+
+```text
+Verification: PASS
+Certification gate: FAIL
+Supported decisions: 5 of 7
+Claim promotion: blocked
+```
+
+The certification artifact and decision tree are frozen under their own cryptographic identities:
+
+```text
+Certification:
+f095fada6527d1214c26c1086d95c751df5ebc4f267c7bd1a2c70a7ec5279b16
+
+Decision tree:
+32e084b8a7bde09d80e19c9b0df00b8f55df1cdde5db329ab74141e8a331c832
+```
+
+## What this stage establishes
+
+The seed-17 certification attempt supports several bounded conclusions.
+
+A learned rank-one direction recovered the known linear relation strongly in both the original and rotated representations.
+
+The absent relation was not certified.
+
+The linear operator family did not certify nonlinear XOR.
+
+The shortcut regime was correctly identified as unstable under distribution shift.
+
+The experiment also produced two non-promotable but informative results: diagonal weighting showed a substantial basis-dependent degradation, and the nonlinear probe recovered meaningful XOR signal, but neither crossed its predeclared certification threshold.
+
+This is not the result we might have chosen after looking at the point estimates.
+
+It is the result produced by the rules we committed to before the evidence arrived.
+
+That difference is the purpose of the repository.

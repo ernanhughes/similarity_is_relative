@@ -28,7 +28,9 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def compare_identity(v1_rows: list[dict[str, Any]], v2_rows: list[dict[str, Any]]) -> dict[str, Any]:
+def compare_identity(
+    v1_rows: list[dict[str, Any]], v2_rows: list[dict[str, Any]]
+) -> dict[str, Any]:
     def identity(row: dict[str, Any]) -> tuple[str, str, str]:
         return (row["repository"], row["function_id"], row["code_sha256"])
 
@@ -147,7 +149,7 @@ def main() -> None:
         "Gate: BLOCK BEFORE EMBEDDING EXTRACTION",
         "```",
         "",
-        "Two independent selections were run in fresh directories. All six v2 JSONL artifacts matched byte-for-byte. Stable keys are unique, no stable key or normalized AST crosses a split boundary, and each primitive table has exactly the selected-manifest key order.",
+        "Two independent selections were run in fresh directories. All six v2 JSONL artifacts matched byte-for-byte. Stable keys are unique, no stable key or normalized AST crosses a split boundary, and each primitive table has exactly the selected-manifest key order.",  # NOQA E501
         "",
         "## Artifact hashes",
         "",
@@ -157,19 +159,19 @@ def main() -> None:
     for split in SPLITS:
         item = verification["splits"][split]
         markdown.append(
-            f"| {split} | {item['rows']:,} | `{item['selected_sha256']}` | `{item['primitive_sha256']}` | {item['v1_comparison']['identity_overlap']:,} |"
+            f"| {split} | {item['rows']:,} | `{item['selected_sha256']}` | `{item['primitive_sha256']}` | {item['v1_comparison']['identity_overlap']:,} |"  # NOQA E501
         )
     markdown += [
         "",
-        "The v1 comparison uses `(repository, function_id, code_sha256)` rather than v1 stable keys because PR 2 repaired the previously missing CodeSearchNet path field. Exact overlap and differences are recorded in the JSON report.",
+        "The v1 comparison uses `(repository, function_id, code_sha256)` rather than v1 stable keys because PR 2 repaired the previously missing CodeSearchNet path field. Exact overlap and differences are recorded in the JSON report.",  # NOQA E501
         "",
         "## Scientific boundary",
         "",
-        "No embedding, probe, hard-negative, metric, or scientific decision was generated. The frozen threshold and two-outcome decision are unchanged.",
+        "No embedding, probe, hard-negative, metric, or scientific decision was generated. The frozen threshold and two-outcome decision are unchanged.",  # NOQA E501
         "",
         "## Next permitted stage",
         "",
-        "The next bounded stage is **PR 4 — predicted executor contract completion**. Canonical embedding extraction remains blocked until PRs 4–6 are merged.",
+        "The next bounded stage is **PR 4 — predicted executor contract completion**. Canonical embedding extraction remains blocked until PRs 4–6 are merged.",  # NOQA E501
         "",
     ]
     checkpoint = Path("docs/research/option-b-canonical-row-selection-v2-complete-2026-08-01.md")
@@ -178,12 +180,12 @@ def main() -> None:
     audit = Path("docs/audits/option-b-pre-embedding-review-and-remediation-2026-08-01.md")
     text = audit.read_text(encoding="utf-8")
     text = text.replace(
-        "Canonical row selection v1: REPRODUCED\nPrimitive tables v1: INVALIDATED BY CONTRACT/IMPLEMENTATION MISMATCH\nSelected manifests: REQUIRE REVERIFICATION AFTER PRIMITIVE REPAIR",
-        "Canonical row selection v2: REPRODUCED AND VERIFIED\nPrimitive tables v2: PUBLISHED; v1 REMAINS INVALIDATED\nSelected manifests v2: REVERIFIED",
+        "Canonical row selection v1: REPRODUCED\nPrimitive tables v1: INVALIDATED BY CONTRACT/IMPLEMENTATION MISMATCH\nSelected manifests: REQUIRE REVERIFICATION AFTER PRIMITIVE REPAIR",  # NOQA E501
+        "Canonical row selection v2: REPRODUCED AND VERIFIED\nPrimitive tables v2: PUBLISHED; v1 REMAINS INVALIDATED\nSelected manifests v2: REVERIFIED",  # NOQA E501
     )
     text = text.replace(
-        "The next implementation PR after this audit is merged is:\n\n```text\nPR 2 — primitive contract conformance\n```\n\nIt must not generate embeddings, fit probes, generate hard negatives, or compute scientific metrics.",
-        "Completed stages:\n\n- PR 2 — primitive contract conformance;\n- PR 3 — canonical selection and primitive checkpoint v2.\n\nThe next implementation PR is:\n\n```text\nPR 4 — predicted executor contract completion\n```\n\nCanonical embedding extraction remains blocked.",
+        "The next implementation PR after this audit is merged is:\n\n```text\nPR 2 — primitive contract conformance\n```\n\nIt must not generate embeddings, fit probes, generate hard negatives, or compute scientific metrics.",  # NOQA E501
+        "Completed stages:\n\n- PR 2 — primitive contract conformance;\n- PR 3 — canonical selection and primitive checkpoint v2.\n\nThe next implementation PR is:\n\n```text\nPR 4 — predicted executor contract completion\n```\n\nCanonical embedding extraction remains blocked.",  # NOQA E501
     )
     audit.write_text(text, encoding="utf-8")
 

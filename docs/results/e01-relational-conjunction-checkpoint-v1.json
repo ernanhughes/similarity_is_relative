@@ -1,0 +1,78 @@
+{
+  "checkpoint_id": "e01-relational-conjunction-checkpoint-v1",
+  "experiment_id": "e01-relational-conjunction",
+  "scope": "single-seed registered synthetic E01.1 point-estimate stage",
+  "config": {
+    "seed": 307,
+    "samples": 6144,
+    "dimensions": 64,
+    "ridge_alpha": 1.0,
+    "target_noise_standard_deviation": 0.15,
+    "train_fraction": 0.6,
+    "validation_fraction": 0.2
+  },
+  "verification": {
+    "status": "PASS",
+    "verification_class": "DETERMINISTIC_REPLAY",
+    "errors": [],
+    "verified_compounds": 4,
+    "verified_decisions": 4
+  },
+  "gate": {
+    "passed": true,
+    "claim_promotion_allowed": false,
+    "reason": "E01.1 is a single-seed deterministic synthetic point-estimate stage; nulls, uncertainty and fresh-seed confirmation remain pending."
+  },
+  "decisions": {
+    "a2_b": "SUPPORTED_POINT_ESTIMATE",
+    "a3_c": "SUPPORTED_POINT_ESTIMATE",
+    "a_b2_c3": "SUPPORTED_POINT_ESTIMATE",
+    "b2_c": "SUPPORTED_POINT_ESTIMATE"
+  },
+  "test_metrics": {
+    "a2_b": {
+      "posthoc_composed_triplet_accuracy": 0.9252535411952058,
+      "composition_regret": 0.07474645880479425,
+      "scalar_collapse_triplet_accuracy": 0.7653057713431176,
+      "wrong_primitive_alignment_triplet_accuracy": 0.6456056535606051,
+      "raw_cosine_triplet_accuracy": 0.5386000202921183,
+      "raw_euclidean_triplet_accuracy": 0.5480186511034942,
+      "spearman": 0.9670045686976816
+    },
+    "a3_c": {
+      "posthoc_composed_triplet_accuracy": 0.9280401783941876,
+      "composition_regret": 0.07195982160581238,
+      "scalar_collapse_triplet_accuracy": 0.798359867483645,
+      "wrong_primitive_alignment_triplet_accuracy": 0.6279360710047687,
+      "raw_cosine_triplet_accuracy": 0.538240496892218,
+      "raw_euclidean_triplet_accuracy": 0.5491439814018325,
+      "spearman": 0.966311702009969
+    },
+    "a_b2_c3": {
+      "posthoc_composed_triplet_accuracy": 0.9273003983431044,
+      "composition_regret": 0.0726996016568956,
+      "scalar_collapse_triplet_accuracy": 0.7128713788494369,
+      "wrong_primitive_alignment_triplet_accuracy": 0.82268085350414,
+      "raw_cosine_triplet_accuracy": 0.5480380609557588,
+      "raw_euclidean_triplet_accuracy": 0.5640825095174447,
+      "spearman": 0.9704199659457343
+    },
+    "b2_c": {
+      "posthoc_composed_triplet_accuracy": 0.9220650318277464,
+      "composition_regret": 0.07793496817225365,
+      "scalar_collapse_triplet_accuracy": 0.7654665686345553,
+      "wrong_primitive_alignment_triplet_accuracy": 0.6479155215349567,
+      "raw_cosine_triplet_accuracy": 0.5390018924605958,
+      "raw_euclidean_triplet_accuracy": 0.553277397668171,
+      "spearman": 0.9667449705467404
+    }
+  },
+  "evidence_identities": {
+    "result_sha256": "e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90",
+    "decision_tree_sha256": "f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77",
+    "config_sha256": "423e3b3b432165e84b7126319862c9e710fab6cc8ddbd78bef0d681b3892f4a5",
+    "rotation_sha256": "a7080ce4c5f09580cc9526ac1cb5f05f124ef1ed6371b9623ddc1812bb445ef2",
+    "primitive_targets_sha256": "284133e964d136d9123f24246c6e67030c0018387834f78ac16cc7fbfeb9389e"
+  },
+  "interpretation": "All four unseen weighted relational conjunctions crossed the frozen point-estimate thresholds. Correct primitive-space composition substantially exceeded raw geometry, scalar collapse and wrong primitive alignment. This supports the registered single-seed synthetic point estimate only; general claim promotion remains blocked."
+}

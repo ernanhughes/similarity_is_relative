@@ -1,0 +1,108 @@
+{
+  "dataset": {
+    "repo_id": "code-search-net/code_search_net",
+    "revision": "bd0cf261e357a3eb5c8fba490d23ec1a1cd59555",
+    "subset": "python"
+  },
+  "environment": {
+    "datasets": "5.0.1",
+    "huggingface_hub": "1.26.0",
+    "numpy": "2.4.6",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.4",
+    "tokenizers": "0.22.2",
+    "torch": "2.13.0+cpu",
+    "transformers": "5.14.1"
+  },
+  "fixture": {
+    "count": 10,
+    "embedding_dtype": "float32",
+    "embedding_shape": [
+      10,
+      768
+    ],
+    "matrix_sha256": "300b75891b2a498f17e774d27baf3ce432082a55cd1fc2401b003c8b5f4e5f46",
+    "rows": [
+      {
+        "code_sha256": "9910e2fc297f8665cc0c7a6a0dcf2522dbe3ad118bdab9b9cb20a4df678557ac",
+        "embedding_sha256": "270f8d3ab8af0568686490bc0462b5b5b0975bf0966996633dcfdc8968b1c2c1",
+        "index": 0,
+        "token_count": 14
+      },
+      {
+        "code_sha256": "f365eda0bd562019d5f7917856005ae51e064a4d0a4796b310a052638bb49e5b",
+        "embedding_sha256": "19bbe2955953be60de3f0451a07eae470bcd5b5853bb99dbd103a1f7a9c3a739",
+        "index": 1,
+        "token_count": 27
+      },
+      {
+        "code_sha256": "f97b46466c9421e6a51b9fc19be91b8b3442f24d48360eca7d633be8c98bdaf9",
+        "embedding_sha256": "a1ae8dfbb484e348d139677bc6b9191c4ff9c2363210223a88b651e7189a3f3e",
+        "index": 2,
+        "token_count": 27
+      },
+      {
+        "code_sha256": "b33c8cd20517b91a3845e539437d5fd0b8446cc9affa8533ed2689c2ad1ac201",
+        "embedding_sha256": "0762ccd2ffc3a6b5942712cf347c8d2cc8ab1932f870fbcf976818f09c505e71",
+        "index": 3,
+        "token_count": 54
+      },
+      {
+        "code_sha256": "ee5f9cfee59ffbfd091f2889a5912cf88caffc6306f4889a74124be156d35603",
+        "embedding_sha256": "f04e1e79215d2c33b70e0944f8fcda71c9b615de7e1fadbe904f447bb160bb23",
+        "index": 4,
+        "token_count": 40
+      },
+      {
+        "code_sha256": "1bd908c2237e5b894073b81e13d6c011db949f560511866da561e9a5f2ad0f6f",
+        "embedding_sha256": "4a0b19ca0be74e205a976b977128c25f0624071888c9cf7825c6c3f16198bd4f",
+        "index": 5,
+        "token_count": 25
+      },
+      {
+        "code_sha256": "ccf608bdd49a7f4c30d56d7e0ce6233fc30554bdb0a9cc324a1f98d4ae976f19",
+        "embedding_sha256": "40fb38f13853bc5fd7eb113ba707e9c7e224aacfbac9481b56c4639f2d09d9dd",
+        "index": 6,
+        "token_count": 83
+      },
+      {
+        "code_sha256": "49c930c5816bbe2d36a579827044712f714a55205df2d82602159fb090565e57",
+        "embedding_sha256": "dfb85c781b215e9e8ec458211f22e927ebbeecb86e822ae1abb4b77a164baada",
+        "index": 7,
+        "token_count": 58
+      },
+      {
+        "code_sha256": "361607fe7aa2ece0b4109d13595048e140dbd070fd554f45ec323f9dc0646299",
+        "embedding_sha256": "59d75dc48db89def717d82d99b4ab69ced29814de43b5309100d2dff61f7d097",
+        "index": 8,
+        "token_count": 52
+      },
+      {
+        "code_sha256": "236f746ae4abd6607f7a2fad6316a03eafb95dd24b26300136382d17730930ae",
+        "embedding_sha256": "1bc88d6f179bfed7f3895eaadaae3aedded2be093535db6cb2a802de08a5371b",
+        "index": 9,
+        "token_count": 65
+      }
+    ]
+  },
+  "identity_id": "option-b-external-identity-v1",
+  "model": {
+    "embedding_metadata": {
+      "model_id": "microsoft/codebert-base",
+      "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39",
+      "torch": "2.13.0+cpu",
+      "transformers": "5.14.1"
+    },
+    "repo_id": "microsoft/codebert-base",
+    "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+  },
+  "pooling_implementation_sha256": "9ac3a71225bcae6bbaf7e4c01788f6a85914b22f0edb054202f00707f3b1cbf5",
+  "status": "IDENTITY_CAPTURE_COMPLETE",
+  "tokenizer_file_sha256": {
+    "config.json": "742474d6148a061fa975dadc09ce93725fa9673c55421ed316ef75532cc6b7aa",
+    "merges.txt": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+    "special_tokens_map.json": "7638f5bbbe86ef6d604ef28ad3647dc690d6d117c81c0d63e885416be8da1150",
+    "tokenizer_config.json": "994f46754c5bf4014f1aa92d34b1374319c3a6b3f702105cd5b742beaecd18ce",
+    "vocab.json": "06b4d46c8e752d410213d9548eb27a54db70fda0319b6271fb8d59dead5e1cab"
+  }
+}

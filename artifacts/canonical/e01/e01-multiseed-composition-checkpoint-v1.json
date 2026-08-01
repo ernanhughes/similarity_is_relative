@@ -1,0 +1,21 @@
+{
+  "checkpoint_id": "e01-multiseed-composition-checkpoint-v1",
+  "experiment_id": "e01-multiseed-composition-confirmation",
+  "stage": "E01.2a",
+  "verification_status": "PASS",
+  "verification_class": "DETERMINISTIC_REPLAY",
+  "scientific_gate": "PASS",
+  "claim_promotion_allowed": false,
+  "seeds": [401, 433, 467, 503, 557],
+  "decisions": {
+    "a2_b": "SUPPORTED_MULTI_SEED",
+    "a3_c": "SUPPORTED_MULTI_SEED",
+    "a_b2_c3": "SUPPORTED_MULTI_SEED",
+    "b2_c": "SUPPORTED_MULTI_SEED"
+  },
+  "result_sha256": "b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168",
+  "decision_tree_sha256": "321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48",
+  "config_sha256": "178711153b2b9115ed8f3abf384e33a2d4c11a6db6e5f962889c0cea6f320d81",
+  "compound_definitions_sha256": "4bd20892449b7630df3fb8557d49595b8129d6bbfbcc6a432a26723d0d134d08",
+  "publication_boundary": "Replicated synthetic weighted product-space score fusion only. Novel algorithmic composition, support-aware refusal, non-additive relations, direct-compound comparison, independent recomputation and real-domain transfer remain unestablished."
+}

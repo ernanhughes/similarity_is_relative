@@ -29,6 +29,7 @@ This ledger separates established prior art, implemented tests, point estimates,
 | E00-SHIFT-001 | The registered shortcut-dependent relation is unstable when its development-time correlation breaks at test time. | Unstable under shift | E00.3/E00.4 | Validation-to-test gap | The gap no longer crosses the registered instability rule on fresh seeds. |
 | E00-COMP-001 | The complete E00 family-aware certification claim passes all required positive, negative and shift controls. | Blocked | E00.4 | Seven-decision all-or-nothing gate | Every required decision passes in a new preregistered confirmation stage. |
 | E01-COMP-PE-001 | Independently predicted primitive coordinates approximated four preregistered weighted product-space relations in the seed-307 synthetic run and exceeded the controls included in the frozen E01.1 contract. | Replay-verified point estimate | E01.1 | Raw cosine, raw Euclidean, one declared scalar collapse, one cyclic wrong alignment, true-target product-space oracle | Fresh-seed confirmation fails, a stronger scalar or wrong-alignment baseline closes the gap, or unsupported-component tests show confident composition from unsupported primitives. This row is not evidence of algorithmic novelty. |
+| E01-COMP-MS-001 | Across five fresh registered synthetic seeds, independently predicted primitive coordinates supported four preregistered weighted product-space retrieval queries and exceeded the strongest included scalar projection and non-identity primitive-permutation controls. | Replicated synthetic | E01.2a | Raw cosine, raw Euclidean, scalar projections using `w` and `sqrt(w)`, all five non-identity primitive permutations, explicit triplet manifests | A fresh preregistered confirmation fails the multi-seed thresholds, a stronger learned scalar or directly trained compound comparator closes the gap, or the result fails under primitive-quality variation. This row confirms standard weighted product-space score fusion, not algorithmic novelty or support-aware refusal. |
 | H-005 | Primitive relation operators can serve unseen relational compositions with bounded regret and support-aware refusal beyond standard score fusion. | Proposed | E01.2/E01.3/E06 | Strong scalar projections, weighted product-space score fusion, constraints, Pareto retrieval, direct compound comparator, unsupported-component controls | Standard score fusion or directly trained baselines match or beat the proposed RELATE mechanism, or unsupported primitives are not correctly refused. |
 | H-006 | Findings from protein embeddings transfer to sentence embeddings. | Proposed | E08 | Exact raw cosine and text-specific probes | Protein success does not reproduce on the frozen sentence benchmark. |
 
@@ -46,9 +47,13 @@ One E00.4 secondary diagnostic subtracted linear triplet accuracy from nonlinear
 
 E01.1 is a successful synthetic composition positive control and harness validation. Its method is standard weighted product-space score fusion over independently predicted properties. It is a real non-collapsing composition operation, but it is not evidence of a novel RELATE composition algorithm. Its frozen `composition_regret` field is interpreted as oracle triplet disagreement, not regret against a directly trained compound model.
 
+### E01.2a classification
+
+E01.2a confirms that the E01.1 weighted product-space positive-control mechanism replicates across five fresh synthetic seeds and stronger declared scalar and alignment controls. The result is intentionally narrow. All primitives remained strong and supported; the experiment did not test weak or absent primitives, refusal, conjunction, exclusion, Pareto retrieval, a validation-selected learned scalar, or a directly trained compound comparator. The smallest aggregate margin was against the strongest wrong alignment for `a_b2_c3`, with a seed-level 95% interval of approximately `[0.0368, 0.0382]`.
+
 ### Verification classification
 
-E00.4 and E01.1 have deterministic replay verification. Their verifiers called the corresponding experiment runners and compared regenerated output trees; they did not independently reimplement the substantive mathematics.
+E00.4, E01.1 and E01.2a have deterministic replay verification. Their verifiers called the corresponding experiment runners and compared regenerated output trees; they did not independently reimplement the substantive mathematics.
 
 ## Publication rule
 

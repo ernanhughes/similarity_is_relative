@@ -7,8 +7,9 @@ import hashlib
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 
@@ -136,7 +137,9 @@ def reconstruct_selected_code(
         from datasets import load_dataset
         from transformers import AutoTokenizer
     except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("install Option B dependencies with pip install -e '.[option-b]'") from exc
+        raise RuntimeError(
+            "install Option B dependencies with pip install -e '.[option-b]'"
+        ) from exc
 
     from relate.experiments.option_b_real_code import (
         OptionBConfig,
@@ -169,7 +172,7 @@ def reconstruct_selected_code(
         records_by_split[split] = records
         print(
             f"[option-b-embed] {split}: eligible={len(records):,} "
-            f"exclusions={dict(reasons)} elapsed={time.perf_counter()-started:.1f}s",
+            f"exclusions={dict(reasons)} elapsed={time.perf_counter() - started:.1f}s",
             file=sys.stderr,
             flush=True,
         )
@@ -179,9 +182,7 @@ def reconstruct_selected_code(
         "validation": config.validation_limit,
         "test": config.test_limit,
     }
-    selected = {
-        split: deterministic_limit(deduplicated[split], limits[split]) for split in SPLITS
-    }
+    selected = {split: deterministic_limit(deduplicated[split], limits[split]) for split in SPLITS}
     result: dict[str, list[str]] = {}
     for split in SPLITS:
         expected_keys = [row["stable_key"] for row in manifests[split]]
@@ -308,7 +309,7 @@ def extract_split(
         rate = end / max(time.perf_counter() - started, 1e-9)
         print(
             f"[option-b-embed] {split}: batch {batch_index}/{total_batches} "
-            f"{end:,}/{len(codes):,} ({100*end/len(codes):5.1f}%) "
+            f"{end:,}/{len(codes):,} ({100 * end / len(codes):5.1f}%) "
             f"{state} {rate:,.1f} rows/s",
             file=sys.stderr,
             flush=True,
@@ -426,9 +427,7 @@ def run_extraction(
         ],
     }
     report_path = output_dir / "option-b-canonical-embeddings-v1.json"
-    report_path.write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     report["report_file_sha256"] = sha256_file(report_path)
     return report
 

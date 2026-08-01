@@ -46,12 +46,8 @@ def _build_chunk_resilient(
         if len(rows) == 1:
             return [], Counter({"ast_recursion_limit": 1})
         midpoint = len(rows) // 2
-        left_records, left_reasons = _build_chunk_resilient(
-            rows[:midpoint], tokenizer, config
-        )
-        right_records, right_reasons = _build_chunk_resilient(
-            rows[midpoint:], tokenizer, config
-        )
+        left_records, left_reasons = _build_chunk_resilient(rows[:midpoint], tokenizer, config)
+        right_records, right_reasons = _build_chunk_resilient(rows[midpoint:], tokenizer, config)
         return left_records + right_records, left_reasons + right_reasons
 
 

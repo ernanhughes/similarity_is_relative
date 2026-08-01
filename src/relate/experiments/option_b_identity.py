@@ -29,13 +29,13 @@ FIXTURE_CODES = (
     "def identity(x):\n    return x\n",
     "def clamp(x, low, high):\n    return max(low, min(x, high))\n",
     "def count_positive(values):\n    return sum(1 for value in values if value > 0)\n",
-    "def first_even(values):\n    for value in values:\n        if value % 2 == 0:\n            return value\n    return None\n", # NOQA E501
+    "def first_even(values):\n    for value in values:\n        if value % 2 == 0:\n            return value\n    return None\n",  # NOQA E501
     "def safe_divide(a, b):\n    if b == 0:\n        return None\n    return a / b\n",
     "def flatten(rows):\n    return [item for row in rows for item in row]\n",
-    "def retry(operation, attempts):\n    for _ in range(attempts):\n        try:\n            return operation()\n        except Exception:\n            pass\n    raise RuntimeError('failed')\n", # NOQA E501
-    "def classify(x):\n    if x < 0:\n        return 'negative'\n    if x == 0:\n        return 'zero'\n    return 'positive'\n", # NOQA E501
-    "def unique_calls(service, items):\n    service.open()\n    for item in items:\n        service.process(item)\n    service.close()\n", # NOQA E501
-    "async def collect(stream):\n    result = []\n    async for item in stream:\n        if item is not None:\n            result.append(item)\n    return result\n", # NOQA E501
+    "def retry(operation, attempts):\n    for _ in range(attempts):\n        try:\n            return operation()\n        except Exception:\n            pass\n    raise RuntimeError('failed')\n",  # NOQA E501
+    "def classify(x):\n    if x < 0:\n        return 'negative'\n    if x == 0:\n        return 'zero'\n    return 'positive'\n",  # NOQA E501
+    "def unique_calls(service, items):\n    service.open()\n    for item in items:\n        service.process(item)\n    service.close()\n",  # NOQA E501
+    "async def collect(stream):\n    result = []\n    async for item in stream:\n        if item is not None:\n            result.append(item)\n    return result\n",  # NOQA E501
 )
 
 

@@ -37,6 +37,7 @@ class Config:
     validation_fraction: float = 0.20
     noise_standard_deviation: float = 0.10
     retrieval_k: int = 10
+    retrieval_ks: tuple[int, ...] = (10, 25, 50, 100)
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -106,30 +107,139 @@ def nearest_by_distance(distance: np.ndarray, k: int) -> np.ndarray:
     return np.argpartition(distance, kth=k - 1)[:k]
 
 
+def _mean_or_nan(values: list[float]) -> float:
+    return float(np.mean(values)) if values else float("nan")
+
+
+def _ndcg_at_k(oracle_distance: np.ndarray, retrieved: np.ndarray, k: int) -> float:
+    """Return NDCG using smoothly decaying relevance derived from oracle distance."""
+    positive = oracle_distance[oracle_distance > 0]
+    scale = float(np.median(positive)) if positive.size else 1.0
+    relevance = np.exp(-oracle_distance / max(scale, np.finfo(float).eps))
+    discounts = 1.0 / np.log2(np.arange(2, k + 2, dtype=np.float64))
+    dcg = float(np.sum(relevance[retrieved[:k]] * discounts))
+    ideal = np.argsort(oracle_distance, kind="stable")[:k]
+    idcg = float(np.sum(relevance[ideal] * discounts))
+    return dcg / idcg if idcg > 0 else 1.0
+
+
+def _deterministic_triplet_accuracy(
+    oracle_distance: np.ndarray, predicted_distance: np.ndarray
+) -> float:
+    """Compare a deterministic set of candidate pairs for one query.
+
+    Each candidate is paired with the candidate half a pool away. Oracle ties are
+    excluded. A predicted tie receives half credit. This avoids introducing an
+    additional random seed into the evidence artifact.
+    """
+    count = len(oracle_distance)
+    if count < 2:
+        return float("nan")
+    left = np.arange(count // 2)
+    right = left + (count - count // 2)
+    oracle_delta = oracle_distance[left] - oracle_distance[right]
+    predicted_delta = predicted_distance[left] - predicted_distance[right]
+    informative = oracle_delta != 0
+    if not np.any(informative):
+        return float("nan")
+    oracle_sign = np.sign(oracle_delta[informative])
+    predicted_sign = np.sign(predicted_delta[informative])
+    scores = np.where(predicted_sign == 0, 0.5, predicted_sign == oracle_sign)
+    return float(np.mean(scores))
+
+
 def evaluate_scalar_retrieval(
     candidate_values: np.ndarray,
     query_values: np.ndarray,
     predicted_candidates: np.ndarray,
     predicted_queries: np.ndarray,
     k: int,
-) -> dict[str, float]:
-    recalls: list[float] = []
-    neighbour_errors: list[float] = []
+    ks: tuple[int, ...] = (10, 25, 50, 100),
+) -> dict[str, Any]:
+    """Evaluate scalar-induced retrieval without over-relying on exact top-k overlap.
+
+    The legacy primary-k fields remain for compatibility. Added metrics distinguish
+    globally correct orderings and close near misses from exact-neighbour identity.
+    """
+    candidate_count = len(candidate_values)
+    effective_ks = tuple(sorted({value for value in (*ks, k) if 0 < value <= candidate_count}))
+    if not effective_ks:
+        raise ValueError("At least one retrieval k must fit inside the candidate pool")
+    primary_k = min(k, candidate_count)
+
+    recall: dict[int, list[float]] = {value: [] for value in effective_ks}
+    retrieved_error: dict[int, list[float]] = {value: [] for value in effective_ks}
+    oracle_error: dict[int, list[float]] = {value: [] for value in effective_ks}
+    relative_error: dict[int, list[float]] = {value: [] for value in effective_ks}
+    ndcg: dict[int, list[float]] = {value: [] for value in effective_ks}
     correlations: list[float] = []
+    triplet_accuracies: list[float] = []
+    oracle_neighbour_ranks: list[float] = []
+    epsilon = np.finfo(float).eps
 
     for true_q, predicted_q in zip(query_values, predicted_queries, strict=True):
         oracle_distance = np.abs(candidate_values - true_q)
         predicted_distance = np.abs(predicted_candidates - predicted_q)
-        oracle = set(nearest_by_distance(oracle_distance, k).tolist())
-        retrieved = nearest_by_distance(predicted_distance, k)
-        recalls.append(len(oracle.intersection(retrieved.tolist())) / k)
-        neighbour_errors.append(float(np.mean(oracle_distance[retrieved])))
-        correlations.append(float(spearmanr(oracle_distance, predicted_distance).statistic))
+        oracle_order = np.argsort(oracle_distance, kind="stable")
+        predicted_order = np.argsort(predicted_distance, kind="stable")
+        predicted_ranks = np.empty(candidate_count, dtype=np.int64)
+        predicted_ranks[predicted_order] = np.arange(1, candidate_count + 1)
+
+        correlation = spearmanr(oracle_distance, predicted_distance).statistic
+        correlations.append(float(correlation))
+        triplet_accuracies.append(
+            _deterministic_triplet_accuracy(oracle_distance, predicted_distance)
+        )
+        oracle_neighbour_ranks.extend(
+            predicted_ranks[oracle_order[:primary_k]].astype(float).tolist()
+        )
+
+        for current_k in effective_ks:
+            oracle = oracle_order[:current_k]
+            retrieved = predicted_order[:current_k]
+            overlap = np.intersect1d(oracle, retrieved, assume_unique=True).size
+            recall[current_k].append(overlap / current_k)
+
+            current_retrieved_error = float(np.mean(oracle_distance[retrieved]))
+            current_oracle_error = float(np.mean(oracle_distance[oracle]))
+            retrieved_error[current_k].append(current_retrieved_error)
+            oracle_error[current_k].append(current_oracle_error)
+            relative_error[current_k].append(
+                current_retrieved_error / max(current_oracle_error, epsilon)
+            )
+            ndcg[current_k].append(_ndcg_at_k(oracle_distance, retrieved, current_k))
+
+    recall_summary = {str(value): _mean_or_nan(recall[value]) for value in effective_ks}
+    retrieved_error_summary = {
+        str(value): _mean_or_nan(retrieved_error[value]) for value in effective_ks
+    }
+    oracle_error_summary = {
+        str(value): _mean_or_nan(oracle_error[value]) for value in effective_ks
+    }
+    relative_error_summary = {
+        str(value): _mean_or_nan(relative_error[value]) for value in effective_ks
+    }
+    ndcg_summary = {str(value): _mean_or_nan(ndcg[value]) for value in effective_ks}
 
     return {
-        "recall_at_k": float(np.mean(recalls)),
-        "mean_oracle_distance": float(np.mean(neighbour_errors)),
+        # Backward-compatible primary fields.
+        "recall_at_k": recall_summary[str(primary_k)],
+        "mean_oracle_distance": retrieved_error_summary[str(primary_k)],
         "spearman": float(np.nanmean(correlations)),
+        # Enhanced retrieval diagnostics.
+        "primary_k": primary_k,
+        "recall_at": recall_summary,
+        "retrieved_mean_oracle_distance_at": retrieved_error_summary,
+        "oracle_mean_distance_at": oracle_error_summary,
+        "relative_neighbor_error_at": relative_error_summary,
+        "ndcg_at": ndcg_summary,
+        "triplet_accuracy": float(np.nanmean(triplet_accuracies)),
+        "oracle_neighbor_predicted_rank_median": float(
+            np.nanmedian(oracle_neighbour_ranks)
+        ),
+        "oracle_neighbor_predicted_rank_p90": float(
+            np.nanpercentile(oracle_neighbour_ranks, 90)
+        ),
     }
 
 
@@ -165,6 +275,7 @@ def run(config: Config, output: Path) -> dict[str, Any]:
             predicted_candidates=predictions[train],
             predicted_queries=predictions[test],
             k=config.retrieval_k,
+            ks=config.retrieval_ks,
         )
         result["regimes"][regime] = {
             "x_sha256": array_hash(x),

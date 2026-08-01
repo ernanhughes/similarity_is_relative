@@ -1,8 +1,8 @@
 # Similarity Is Relative
 
-Research into whether frozen representations contain useful relational signals that their default similarity geometry fails to expose—and whether those signals can be composed, verified, and rejected when unsupported.
+Research into whether frozen representations contain useful relational signals that their default similarity geometry fails to expose—and whether those signals can be queried, verified and rejected when unsupported.
 
-This repository is intentionally evidence-first. Research claims begin as falsifiable questions, become executable contracts, and are promoted to findings only after committed evidence, explicit decision rules, and an appropriately classified verification process.
+This repository is evidence-first. Claims begin as falsifiable questions, become executable contracts and are promoted only after committed evidence, explicit decision rules and appropriately classified verification.
 
 ## Publication rule
 
@@ -11,143 +11,144 @@ Every sentence beginning with **“we found”**, **“RELATE improves”**, **�
 1. a row in [`CLAIMS.md`](CLAIMS.md);
 2. a committed reproduction command;
 3. a committed compact result record;
-4. the hashes of the local evidence-bearing artifacts;
+4. hashes of the evidence-bearing artifacts;
 5. a declared falsification or revision condition.
-
-Large datasets, embeddings, checkpoints, distance matrices and raw run outputs may remain local. Their identities, production contracts, verification results and cryptographic hashes must be committed.
 
 Verification language is explicit:
 
 - **deterministic replay** means the same implementation reproduced the result tree;
 - **independent recomputation** requires separate substantive metric and decision code;
-- neither term alone implies that the scientific gate passed.
+- neither term alone implies a scientific claim passed.
+
+## Current thesis
+
+The original E01 composition thesis has been closed.
+
+The prospective thesis is now:
+
+> **RELATE is a support-aware relational query runtime over frozen representations. It learns evidence-bearing primitive relations, executes declared compound queries over those primitives, propagates uncertainty through the query, and refuses when the primitive evidence or registered query algebra is insufficient.**
+
+No future query-runtime result inherits success from E01.
 
 ## Research sequence
 
-Frozen historical experiment identifiers are retained. The prospective sequence is:
+Frozen historical experiment identifiers remain unchanged. The prospective sequence is:
 
 ```text
-E00    synthetic primitive recoverability
-→ E00.5 nonlinear-boundary diagnosis
-→ E01.0 linear composition identity check
-→ E01.1 weighted product-space composition positive control
-→ E01.2 multi-seed composition and support gate
-→ E01.3 support propagation and certified abstention
-→ E02    QM9 scalar-collapse falsification
-→ E03    conditional-similarity replication
-→ E04    protein benchmark construction
-→ E05    protein primitive relations
-→ E06    real-embedding composition
-→ E07    certified real-domain abstention
-→ E08    language transfer
+E00    synthetic primitive recoverability and failure controls
+E01    historical weighted-product-space positive controls — CLOSED
+E01-A  external review and independent recomputation — COMPLETE
+E02    factorisation sufficiency and query-algebra boundary
+E03    primitive-support calibration
+E04    compound uncertainty propagation and refusal
+E05    limited real frozen-representation pilot
+E06    real-domain query execution
+E07    real-domain certified refusal
+E08    transfer study
 ```
-
-The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-synthetic-recoverability.md).
 
 ## Current status
 
-- Research question: **frozen**
-- Claims ledger: **split into evidence-bearing component claims**
-- E00.1 baseline machinery: **verified**
-- E00.2 operator point estimates: **verified**
-- E00.3 seed-17 certification: **replay verified; scientific gate failed**
-- E00.4 five-seed confirmation: **replay verified; 6 of 7 decisions matched; scientific gate failed**
-- Synthetic linear recovery and basis-dependence components: **replicated across five seeds**
-- Reliable nonlinear XOR recovery: **insufficient evidence**
-- Complete E00 certification claim: **blocked**
-- E01.0 linear composition identity check: **implementation identity confirmed; no composition-generalisation claim**
-- E01.1 weighted product-space composition: **replay-verified single-seed positive control; 4 of 4 point-estimate decisions passed**
-- E01.2a weighted product-space confirmation: **replicated across five fresh seeds; 4 of 4 multi-seed decisions passed**
-- E01.2a deterministic replay: **PASS**
-- E01.2a algorithmic novelty and support-aware refusal: **not established**
-- General non-additive composition, support propagation and abstention: **not established**
-- Promoted cross-domain or RELATE algorithmic findings: **none**
+- E00 linear recovery and basis-dependence components: **replicated synthetic**
+- E00 complete family-aware certification: **blocked**
+- E00 nonlinear XOR recovery: **insufficient evidence**
+- E01.0 ridge composition identity: **confirmed identity; no generalisation claim**
+- E01.1 weighted-product-space measurement: **numerically reproducible historical positive control**
+- E01.2a five-seed measurement: **numerically replicated under its substage rule**
+- E01 independent recomputation: **complete**
+- E01 original `0.10` rule under exhaustive permutations: **fails for 3 of 4 compounds**
+- E01 attainable ceiling: **saturated at the true-latent oracle**
+- E01 permutation diagnostic: **weight-separation effect, not semantic verification**
+- E01 general or novel composition line: **closed**
+- Support-aware relational query runtime: **proposed, untested**
+- Promoted real-domain or RELATE algorithmic findings: **none**
 
-## E00 checkpoints
+## E01 final closure
 
-### Baseline checkpoint
+The independent audit reproduced the headline E01 measurements and changed their interpretation.
 
-- Checkpoint: **`e00-baseline-checkpoint-v1`**
-- Local artifact verification: **PASS**
-- Verified regimes / metric sets: **6 / 6**
-- Manifest: **`8558e1847918b08eb0db9ce512c4bcfb4e94e4a1f7dc4a222cdd2b99cd2c6220`**
-- Public record: [`docs/results/e00-baseline-checkpoint-v1.md`](docs/results/e00-baseline-checkpoint-v1.md)
+### Exhaustive E01.1 control result
 
-### Operator-matrix checkpoint
+| Compound | Margin over strongest permutation | Original `0.10` rule |
+|---|---:|---|
+| `a2_b` | `0.0853` | fail |
+| `a3_c` | `0.1464` | pass |
+| `b2_c` | `0.0788` | fail |
+| `a_b2_c3` | `0.0374` | fail |
 
-- Checkpoint: **`e00-operator-matrix-checkpoint-v1`**
-- Replay verification: **PASS**
-- Verified regimes / method sets: **6 / 40**
-- Source manifest: **`8558e1847918b08eb0db9ce512c4bcfb4e94e4a1f7dc4a222cdd2b99cd2c6220`**
-- Operator matrix: **`c25202e5842b79073ae27ab2edb5068a12846a57bcaa47cfc8d3be30436ce235`**
-- Public record: [`docs/results/e00-operator-matrix-checkpoint-v1.md`](docs/results/e00-operator-matrix-checkpoint-v1.md)
-- Scientific claim promotion: **blocked**
+E01.2a therefore replicated the measurement pattern under a different substage rule; it did not replicate E01.1's original pass/fail rule.
 
-### Seed-17 certification attempt
+### Saturation result
 
-- Checkpoint: **`e00-certification-attempt-v1`**
-- Replay verification: **PASS**
-- Scientific gate: **FAIL**
-- Supported decisions: **5 of 7**
-- Certification: **`f095fada6527d1214c26c1086d95c751df5ebc4f267c7bd1a2c70a7ec5279b16`**
-- Decision tree: **`32e084b8a7bde09d80e19c9b0df00b8f55df1cdde5db329ab74141e8a331c832`**
+The predicted-primitive executor was effectively indistinguishable from applying the same query to the true noiseless latent primitives. Median ceiling fractions were approximately `1.0` for all four compounds.
 
-### Five-seed confirmation attempt
+The narrow cross-seed intervals reflected a saturated generator with almost no headroom.
 
-- Checkpoint: **`e00-multiseed-confirmation-attempt-v1`**
-- Deterministic replay verification: **PASS**
-- Scientific gate: **FAIL**
-- Required decisions matched: **6 of 7**
-- Aggregate result: **`8dd526eaa45a28f56c99cb1045138685b89982109dbf61fb9788a6a65937e86d`**
-- Decision tree: **`25b52842a4d5fbfefa1145c8f406328dc70744659852b7aa0535cf06788f4c90`**
-- Public record: [`docs/results/e00-multiseed-confirmation-attempt-v1.md`](docs/results/e00-multiseed-confirmation-attempt-v1.md)
-- Audit and erratum: [`docs/audits/e00-evidence-audit-2026-08-01.md`](docs/audits/e00-evidence-audit-2026-08-01.md)
-- Complete E00 claim promotion: **blocked**
+### Weight-separation result
 
-The replicated synthetic result is bounded: a supervised scalar direction strongly recovered the registered linear relation in native and rotated bases, while raw cosine and Euclidean neighbourhoods exposed it poorly and diagonal coordinate weighting degraded after rotation. This is not an algorithmic advantage over ridge predicted-value retrieval; those scalar ridge geometries are ranking-equivalent in this setting.
+For exchangeable primitives, the strongest wrong-permutation margin increased monotonically with weight separation and was exactly zero for equal weights. The E01 permutation control therefore did not test semantic relation-name identity.
 
-## E01 checkpoints
+### Retrieval context
 
-### Linear composition identity check
+Mean recall@10 ranged from roughly `0.16` to `0.35`, despite triplet accuracies around `0.92–0.93`. The latent oracle showed almost the same retrieval profile.
 
-- Stage: **`E01.0`**
-- Deterministic replay: **PASS**
-- Interpretation: weighted primitive ridge predictions reproduce the corresponding weighted-target ridge solution by linearity
-- Scientific composition-generalisation claim: **not tested**
+### Final classification
 
-### Weighted product-space positive control
+```text
+E01 weighted-product-space composition line: CLOSED
+Historical numerical artifacts: PRESERVED
+General composition claim: NOT SUPPORTED
+Revised query-runtime thesis: PROPOSED
+```
 
-- Checkpoint: **`e01-relational-conjunction-checkpoint-v1`**
-- Stage: **`E01.1`**
-- Deterministic replay: **PASS**
-- Point-estimate gate: **PASS**
-- Frozen compounds passed: **4 of 4**
-- Classification: **synthetic composition positive control / harness validation**
-- Result: **`e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90`**
-- Decision tree: **`f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77`**
-- Public record: [`docs/results/e01-relational-conjunction-checkpoint-v1.md`](docs/results/e01-relational-conjunction-checkpoint-v1.md)
-- Blog: [`docs/blog/e01-relational-conjunction.md`](docs/blog/e01-relational-conjunction.md)
-- Claim promotion: **blocked**
+Read:
 
-E01.1 shows that independently predicted primitive coordinates can support preregistered weighted product-space queries in one deliberately easy synthetic positive-control world. Weighted product-space score fusion is standard; algorithmic novelty, fresh-seed reliability, strong scalar baselines, exhaustive wrong alignments, unsupported-component refusal and real-representation transfer remain open.
+- [Independent recomputation checkpoint](docs/results/e01-independent-recomputation-checkpoint-v1.md)
+- [Final closure blog](docs/blog/closing-the-e01-composition-line.md)
+- [External-review audit](docs/audits/e01-external-review-audit-2026-08-01.md)
+- [Research reset](docs/research/e01-research-reset-2026-08-01.md)
 
-### Multi-seed weighted product-space confirmation
+## Evidence identities
 
-- Checkpoint: **`e01-multiseed-composition-checkpoint-v1`**
-- Stage: **`E01.2a`**
-- Fresh seeds: **`401, 433, 467, 503, 557`**
-- Deterministic replay: **PASS**
-- Scientific gate: **PASS**
-- Multi-seed decisions passed: **4 of 4**
-- Successful seed-compound evaluations: **20 of 20**
-- Minimum composed triplet accuracy: **greater than `0.923`**
-- Result: **`b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168`**
-- Decision tree: **`321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48`**
-- Public record: [`docs/results/e01-multiseed-composition-checkpoint-v1.md`](docs/results/e01-multiseed-composition-checkpoint-v1.md)
-- Blog: [`docs/blog/e01-multiseed-composition-confirmation.md`](docs/blog/e01-multiseed-composition-confirmation.md)
-- Complete RELATE composition claim promotion: **blocked**
+### E01 independent recomputation
 
-E01.2a establishes a replicated synthetic result for standard weighted product-space score fusion over independently predicted primitive coordinates. Every included scalar and wrong-permutation margin remained positive, but the `a_b2_c3` margin over the strongest incorrect alignment was narrow—approximately `0.037`. Weak and absent primitives, support-aware refusal, conjunction, exclusion, Pareto retrieval, learned scalar and directly trained compound comparators, independent recomputation and real-domain transfer remain open.
+```text
+Result:
+61737040da7f7c7d2b70de064062bf4c79236d4e1e7ca500a36f44d254ac8454
+
+Decision tree:
+0df12d733bc40e99ff78a1feb2a19c744cc472523bccb0c0689809e2a1633583
+
+Configuration:
+6e236067860e3a671a3bb489393e8bef8c6f9aeb085c0b630826351ac4a427a6
+```
+
+### Historical E01.1
+
+```text
+Result:
+e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90
+
+Decision tree:
+f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77
+```
+
+### Historical E01.2a
+
+```text
+Result:
+b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168
+
+Decision tree:
+321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48
+```
+
+## E00 records
+
+- [Baseline checkpoint](docs/results/e00-baseline-checkpoint-v1.md)
+- [Operator-matrix checkpoint](docs/results/e00-operator-matrix-checkpoint-v1.md)
+- [Five-seed confirmation attempt](docs/results/e00-multiseed-confirmation-attempt-v1.md)
+- [E00 evidence audit and erratum](docs/audits/e00-evidence-audit-2026-08-01.md)
 
 ## Development
 

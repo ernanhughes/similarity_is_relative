@@ -58,10 +58,7 @@ def test_decision_thresholds() -> None:
     oracle = {"triplet_accuracy": 0.93}
     controls = [{"triplet_accuracy": 0.60}, {"triplet_accuracy": 0.65}]
     assert _decision(supported, oracle, controls) == "SUPPORTED_POINT_ESTIMATE"
-    assert (
-        _decision({"triplet_accuracy": 0.60}, oracle, controls)
-        == "UNSUPPORTED_AT_THRESHOLD"
-    )
+    assert _decision({"triplet_accuracy": 0.60}, oracle, controls) == "UNSUPPORTED_AT_THRESHOLD"
 
 
 def test_small_run_writes_complete_result(tmp_path: Path) -> None:

@@ -55,7 +55,9 @@ def _pairwise_cosine(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     return 1.0 - (left @ right.T) / denominator
 
 
-def _scalar_distances(values: np.ndarray, candidates: np.ndarray, queries: np.ndarray) -> np.ndarray:
+def _scalar_distances(
+    values: np.ndarray, candidates: np.ndarray, queries: np.ndarray
+) -> np.ndarray:
     return np.abs(values[queries, None] - values[candidates][None, :])
 
 
@@ -143,7 +145,9 @@ def _generate(config: CompositionConfig) -> dict[str, Any]:
     }
 
 
-def _decision(metrics: dict[str, Any], oracle: dict[str, Any], controls: list[dict[str, Any]]) -> str:
+def _decision(
+    metrics: dict[str, Any], oracle: dict[str, Any], controls: list[dict[str, Any]]
+) -> str:
     composed = metrics["triplet_accuracy"]
     regret = oracle["triplet_accuracy"] - composed
     margin = min(composed - item["triplet_accuracy"] for item in controls)
@@ -253,11 +257,10 @@ def run(output: Path, config: CompositionConfig | None = None) -> dict[str, Any]
 
     result["gate"] = {
         "passed": all(
-            item["status"] == "SUPPORTED_POINT_ESTIMATE"
-            for item in result["decisions"].values()
+            item["status"] == "SUPPORTED_POINT_ESTIMATE" for item in result["decisions"].values()
         ),
         "claim_promotion_allowed": False,
-        "note": "E01.1 is a deterministic point-estimate stage; nulls and replication remain pending.",
+        "note": "E01.1 is a deterministic point-estimate stage; nulls and replication remain pending.", # NOQA E501
     }
     result["decision_tree_sha256"] = _json_hash(result["decisions"])
     output.mkdir(parents=True, exist_ok=True)

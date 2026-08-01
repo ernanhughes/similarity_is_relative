@@ -19,7 +19,14 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import average_precision_score
 from sklearn.preprocessing import StandardScaler
 
-from relate.experiments.e00 import BINARY_REGIMES, REGIMES, Config, array_hash, split_indices
+from relate.experiments.e00 import (
+    BINARY_REGIMES,
+    REGIMES,
+    Config,
+    array_hash,
+    orthogonal_matrix,
+    split_indices,
+)
 
 
 @dataclass(frozen=True)
@@ -54,7 +61,10 @@ def _pairwise_cosine(queries: np.ndarray, candidates: np.ndarray) -> np.ndarray:
 
 
 def _distance_from_projection(
-    x: np.ndarray, train: np.ndarray, test: np.ndarray, transform: Callable[[np.ndarray], np.ndarray]
+    x: np.ndarray,
+    train: np.ndarray,
+    test: np.ndarray,
+    transform: Callable[[np.ndarray], np.ndarray],
 ) -> np.ndarray:
     projected = transform(x)
     return _pairwise_euclidean(projected[test], projected[train])
@@ -122,14 +132,24 @@ def _evaluate_distance_matrix(
     return result
 
 
+def frozen_splits(config: Config) -> dict[str, np.ndarray]:
+    """Reproduce the original E00 RNG sequence before constructing splits."""
+    rng = np.random.default_rng(config.seed)
+    orthogonal_matrix(rng, config.dimensions)
+    return split_indices(config, rng)
+
+
 def run(source_directory: Path, output_directory: Path, config: OperatorConfig) -> dict[str, Any]:
     manifest_path = source_directory / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     source_config = Config(**manifest["config"])
-    rng = np.random.default_rng(source_config.seed)
-    splits = split_indices(source_config, rng)
+    splits = frozen_splits(source_config)
     train = splits["train"]
     test = splits["test"]
+
+    for name, indices in splits.items():
+        if array_hash(indices) != manifest["split_hashes"][name]:
+            raise ValueError(f"Frozen split mismatch: {name}")
 
     result: dict[str, Any] = {
         "experiment_id": "e00-operator-matrix",
@@ -215,9 +235,7 @@ def run(source_directory: Path, output_directory: Path, config: OperatorConfig) 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--source", type=Path, default=Path("runs/e00/canonical-seed-17")
-    )
+    parser.add_argument("--source", type=Path, default=Path("runs/e00/canonical-seed-17"))
     parser.add_argument(
         "--output", type=Path, default=Path("runs/e00/operator-matrix-seed-17")
     )

@@ -22,6 +22,7 @@ dev = [
 [project.scripts]
 relate-e00 = "relate.experiments.e00:main"
 relate-verify-e00 = "relate.verification.e00:main"
+relate-finalize-e00 = "relate.publication.e00:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

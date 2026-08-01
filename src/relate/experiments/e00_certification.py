@@ -363,7 +363,7 @@ def run(
             result["decisions"][key]["status"] == value for key, value in required.items()
         ),
         "claim_promotion_allowed": False,
-        "note": "Seed-17 certification can pass, but confirmatory multi-seed replication is still required before claim promotion.", # NOQA E501
+        "note": "Seed-17 certification can pass, but confirmatory multi-seed replication is still required before claim promotion.",  # NOQA E501
     }
 
     output_directory.mkdir(parents=True, exist_ok=True)

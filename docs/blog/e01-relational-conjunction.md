@@ -34,9 +34,9 @@ d_w(i, j) = sqrt(sum_k w_k * (t_k(i) - t_k(j))^2)
 
 The primitive predictors were still fitted independently. No compound target was used to train them. Only after training were their predicted coordinates combined into the frozen compound geometry.
 
-This made the experiment nontrivial. The composed geometry could approach the true primitive-space oracle, but it was no longer algebraically forced to equal it.
+This removed the E01.0 identity. The composed geometry could approach the true primitive-space oracle, but it was no longer algebraically forced to equal it.
 
-## Four unseen relational conjunctions
+## Four unseen weighted product-space queries
 
 The seed-307 run froze four compound queries:
 
@@ -53,27 +53,21 @@ The experiment compared the post-hoc primitive-space composition against four co
 
 - raw cosine distance in the 64-dimensional representation;
 - raw Euclidean distance;
-- scalar collapse into one weighted sum;
-- incorrect primitive alignment produced by permuting the learned primitive coordinates.
+- one declared scalar collapse into a weighted sum;
+- one incorrect primitive alignment produced by cyclically permuting the learned primitive coordinates.
 
-A compound passed only if its test triplet accuracy reached `0.88`, its regret relative to the true-target oracle stayed below `0.12`, and it exceeded every control by at least `0.10`.
+A compound passed only if its test triplet accuracy reached `0.88`, its frozen oracle-disagreement field stayed below `0.12`, and it exceeded every included control by at least `0.10`.
 
 ## All four point estimates passed
 
-The complete test result was:
-
-| Compound | Composed | Regret | Scalar collapse | Wrong alignment | Raw cosine | Raw Euclidean |
+| Compound | Composed | Frozen `composition_regret` field | Scalar collapse | Wrong alignment | Raw cosine | Raw Euclidean |
 |---|---:|---:|---:|---:|---:|---:|
 | `a2_b` | `0.9253` | `0.0747` | `0.7653` | `0.6456` | `0.5386` | `0.5480` |
 | `a3_c` | `0.9280` | `0.0720` | `0.7984` | `0.6279` | `0.5382` | `0.5491` |
 | `a_b2_c3` | `0.9273` | `0.0727` | `0.7129` | `0.8227` | `0.5480` | `0.5641` |
 | `b2_c` | `0.9221` | `0.0779` | `0.7655` | `0.6479` | `0.5390` | `0.5533` |
 
-All four decisions were:
-
-```text
-SUPPORTED_POINT_ESTIMATE
-```
+All four decisions were `SUPPORTED_POINT_ESTIMATE`.
 
 The deterministic replay verifier regenerated all four compounds and all four decisions without error.
 
@@ -84,59 +78,43 @@ Scientific point-estimate gate: PASS
 Claim promotion: blocked
 ```
 
-## Why the nonzero regret matters
+## Why the nonzero disagreement matters
 
-The previous experiment produced exactly zero regret. That was the warning sign: the post-hoc method and direct ridge comparator were two algebraically equivalent routes to the same scalar model.
+The previous experiment produced exactly zero disagreement. That was the warning sign: the post-hoc method and direct ridge comparator were two algebraically equivalent routes to the same scalar model.
 
-Here the regret was not zero. It ranged from approximately `0.0720` to `0.0779`.
+Here the frozen field called `composition_regret` ranged from approximately `0.0720` to `0.0779`. In this experiment that field equals one minus triplet accuracy against the true noisy-target geometry. It is therefore better interpreted as oracle triplet disagreement or ranking error, not regret against a directly trained compound model.
 
-That is what we should expect from a meaningful comparison. The oracle measures compound distance using the true primitive targets. The composed method measures it using three independently estimated primitive coordinates. Prediction error in those coordinates creates a real gap.
+The field name remains frozen for artifact stability. Future experiments will use clearer terminology and will separately compare against a directly trained compound comparator.
 
-The important fact is not that the gap vanished. It is that the independently learned primitive geometry retained enough information to answer the unseen compound queries with triplet accuracy above `0.92` in every case.
+## Scalar collapse lost information
 
-## Scalar collapse lost the relation
+The same primitive predictions were available to both methods. One method kept the primitive coordinates separate and combined their squared differences. The other reduced them to a single weighted number and measured absolute distance on that line.
 
-The scalar-collapse control was the most direct test of the original thesis.
+The declared scalar version was consistently worse. On `a_b2_c3`, scalar collapse achieved approximately `0.7129`; primitive-space composition achieved approximately `0.9273`.
 
-The same primitive predictions were available to both methods. The difference was how they were represented and processed.
+This shows that the chosen one-dimensional collapse discarded information retained by the weighted product-space representation.
 
-One method kept the primitive coordinates separate and combined their squared differences. The other reduced them to a single weighted number and then measured absolute distance on that line.
-
-The scalar version was consistently worse.
-
-On `a_b2_c3`, the three-relation compound, scalar collapse achieved approximately `0.7129`. Primitive-space composition achieved approximately `0.9273`.
-
-Nothing new had been added to the frozen representation. Nothing new had been trained for the compound. The gain came from refusing to collapse a structured relation into one scalar before retrieval.
-
-This is the clearest result in the project so far for the claim that similarity depends on the relational object and the operation applied to it—not merely on the original embedding row and a default distance function.
+It does **not** yet show that every strong scalar alternative fails. E01.2 must include scale-matched scalar projections, a validation-selected rank-one projection, and a small nonlinear scalar comparator.
 
 ## Wrong relations can still look plausible
 
-The three-relation compound also produced the strongest wrong-alignment control: approximately `0.8227`.
+The three-relation compound produced the strongest wrong-alignment control: approximately `0.8227`.
 
-That deserves attention rather than concealment.
+The correct alignment exceeded the frozen margin by only about `0.1046`. Because E01.1 used only one cyclic permutation, this result is a warning rather than a completed adversarial test.
 
-When all three primitive coordinates are active, permuting them can preserve a substantial amount of generic structure. The correct alignment still exceeded the frozen `0.10` margin, but only narrowly—by approximately `0.1046`.
+E01.2 must evaluate every non-identity primitive permutation and report the strongest incorrect alignment.
 
-This suggests an important next boundary. A useful composition system must not only outperform raw geometry. It must distinguish the requested primitive semantics from a plausible but incorrect rearrangement.
+## What this point estimate showed
 
-Multi-seed confirmation should therefore preserve wrong-alignment as a required control and examine its margin carefully rather than treating it as an incidental baseline.
+Within the registered seed-307 synthetic run, independently predicted primitive coordinates were combined after training into four unseen weighted product-space retrieval geometries. The resulting scores exceeded the controls included in the frozen E01.1 contract.
 
-## What we found—and what we did not
+This is a valid non-collapsing synthetic composition positive control.
 
-Within this registered synthetic seed-307 point-estimate experiment, independently learned primitive predictors were successfully combined after training into four unseen weighted multi-relation retrieval geometries.
+It is not evidence that RELATE has invented a novel composition algorithm. Weighted product-space score fusion is the baseline that a later RELATE mechanism must equal or surpass while adding constraints, exclusion, Pareto retrieval, support propagation or calibrated abstention.
 
-The compositions substantially exceeded raw cosine, raw Euclidean distance, scalar collapse and incorrect primitive alignment. They approached, but did not equal, the true-target primitive-space oracle.
-
-That is a real composition result.
-
-It is not yet a general composition claim.
-
-This was one synthetic dataset seed. There are no fresh-seed confidence intervals, permutation nulls, missing-primitive tests, support calibration or abstention decisions. The result does not yet transfer to scientific or language embeddings.
+This was one deliberately easy positive-control world: all three primitives were linearly encoded, independently recoverable, similarly distributed and supported. There are no fresh-seed confidence intervals, exhaustive wrong alignments, strong learned scalar baselines, missing-primitive tests, direct compound metric comparators, support calibration or abstention decisions.
 
 The gate therefore passed while claim promotion remained blocked.
-
-The next stage is not to make the point estimate prettier. It is to ask whether the result survives fresh preregistered seeds and whether the system knows when one of the primitive relations is too weak to compose safely.
 
 ## Frozen evidence
 

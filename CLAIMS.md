@@ -20,7 +20,8 @@ This ledger separates established prior art, implemented tests, point estimates,
 
 | ID | Claim | Status | Experiment | Required baseline | Falsification or revision condition |
 |---|---|---|---|---|---|
-| PA-001 | Context-specific masks and metrics over shared embeddings are established prior art. | Prior art | E03 | Conditional Similarity Networks and standard metric learning | Never present this as a RELATE invention. |
+| PA-001 | Context-specific masks and metrics over shared embeddings are established prior art. | Prior art | Historical / future baseline work | Conditional Similarity Networks and standard metric learning | Never present this as a RELATE invention. |
+| PA-CODE-001 | Pretrained code models, frozen probing, AST metrics and repository-separated code benchmarks are established prior art. | Prior art | Option B | CodeBERT, CodeSearchNet and code-model probing literature | Never present the representation, probes, AST extractors or split design as RELATE inventions. |
 | E00-LIN-001 | In the registered synthetic setting, a known linear relation weakly exposed by raw cosine and Euclidean distance is strongly recoverable through a supervised scalar direction. | Replicated synthetic | E00.2/E00.4 | Raw cosine, raw Euclidean, ridge predicted-value distance | Fresh registered seeds fail the rank-one recovery thresholds or raw geometry closes the declared gap. |
 | E00-ROT-001 | Recovery through the supervised scalar direction survives a common information-preserving orthogonal rotation. | Replicated synthetic | E00.4 | Native and rotated rank-one retrieval | Rotation retention fails the frozen multi-seed thresholds. |
 | E00-BASIS-001 | A raw-coordinate diagonal metric is basis dependent under the registered rotation test. | Replicated synthetic | E00.4 | Native and rotated diagonal retrieval | Diagonal retention no longer shows the preregistered degradation across fresh seeds. |
@@ -35,8 +36,9 @@ This ledger separates established prior art, implemented tests, point estimates,
 | E01-CEIL-001 | The E01.2a predicted-primitive executor operates at effectively the same triplet-accuracy ceiling as the true noiseless latent executor. | Independently audited | E01 independent recomputation | Latent oracle and ceiling fraction | Fresh non-saturated generator regimes produce a material and stable gap from the attainable ceiling. |
 | E01-PERM-001 | In the exchangeable E01 generator, the strongest wrong-permutation margin is primarily determined by weight separation and is zero for symmetric weights. | Independently audited | E01 independent recomputation | Frozen weight-separation sweep | A non-exchangeable semantic-identity experiment shows the same diagnostic has semantic validity. |
 | E01-LINE-001 | The E01 weighted-product-space line supports a general or novel relational-composition claim. | Closed | E01.0–E01.2a | Direct compound models, non-saturated primitives, semantic identity, support boundaries | This former thesis is closed. Any future support-aware query-runtime claim begins under a new experiment contract and does not inherit E01 success. |
-| H-005 | A support-aware relational query runtime can execute declared compound queries over imperfect primitive evidence, retain a useful zero-shot reuse advantage, propagate uncertainty and refuse unsupported requests. | Proposed | E02–E07 | Direct compound comparators, conditional metric learning, independent thresholding, conformal/selective prediction | Direct baselines match the runtime at equal supervision and coverage, the runtime cannot identify unsupported queries, or the effect fails in a limited real-domain pilot. |
-| H-006 | Findings from one real frozen-representation domain transfer to sentence embeddings. | Proposed | E08 | Exact raw cosine and text-specific probes | Real-domain success does not reproduce on the frozen sentence benchmark. |
+| H-005 | The cancelled broad E02–E07 synthetic roadmap can establish a support-aware relational query runtime through a large factorisation and supervision matrix. | Closed | Post-E01 decision | Real-premise test and bounded refusal test | This roadmap is cancelled. It may not be revived without a new explicit project decision. |
+| B-PREM-001 | In repository-separated real Python code, independently predicted AST primitives expose the frozen three-way structural conjunction materially better than the strongest default CodeBERT geometry. | Proposed | Option B | Raw CodeBERT cosine, raw CodeBERT Euclidean, token-length diagnostic, true-primitive oracle | `predicted_primitive_hard_triplet_accuracy - max(raw_cosine, raw_euclidean) < 0.10`. This outcome closes RELATE; secondary metrics cannot rescue it. |
+| C-REFUSE-001 | Propagated compound support can improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper. | Proposed, conditional | Option C | Independent primitive conformal abstention and direct compound conformal model | Option B fails, or propagated support does not beat the frozen baselines by the future preregistered material margin. Option C may not be implemented unless B-PREM-001 passes. |
 
 ## Interpretation notes
 
@@ -64,9 +66,22 @@ See:
 - [`docs/blog/closing-the-e01-composition-line.md`](docs/blog/closing-the-e01-composition-line.md)
 - [`docs/audits/e01-external-review-audit-2026-08-01.md`](docs/audits/e01-external-review-audit-2026-08-01.md)
 
+### Option B boundary
+
+Option B is a real-premise kill test, not a novelty experiment. It freezes one CodeSearchNet language, one CodeBERT representation, three objective AST primitives, one Chebyshev conjunction and one primary `0.10` continuation threshold.
+
+A `REAL_PREMISE_FAILED` decision closes RELATE. A `REAL_PREMISE_SUPPORTED` decision authorises only a separately contracted Option C refusal experiment.
+
+See:
+
+- [`docs/experiments/08-option-b-real-code-premise-test.md`](docs/experiments/08-option-b-real-code-premise-test.md)
+- [`docs/research/option-b-domain-selection-2026-08-01.md`](docs/research/option-b-domain-selection-2026-08-01.md)
+
 ### Verification classification
 
 E00.4, E01.1 and E01.2a have deterministic replay verification. The E01 closure additionally has an independent recomputation implementation that does not call the experiment runners or their metric and decision helpers.
+
+Option B requires both deterministic replay and independent metric recomputation over frozen embeddings, primitive values, predictions and manifests.
 
 ## Publication rule
 

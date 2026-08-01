@@ -45,7 +45,26 @@ STOP     close RELATE if either required kill test fails
 
 Maximum remaining RELATE research budget: **25 working days**.
 
-Read the full decision: [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md).
+Read:
+
+- [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
+- [Option B domain selection](docs/research/option-b-domain-selection-2026-08-01.md)
+- [Option B frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
+
+## Option B frozen design
+
+```text
+domain: CodeSearchNet Python functions
+representation: microsoft/codebert-base, frozen
+primitives: cyclomatic complexity, maximum control nesting depth,
+            distinct call-site count
+query: joint similarity under true and predicted Chebyshev geometry
+primary metric: hard-negative triplet accuracy
+continuation threshold: predicted executor - strongest raw geometry >= 0.10
+budget: 10 working days
+```
+
+A gap below `0.10` produces `REAL_PREMISE_FAILED` and closes RELATE. Secondary metrics cannot rescue the decision. A pass authorises only the separately contracted Option C refusal test.
 
 ## Current status
 
@@ -61,7 +80,7 @@ Read the full decision: [Post-E01 publication and kill-test decision](docs/resea
 - E01 permutation diagnostic: **weight-separation effect, not semantic verification**
 - E01 general or novel composition line: **closed**
 - Broad synthetic factorisation roadmap: **cancelled**
-- Option B real-representation premise test: **next, contract not yet frozen**
+- Option B real-code premise test: **design contract frozen; implementation not started**
 - Option C propagated refusal: **conditional on B**
 - Promoted real-domain or RELATE algorithmic findings: **none**
 

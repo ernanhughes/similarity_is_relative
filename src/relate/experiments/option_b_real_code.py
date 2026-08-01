@@ -13,9 +13,10 @@ import hashlib
 import json
 import platform
 from collections import Counter
+from collections.abc import Iterable, Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any
 
 import numpy as np
 from scipy.stats import spearmanr
@@ -59,9 +60,7 @@ class FunctionRecord:
 
     @property
     def stable_key(self) -> str:
-        value = "\n".join(
-            (self.repository, self.path, self.function_id, self.code_sha256)
-        ).encode()
+        value = "\n".join((self.repository, self.path, self.function_id, self.code_sha256)).encode()
         return hashlib.sha256(value).hexdigest()
 
     @property
@@ -311,7 +310,9 @@ def embed_code(
         import torch
         from transformers import AutoModel, AutoTokenizer
     except ImportError as exc:  # pragma: no cover - exercised only in full environment
-        raise RuntimeError("install the option-b dependencies with pip install -e '.[option-b]'") from exc
+        raise RuntimeError(
+            "install the option-b dependencies with pip install -e '.[option-b]'"
+        ) from exc
 
     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
     model = AutoModel.from_pretrained(model_id, revision=revision).to(device)
@@ -364,7 +365,9 @@ def fit_primitive_probes(
         validation_prediction = selected.predict(validation_x)
         report[name] = {
             "selected_alpha": float(selected.alpha),
-            "validation_mae": float(mean_absolute_error(validation_y[:, index], validation_prediction)),
+            "validation_mae": float(
+                mean_absolute_error(validation_y[:, index], validation_prediction)
+            ),
             "validation_r2": float(r2_score(validation_y[:, index], validation_prediction)),
             "validation_spearman": float(
                 spearmanr(validation_y[:, index], validation_prediction).statistic
@@ -381,7 +384,9 @@ def chebyshev_distance(queries: np.ndarray, candidates: np.ndarray) -> np.ndarra
 
 def cosine_distance(queries: np.ndarray, candidates: np.ndarray) -> np.ndarray:
     q = queries / np.maximum(np.linalg.norm(queries, axis=1, keepdims=True), np.finfo(float).eps)
-    c = candidates / np.maximum(np.linalg.norm(candidates, axis=1, keepdims=True), np.finfo(float).eps)
+    c = candidates / np.maximum(
+        np.linalg.norm(candidates, axis=1, keepdims=True), np.finfo(float).eps
+    )
     return 1.0 - q @ c.T
 
 
@@ -444,11 +449,14 @@ def manifest_triplet_accuracy(distances: np.ndarray, manifest: list[dict[str, in
 
 def array_hash(value: np.ndarray) -> str:
     array = np.ascontiguousarray(value)
-    payload = json.dumps(
-        {"dtype": str(array.dtype), "shape": list(array.shape)},
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode() + array.tobytes()
+    payload = (
+        json.dumps(
+            {"dtype": str(array.dtype), "shape": list(array.shape)},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        + array.tobytes()
+    )
     return hashlib.sha256(payload).hexdigest()
 
 

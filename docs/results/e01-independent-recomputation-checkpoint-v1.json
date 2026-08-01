@@ -1,0 +1,50 @@
+{
+  "checkpoint_id": "e01-independent-recomputation-checkpoint-v1",
+  "audit_id": "e01-independent-recomputation",
+  "status": "AUDIT_RESULT_COMPLETE",
+  "verification_class": "INDEPENDENT_RECOMPUTATION",
+  "claim_promotion_allowed": false,
+  "result_sha256": "61737040da7f7c7d2b70de064062bf4c79236d4e1e7ca500a36f44d254ac8454",
+  "decision_tree_sha256": "0df12d733bc40e99ff78a1feb2a19c744cc472523bccb0c0689809e2a1633583",
+  "config_sha256": "6e236067860e3a671a3bb489393e8bef8c6f9aeb085c0b630826351ac4a427a6",
+  "decisions": {
+    "e01_1_exhaustive_control": "ORIGINAL_RULE_FAILS_WITH_EXHAUSTIVE_CONTROL",
+    "e01_1_exhaustive_control_failed_compounds": [
+      "a2_b",
+      "b2_c",
+      "a_b2_c3"
+    ],
+    "ceiling": "SATURATED_AT_LATENT_ORACLE",
+    "weight_separation": "WEIGHT_SEPARATION_DIAGNOSTIC_SUPPORTED"
+  },
+  "seed_307_exhaustive_margins": {
+    "a2_b": 0.0853,
+    "a3_c": 0.1464,
+    "b2_c": 0.0788,
+    "a_b2_c3": 0.0374
+  },
+  "fresh_seed_summary": {
+    "seeds": [401, 433, 467, 503, 557],
+    "median_ceiling_fraction": {
+      "a2_b": 1.00037,
+      "a3_c": 1.00018,
+      "b2_c": 1.00005,
+      "a_b2_c3": 1.00036
+    },
+    "mean_recall_at_10": {
+      "a2_b": 0.1723,
+      "a3_c": 0.1614,
+      "b2_c": 0.1697,
+      "a_b2_c3": 0.3542
+    }
+  },
+  "weight_separation_sweep": {
+    "1_1_1": 0.0,
+    "1_1.1_1.2": 0.00183,
+    "1_1.5_2": 0.02091,
+    "1_2_3": 0.03737,
+    "1_4_16": 0.06739
+  },
+  "classification": "E01_WEIGHTED_PRODUCT_SPACE_LINE_CLOSED",
+  "interpretation": "E01.1 and E01.2a remain numerically reproducible synthetic positive controls. The generator was saturated, E01.1 does not retain its original margin rule under exhaustive wrong-alignment controls, and the permutation diagnostic measured weight separation among exchangeable primitives rather than semantic identity. No general composition or RELATE algorithmic claim is supported."
+}

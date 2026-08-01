@@ -4,12 +4,14 @@ The next stage moved beyond the original seed-17 experiment and generated five f
 
 Seed 17 was excluded from model selection, aggregation and certification. Each fresh seed received its own rotation, train-validation-test split, generated arrays, permutation nulls, bootstrap intervals and validation-only nonlinear model selection.
 
-The independent verifier then regenerated the complete five-seed experiment and reproduced all five model selections, all seven decisions and the entire aggregate result tree without error.
+The deterministic replay verifier regenerated the complete five-seed experiment and reproduced all five model selections, all seven decisions and the entire aggregate result tree without error.
+
+That establishes exact reproducibility by the committed implementation. It does not by itself establish independent mathematical correctness: a replay verifier can reproduce a shared bug. Reproducibility verification and correctness verification are different things.
 
 The verification status was:
 
 ```text
-Verification: PASS
+Replay verification: PASS
 Verified seeds: 5
 Verified model selections: 5
 Verified decisions: 7
@@ -32,6 +34,10 @@ The two results were almost indistinguishable.
 Mean rank-one rotation retention was `1.0005`, with a seed-level interval from `0.9931` to `1.0089`.
 
 In this registered synthetic setting, the recoverable relation therefore behaved like a direction that survived a change of basis rather than a property tied to one coordinate system.
+
+There is an important competitive boundary. Ridge predicted-value distance and distance along the normalised ridge coefficient define the same ranking geometry in this scalar linear setting. The intercept cancels and normalisation only rescales all distances by a positive constant.
+
+The result is therefore not that a new rank-one algorithm beat ridge regression. It is that a supervised scalar direction exposed a relation that raw cosine and Euclidean neighbourhoods largely hid, and that this recovery survived rotation.
 
 ## Diagonal weighting did not survive the same rotation
 
@@ -79,13 +85,23 @@ The five test average-precision results were approximately:
 
 One seed collapsed almost completely to chance. The others ranged from moderate to strong recovery.
 
-The aggregate mean was approximately `0.7546`, but the seed-level 95% confidence interval ran from `0.6154` to `0.8640`. The minimum seed result was `0.5011`.
+The aggregate mean was approximately `0.7546`, but the seed-level 95% confidence interval ran from `0.6154` to `0.8640`. The minimum seed result was `0.5011`, and only one of five seeds reached average precision of at least `0.85`.
 
-The nonlinear-minus-linear advantage was positive on average, but its lower seed-level confidence bound was approximately `0.1169`, below the preregistered requirement of `0.15`.
+Those conditions independently fail the preregistered nonlinear gate.
 
-The correct decision was therefore:
+### Erratum: one secondary comparison mixed metrics
+
+The original checkpoint also reported a nonlinear-minus-linear lower interval of approximately `0.1169`. A later audit found that this quantity subtracted linear triplet accuracy from nonlinear average precision while labelling the result as an average-precision difference.
+
+Those metrics are not commensurable. The `0.1169` interval is invalid and must not be used.
+
+The erratum does not reverse the decision. The minimum seed AP, the number of seeds above `0.85`, the mean AP and the aggregate lower confidence bound all miss their frozen thresholds independently.
+
+The correct decision remains:
 
 > `INSUFFICIENT_EVIDENCE`
+
+The full audit is recorded in [`docs/audits/e00-evidence-audit-2026-08-01.md`](../audits/e00-evidence-audit-2026-08-01.md).
 
 This failure is more informative than a single successful XOR demonstration would have been.
 
@@ -114,7 +130,7 @@ Six of seven decisions matched the preregistered gate.
 The gate nevertheless remained false:
 
 ```text
-Verification: PASS
+Replay verification: PASS
 Scientific gate: FAIL
 Required decisions matched: 6 of 7
 Claim promotion: blocked
@@ -130,7 +146,7 @@ That is exactly what happened.
 
 The full E00 claim remains unpromoted, but the multi-seed experiment supports several bounded statements within the registered synthetic setting.
 
-Across five independently generated representations, a supervised rank-one direction consistently recovered a known linear relation in both the original and rotated bases.
+Across five independently generated representations, a supervised scalar direction consistently recovered a known linear relation in both the original and rotated bases.
 
 Diagonal coordinate weighting did not retain comparable performance after rotation.
 

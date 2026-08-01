@@ -33,8 +33,8 @@ jobs:
           PYTHONHASHSEED: '0'
         run: |
           rm -rf runs/option-b/selection-v2-a runs/option-b/selection-v2-b
-          relate-option-b-select --output-dir runs/option-b/selection-v2-a --artifact-version v2
-          relate-option-b-select --output-dir runs/option-b/selection-v2-b --artifact-version v2
+          python -m relate.experiments.option_b_selection_v2 --output-dir runs/option-b/selection-v2-a
+          python -m relate.experiments.option_b_selection_v2 --output-dir runs/option-b/selection-v2-b
           python scripts/verify_option_b_selection_v2.py \
             --run-a runs/option-b/selection-v2-a \
             --run-b runs/option-b/selection-v2-b \

@@ -1,0 +1,16 @@
+{
+  "checkpoint_id": "e00-multiseed-confirmation-attempt-v1",
+  "experiment_id": "e00-multiseed-confirmation",
+  "verification_status": "PASS",
+  "gate_passed": false,
+  "claim_promotion_allowed": false,
+  "verified_seeds": [23, 41, 59, 83, 101],
+  "verified_decisions": 7,
+  "matched_required_decisions": 6,
+  "failed_required_decision": {
+    "id": "xor.nonlinear_multiseed",
+    "status": "INSUFFICIENT_EVIDENCE"
+  },
+  "aggregate_result_sha256": "8dd526eaa45a28f56c99cb1045138685b89982109dbf61fb9788a6a65937e86d",
+  "decision_tree_sha256": "25b52842a4d5fbfefa1145c8f406328dc70744659852b7aa0535cf06788f4c90"
+}

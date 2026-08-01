@@ -23,6 +23,7 @@ option-b = [
   "transformers>=4.45",
   "tokenizers>=0.20",
   "datasets>=3.0",
+  "huggingface-hub>=0.25",
 ]
 
 [project.scripts]
@@ -43,6 +44,7 @@ relate-e01-multiseed = "relate.experiments.e01_multiseed_composition:main"
 relate-verify-e01-multiseed = "relate.verification.e01_multiseed_composition:main"
 relate-audit-e01 = "relate.audits.e01_independent_recomputation:main"
 relate-option-b = "relate.experiments.option_b_real_code:main"
+relate-option-b-freeze = "relate.experiments.option_b_identity:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

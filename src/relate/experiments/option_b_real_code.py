@@ -12,6 +12,7 @@ import ast
 import hashlib
 import json
 import platform
+import sys
 from collections import Counter
 from collections.abc import Iterable, Iterator
 from dataclasses import asdict, dataclass
@@ -27,6 +28,7 @@ MODEL_ID = "microsoft/codebert-base"
 PRIMITIVES = ("cyclomatic_complexity", "max_control_depth", "distinct_call_sites")
 ALPHAS = (0.01, 0.1, 1.0, 10.0, 100.0)
 MANIFEST_SEED = 8112026
+AST_RECURSION_LIMIT = 1_000
 
 
 @dataclass(frozen=True)
@@ -75,22 +77,6 @@ class FunctionRecord:
         )
 
 
-_CONTROL_NODES = (
-    ast.If,
-    ast.For,
-    ast.AsyncFor,
-    ast.While,
-    ast.Try,
-    ast.With,
-    ast.AsyncWith,
-    ast.Match,
-    ast.ListComp,
-    ast.SetComp,
-    ast.DictComp,
-    ast.GeneratorExp,
-)
-
-
 class _PrimitiveVisitor(ast.NodeVisitor):
     """Extract the three frozen AST primitives.
 
@@ -126,8 +112,7 @@ class _PrimitiveVisitor(ast.NodeVisitor):
         return
 
     def visit_If(self, node: ast.If) -> None:
-        self.complexity += 1
-        self._visit_control(node)
+        self._visit_if_chain(node, enter_depth=True)
 
     def visit_IfExp(self, node: ast.IfExp) -> None:
         self.complexity += 1
@@ -145,6 +130,15 @@ class _PrimitiveVisitor(ast.NodeVisitor):
         self.complexity += 1
         self._visit_control(node)
 
+    def visit_Try(self, node: ast.Try) -> None:
+        self._visit_control(node)
+
+    def visit_With(self, node: ast.With) -> None:
+        self._visit_control(node)
+
+    def visit_AsyncWith(self, node: ast.AsyncWith) -> None:
+        self._visit_control(node)
+
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         self.complexity += 1
         self.generic_visit(node)
@@ -154,9 +148,17 @@ class _PrimitiveVisitor(ast.NodeVisitor):
         self.complexity += max(len(node.values) - 1, 0)
         self.generic_visit(node)
 
-    def visit_comprehension(self, node: ast.comprehension) -> None:
-        self.complexity += len(node.ifs)
-        self.generic_visit(node)
+    def visit_ListComp(self, node: ast.ListComp) -> None:
+        self._visit_comprehension_expression(node.generators, (node.elt,))
+
+    def visit_SetComp(self, node: ast.SetComp) -> None:
+        self._visit_comprehension_expression(node.generators, (node.elt,))
+
+    def visit_DictComp(self, node: ast.DictComp) -> None:
+        self._visit_comprehension_expression(node.generators, (node.key, node.value))
+
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> None:
+        self._visit_comprehension_expression(node.generators, (node.elt,))
 
     def visit_Match(self, node: ast.Match) -> None:
         # The first case is the base path; each additional case adds a branch.
@@ -167,11 +169,63 @@ class _PrimitiveVisitor(ast.NodeVisitor):
         self.calls.add(_normalize_call_target(node.func))
         self.generic_visit(node)
 
-    def _visit_control(self, node: ast.AST) -> None:
+    def _visit_if_chain(self, node: ast.If, *, enter_depth: bool) -> None:
+        self.complexity += 1
+        if enter_depth:
+            self._enter_control()
+        self.visit(node.test)
+        for statement in node.body:
+            self.visit(statement)
+        if self._has_elif(node):
+            self._visit_if_chain(node.orelse[0], enter_depth=False)
+        else:
+            for statement in node.orelse:
+                self.visit(statement)
+        if enter_depth:
+            self.depth -= 1
+
+    @staticmethod
+    def _has_elif(node: ast.If) -> bool:
+        return (
+            len(node.orelse) == 1
+            and isinstance(node.orelse[0], ast.If)
+            and node.orelse[0].col_offset == node.col_offset
+        )
+
+    def _visit_comprehension_expression(
+        self,
+        generators: list[ast.comprehension],
+        result_nodes: tuple[ast.AST, ...],
+    ) -> None:
+        entered = 0
+        for generator in generators:
+            # Every generator is a loop decision; every filter is an additional decision.
+            self.complexity += 1 + len(generator.ifs)
+            self.visit(generator.iter)
+            self._enter_control()
+            entered += 1
+            self.visit(generator.target)
+            for condition in generator.ifs:
+                self.visit(condition)
+        for result_node in result_nodes:
+            self.visit(result_node)
+        self.depth -= entered
+
+    def _enter_control(self) -> None:
         self.depth += 1
         self.max_depth = max(self.max_depth, self.depth)
+
+    def _visit_control(self, node: ast.AST) -> None:
+        self._enter_control()
         self.generic_visit(node)
         self.depth -= 1
+
+
+def pin_ast_recursion_limit() -> None:
+    """Set the recursion limit used by canonical primitive extraction."""
+
+    if sys.getrecursionlimit() != AST_RECURSION_LIMIT:
+        sys.setrecursionlimit(AST_RECURSION_LIMIT)
 
 
 def _normalize_call_target(node: ast.AST) -> str:
@@ -228,15 +282,19 @@ def build_records(
     tokenizer: Any,
     config: OptionBConfig,
 ) -> tuple[list[FunctionRecord], Counter[str]]:
+    pin_ast_recursion_limit()
     records: list[FunctionRecord] = []
     reasons: Counter[str] = Counter()
     for row in rows:
-        code = _field(row, "code", "whole_func_string", "func_code_string")
+        code = _field(row, "code", "whole_func_string", "original_string", "func_code_string")
         if not code:
             reasons["missing_code"] += 1
             continue
         try:
             ast_sha, primitive = extract_primitives(code)
+        except RecursionError:
+            reasons["ast_recursion_limit"] += 1
+            continue
         except (SyntaxError, ValueError):
             reasons["ast_ineligible"] += 1
             continue
@@ -244,13 +302,19 @@ def build_records(
         if token_count < config.min_tokens or token_count > config.max_tokens:
             reasons["token_length"] += 1
             continue
+        repository = _field(row, "repository_name", "repo", "repository")
+        path = _field(row, "func_path_in_repository", "path", "file_path")
+        function_id = _field(row, "func_name", "function_name", "func_code_url", "url")
+        if not repository or not path or not function_id:
+            reasons["missing_provenance"] += 1
+            continue
         code_sha = hashlib.sha256(code.encode()).hexdigest()
         records.append(
             FunctionRecord(
-                split=_field(row, "_split"),
-                repository=_field(row, "repo", "repository_name", "repository"),
-                path=_field(row, "path", "file_path"),
-                function_id=_field(row, "func_name", "function_name", "url", default=code_sha),
+                split=_field(row, "_split", "split_name", "partition"),
+                repository=repository,
+                path=path,
+                function_id=function_id,
                 code=code,
                 code_sha256=code_sha,
                 normalized_ast_sha256=ast_sha,

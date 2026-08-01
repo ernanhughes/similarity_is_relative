@@ -68,7 +68,11 @@ def split_indices(config: Config, rng: np.random.Generator) -> dict[str, np.ndar
 
 
 def generate_regime(
-    regime: str, config: Config, rng: np.random.Generator, rotation: np.ndarray
+    regime: str,
+    config: Config,
+    rng: np.random.Generator,
+    rotation: np.ndarray,
+    splits: dict[str, np.ndarray],
 ) -> tuple[np.ndarray, np.ndarray]:
     x = rng.normal(size=(config.samples, config.dimensions))
     noise = rng.normal(scale=config.noise_standard_deviation, size=config.samples)
@@ -88,9 +92,10 @@ def generate_regime(
         y = rng.normal(size=config.samples)
     elif regime == "correlated_nuisance":
         y = x[:, 0] + noise
-        split_point = int(config.samples * (config.train_fraction + config.validation_fraction))
-        x[:split_point, 1] = y[:split_point] + rng.normal(scale=0.02, size=split_point)
-        x[split_point:, 1] = rng.normal(size=config.samples - split_point)
+        development = np.concatenate((splits["train"], splits["validation"]))
+        test = splits["test"]
+        x[development, 1] = y[development] + rng.normal(scale=0.02, size=len(development))
+        x[test, 1] = rng.normal(size=len(test))
     else:
         raise ValueError(f"Unknown regime: {regime}")
 
@@ -147,7 +152,7 @@ def run(config: Config, output: Path) -> dict[str, Any]:
     }
 
     for regime in REGIMES:
-        x, y = generate_regime(regime, config, rng, rotation)
+        x, y = generate_regime(regime, config, rng, rotation, splits)
         np.savez_compressed(arrays_dir / f"{regime}.npz", x=x, y=y)
 
         train = splits["train"]

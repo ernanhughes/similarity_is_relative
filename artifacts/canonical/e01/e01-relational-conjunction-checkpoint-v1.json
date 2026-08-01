@@ -1,0 +1,28 @@
+{
+  "checkpoint_id": "e01-relational-conjunction-checkpoint-v1",
+  "experiment_id": "e01-relational-conjunction",
+  "verification": {
+    "status": "PASS",
+    "verification_class": "DETERMINISTIC_REPLAY",
+    "verified_compounds": 4,
+    "verified_decisions": 4
+  },
+  "gate": {
+    "passed": true,
+    "claim_promotion_allowed": false
+  },
+  "decisions": {
+    "a2_b": "SUPPORTED_POINT_ESTIMATE",
+    "a3_c": "SUPPORTED_POINT_ESTIMATE",
+    "a_b2_c3": "SUPPORTED_POINT_ESTIMATE",
+    "b2_c": "SUPPORTED_POINT_ESTIMATE"
+  },
+  "evidence_identities": {
+    "result_sha256": "e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90",
+    "decision_tree_sha256": "f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77",
+    "config_sha256": "423e3b3b432165e84b7126319862c9e710fab6cc8ddbd78bef0d681b3892f4a5",
+    "rotation_sha256": "a7080ce4c5f09580cc9526ac1cb5f05f124ef1ed6371b9623ddc1812bb445ef2",
+    "primitive_targets_sha256": "284133e964d136d9123f24246c6e67030c0018387834f78ac16cc7fbfeb9389e"
+  },
+  "publication_boundary": "Single-seed registered synthetic point estimate only. General composition claim promotion remains blocked pending fresh-seed confirmation, uncertainty and null controls."
+}

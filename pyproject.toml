@@ -48,6 +48,8 @@ relate-option-b-freeze = "relate.experiments.option_b_identity:main"
 relate-option-b-freeze-v2 = "relate.experiments.option_b_identity_v2:main"
 relate-option-b-select = "relate.experiments.option_b_selection_resilient:main"
 relate-option-b-embed = "relate.experiments.option_b_embeddings_hardened:main"
+relate-option-b-embed-preflight = "relate.experiments.option_b_embedding_preflight:main"
+relate-option-b-verify-embeddings = "relate.experiments.option_b_embedding_reproduction:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,0 +1,47 @@
+{
+  "test": {
+    "common_rows_with_blank_to_populated_path": 1653,
+    "overlap": 1653,
+    "unexpected_v2_only_rows_below_old_cutoff": 0,
+    "v1_blank_paths": 4000,
+    "v1_keys_matching_empty_path_formula": 4000,
+    "v1_only": 2347,
+    "v1_rows": 4000,
+    "v1_stable_key_cutoff": "6a391b777aeac2c10012d51288f212656a50f3370a08a6d7c7f3f2440585efb2",
+    "v2_blank_paths": 0,
+    "v2_keys_matching_repaired_path_formula": 4000,
+    "v2_only": 2347,
+    "v2_rows": 4000,
+    "v2_rows_below_old_cutoff_using_legacy_key": 1653
+  },
+  "train": {
+    "common_rows_with_blank_to_populated_path": 2239,
+    "overlap": 2239,
+    "unexpected_v2_only_rows_below_old_cutoff": 0,
+    "v1_blank_paths": 20000,
+    "v1_keys_matching_empty_path_formula": 20000,
+    "v1_only": 17761,
+    "v1_rows": 20000,
+    "v1_stable_key_cutoff": "1cb05b195baa26d6641e7017fe58b23a18207198604cb7077615f59855f4dbde",
+    "v2_blank_paths": 0,
+    "v2_keys_matching_repaired_path_formula": 20000,
+    "v2_only": 17761,
+    "v2_rows": 20000,
+    "v2_rows_below_old_cutoff_using_legacy_key": 2239
+  },
+  "validation": {
+    "common_rows_with_blank_to_populated_path": 1582,
+    "overlap": 1582,
+    "unexpected_v2_only_rows_below_old_cutoff": 0,
+    "v1_blank_paths": 4000,
+    "v1_keys_matching_empty_path_formula": 4000,
+    "v1_only": 2418,
+    "v1_rows": 4000,
+    "v1_stable_key_cutoff": "65be6309fddd49cb38835388c15ba066a51de0596beaecc830f08f90765995a6",
+    "v2_blank_paths": 0,
+    "v2_keys_matching_repaired_path_formula": 4000,
+    "v2_only": 2418,
+    "v2_rows": 4000,
+    "v2_rows_below_old_cutoff_using_legacy_key": 1582
+  }
+}

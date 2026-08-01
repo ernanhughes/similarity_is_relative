@@ -1,0 +1,236 @@
+{
+  "artifacts": {
+    "test": {
+      "primitive_table": {
+        "path": "artifacts/canonical/option-b/selection/option-b-primitives-test-v2.jsonl",
+        "rows": 4000,
+        "sha256": "20eff2f32e3a4572f23c8d6e3f481188a194d6d8ce0513553831b418d6b32a57"
+      },
+      "selected_manifest": {
+        "path": "artifacts/canonical/option-b/selection/option-b-selected-test-v2.jsonl",
+        "rows": 4000,
+        "sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b"
+      }
+    },
+    "train": {
+      "primitive_table": {
+        "path": "artifacts/canonical/option-b/selection/option-b-primitives-train-v2.jsonl",
+        "rows": 20000,
+        "sha256": "f87629dcf8441aff5f9dace95535ee0e98316e57c1c0825d0baa7a8bdba7ad8a"
+      },
+      "selected_manifest": {
+        "path": "artifacts/canonical/option-b/selection/option-b-selected-train-v2.jsonl",
+        "rows": 20000,
+        "sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af"
+      }
+    },
+    "validation": {
+      "primitive_table": {
+        "path": "artifacts/canonical/option-b/selection/option-b-primitives-validation-v2.jsonl",
+        "rows": 4000,
+        "sha256": "a0172b434533c94a28b21885393562ea904ce7e48f430ded4654e40fec01fbeb"
+      },
+      "selected_manifest": {
+        "path": "artifacts/canonical/option-b/selection/option-b-selected-validation-v2.jsonl",
+        "rows": 4000,
+        "sha256": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d"
+      }
+    }
+  },
+  "ast_recursion_limit": 1000,
+  "config": {
+    "bootstrap_repetitions": 2000,
+    "continuation_gap": 0.1,
+    "max_pairs_per_query": 128,
+    "max_rank_separation": 25,
+    "max_tokens": 256,
+    "min_rank_separation": 5,
+    "min_tokens": 32,
+    "ridge_alphas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "test_limit": 4000,
+    "train_limit": 20000,
+    "validation_limit": 4000
+  },
+  "cross_split_deduplication": {
+    "cross_split_ast_count": 0,
+    "removed_by_split": {
+      "test": 0,
+      "train": 0,
+      "validation": 0
+    }
+  },
+  "eligible_after_cross_split_deduplication": {
+    "test": 9578,
+    "train": 179659,
+    "validation": 9909
+  },
+  "eligible_before_cross_split_deduplication": {
+    "test": 9578,
+    "train": 179659,
+    "validation": 9909
+  },
+  "embedding_extraction_allowed": false,
+  "exclusions": {
+    "test": {
+      "ast_ineligible": 228,
+      "token_length": 12370
+    },
+    "train": {
+      "ast_ineligible": 4011,
+      "ast_recursion_limit": 1,
+      "token_length": 228507
+    },
+    "validation": {
+      "ast_ineligible": 290,
+      "token_length": 12908
+    }
+  },
+  "identity": {
+    "dataset_revision": "bd0cf261e357a3eb5c8fba490d23ec1a1cd59555",
+    "fixture_matrix_sha256": "300b75891b2a498f17e774d27baf3ce432082a55cd1fc2401b003c8b5f4e5f46",
+    "model_revision": "3b0952feddeffad0063f274080e3c23d75e7eb39",
+    "path": "artifacts/canonical/option-b/option-b-external-identity-v1.json",
+    "pooling_implementation_sha256": "9ac3a71225bcae6bbaf7e4c01788f6a85914b22f0edb054202f00707f3b1cbf5"
+  },
+  "next_allowed_action": "PREDICTED_EXECUTOR_CONTRACT_COMPLETION",
+  "prohibited_actions": [
+    "scientific metric evaluation",
+    "threshold changes",
+    "query changes",
+    "second model or language"
+  ],
+  "scientific_result_observed": false,
+  "selected_rows": {
+    "test": 4000,
+    "train": 20000,
+    "validation": 4000
+  },
+  "selection_id": "option-b-canonical-row-selection-v2",
+  "source_rows": {
+    "test": 22176,
+    "train": 412178,
+    "validation": 23107
+  },
+  "status": "CANONICAL_ROW_SELECTION_V2_VERIFIED",
+  "v1_v2_selection_diagnosis": {
+    "artifact": {
+      "path": "artifacts/canonical/option-b/selection/option-b-v1-v2-selection-diagnosis.json",
+      "sha256": "c9da550042b1d6afc9e637b069d3269372506b81dca1aabc4ba8ad4a274386d9"
+    },
+    "cause": "PR 2 populated the previously blank path component of the stable key. This deterministically reordered the unchanged eligible populations before applying the frozen split limits.",
+    "dataset_or_filtering_drift_detected": false,
+    "splits": {
+      "test": {
+        "common_rows_with_blank_to_populated_path": 1653,
+        "overlap": 1653,
+        "unexpected_v2_only_rows_below_old_cutoff": 0,
+        "v1_blank_paths": 4000,
+        "v1_keys_matching_empty_path_formula": 4000,
+        "v1_only": 2347,
+        "v1_rows": 4000,
+        "v1_stable_key_cutoff": "6a391b777aeac2c10012d51288f212656a50f3370a08a6d7c7f3f2440585efb2",
+        "v2_blank_paths": 0,
+        "v2_keys_matching_repaired_path_formula": 4000,
+        "v2_only": 2347,
+        "v2_rows": 4000,
+        "v2_rows_below_old_cutoff_using_legacy_key": 1653
+      },
+      "train": {
+        "common_rows_with_blank_to_populated_path": 2239,
+        "overlap": 2239,
+        "unexpected_v2_only_rows_below_old_cutoff": 0,
+        "v1_blank_paths": 20000,
+        "v1_keys_matching_empty_path_formula": 20000,
+        "v1_only": 17761,
+        "v1_rows": 20000,
+        "v1_stable_key_cutoff": "1cb05b195baa26d6641e7017fe58b23a18207198604cb7077615f59855f4dbde",
+        "v2_blank_paths": 0,
+        "v2_keys_matching_repaired_path_formula": 20000,
+        "v2_only": 17761,
+        "v2_rows": 20000,
+        "v2_rows_below_old_cutoff_using_legacy_key": 2239
+      },
+      "validation": {
+        "common_rows_with_blank_to_populated_path": 1582,
+        "overlap": 1582,
+        "unexpected_v2_only_rows_below_old_cutoff": 0,
+        "v1_blank_paths": 4000,
+        "v1_keys_matching_empty_path_formula": 4000,
+        "v1_only": 2418,
+        "v1_rows": 4000,
+        "v1_stable_key_cutoff": "65be6309fddd49cb38835388c15ba066a51de0596beaecc830f08f90765995a6",
+        "v2_blank_paths": 0,
+        "v2_keys_matching_repaired_path_formula": 4000,
+        "v2_only": 2418,
+        "v2_rows": 4000,
+        "v2_rows_below_old_cutoff_using_legacy_key": 1582
+      }
+    },
+    "status": "DETERMINISTIC_PATH_REPAIR_RESELECTION_CONFIRMED",
+    "unexplained_selected_rows": 0
+  },
+  "verification": {
+    "runs": {
+      "a": "runs\\option-b\\selection-v2-a",
+      "b": "runs\\option-b\\selection-v2-b"
+    },
+    "scientific_result_observed": false,
+    "splits": {
+      "test": {
+        "primitive_key_order_exact": true,
+        "primitive_sha256": "20eff2f32e3a4572f23c8d6e3f481188a194d6d8ce0513553831b418d6b32a57",
+        "rows": 4000,
+        "run_a_run_b_byte_identical": true,
+        "selected_sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+        "stable_key_unique": true,
+        "v1_comparison": {
+          "identity_overlap": 1653,
+          "same_identity_order": false,
+          "v1_only": 2347,
+          "v1_rows": 4000,
+          "v2_only": 2347,
+          "v2_rows": 4000
+        }
+      },
+      "train": {
+        "primitive_key_order_exact": true,
+        "primitive_sha256": "f87629dcf8441aff5f9dace95535ee0e98316e57c1c0825d0baa7a8bdba7ad8a",
+        "rows": 20000,
+        "run_a_run_b_byte_identical": true,
+        "selected_sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+        "stable_key_unique": true,
+        "v1_comparison": {
+          "identity_overlap": 2239,
+          "same_identity_order": false,
+          "v1_only": 17761,
+          "v1_rows": 20000,
+          "v2_only": 17761,
+          "v2_rows": 20000
+        }
+      },
+      "validation": {
+        "primitive_key_order_exact": true,
+        "primitive_sha256": "a0172b434533c94a28b21885393562ea904ce7e48f430ded4654e40fec01fbeb",
+        "rows": 4000,
+        "run_a_run_b_byte_identical": true,
+        "selected_sha256": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d",
+        "stable_key_unique": true,
+        "v1_comparison": {
+          "identity_overlap": 1582,
+          "same_identity_order": false,
+          "v1_only": 2418,
+          "v1_rows": 4000,
+          "v2_only": 2418,
+          "v2_rows": 4000
+        }
+      }
+    },
+    "status": "CANONICAL_ROW_SELECTION_V2_VERIFIED"
+  }
+}

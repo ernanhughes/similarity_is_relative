@@ -50,9 +50,9 @@ The following remain prohibited:
 ```text
 Option B contract: FROZEN
 External identity v1: RECORDED BUT NOT SUFFICIENTLY ENFORCED
-Canonical row selection v1: REPRODUCED
-Primitive tables v1: INVALIDATED BY CONTRACT/IMPLEMENTATION MISMATCH
-Selected manifests: REQUIRE REVERIFICATION AFTER PRIMITIVE REPAIR
+Canonical row selection v2: REPRODUCED AND VERIFIED
+Primitive tables v2: PUBLISHED; v1 REMAINS INVALIDATED
+Selected manifests v2: REVERIFIED
 Canonical embeddings: NOT GENERATED
 Embedding determinism: NOT TESTED
 Primitive probes: NOT FIT
@@ -319,13 +319,18 @@ After the embedding checkpoint:
 
 # Next permitted action
 
-The next implementation PR after this audit is merged is:
+Completed stages:
+
+- PR 2 — primitive contract conformance;
+- PR 3 — canonical selection and primitive checkpoint v2.
+
+The next implementation PR is:
 
 ```text
-PR 2 — primitive contract conformance
+PR 4 — predicted executor contract completion
 ```
 
-It must not generate embeddings, fit probes, generate hard negatives, or compute scientific metrics.
+Canonical embedding extraction remains blocked.
 
 # Completion rule for this audit
 

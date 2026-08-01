@@ -9,6 +9,7 @@ import json
 import platform
 from importlib import metadata
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -57,16 +58,16 @@ def capture(output: Path, cache_dir: Path | None = None) -> dict[str, Any]:
     try:
         import torch
         from huggingface_hub import dataset_info, model_info, snapshot_download
-        from transformers import AutoModel, AutoTokenizer
+        from transformers import AutoTokenizer
     except ImportError as error:
-        raise RuntimeError('install the option-b dependencies first') from error
+        raise RuntimeError("install the option-b dependencies first") from error
 
     model = model_info(MODEL_ID)
     dataset = dataset_info(DATASET_ID)
     model_revision = model.sha
     dataset_revision = dataset.sha
     if not model_revision or not dataset_revision:
-        raise RuntimeError('Hub did not return immutable revisions')
+        raise RuntimeError("Hub did not return immutable revisions")
 
     snapshot = Path(
         snapshot_download(
@@ -77,25 +78,32 @@ def capture(output: Path, cache_dir: Path | None = None) -> dict[str, Any]:
         )
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        MODEL_ID, revision=model_revision, cache_dir=cache_dir
+        MODEL_ID,
+        revision=model_revision,
+        cache_dir=cache_dir,
     )
-    encoder = AutoModel.from_pretrained(
-        MODEL_ID, revision=model_revision, cache_dir=cache_dir
-    )
-    encoder.eval()
 
-    embeddings = embed_code(
-        list(FIXTURE_CODES), tokenizer, encoder, batch_size=5, max_tokens=256, device='cpu'
-    ).astype(np.float32)
+    fixture_records = [SimpleNamespace(code=code) for code in FIXTURE_CODES]
+    embeddings, embedding_metadata = embed_code(
+        fixture_records,
+        model_id=MODEL_ID,
+        revision=model_revision,
+        batch_size=5,
+        device="cpu",
+    )
+    embeddings = embeddings.astype(np.float32, copy=False)
+
     fixture_rows = []
     for index, (code, embedding) in enumerate(zip(FIXTURE_CODES, embeddings, strict=True)):
-        token_count = len(tokenizer(code, add_special_tokens=True, truncation=False)['input_ids'])
+        token_count = len(
+            tokenizer(code, add_special_tokens=True, truncation=False)["input_ids"]
+        )
         fixture_rows.append(
             {
-                'index': index,
-                'code_sha256': _sha256_bytes(code.encode()),
-                'token_count': token_count,
-                'embedding_sha256': _sha256_bytes(embedding.tobytes()),
+                "index": index,
+                "code_sha256": _sha256_bytes(code.encode()),
+                "token_count": token_count,
+                "embedding_sha256": _sha256_bytes(embedding.tobytes()),
             }
         )
 
@@ -106,48 +114,56 @@ def capture(output: Path, cache_dir: Path | None = None) -> dict[str, Any]:
     }
     pooling_source = inspect.getsource(embed_code).encode()
     result = {
-        'identity_id': 'option-b-external-identity-v1',
-        'status': 'IDENTITY_CAPTURE_COMPLETE',
-        'model': {'repo_id': MODEL_ID, 'revision': model_revision},
-        'dataset': {'repo_id': DATASET_ID, 'revision': dataset_revision, 'subset': 'python'},
-        'tokenizer_file_sha256': tokenizer_hashes,
-        'pooling_implementation_sha256': _sha256_bytes(pooling_source),
-        'fixture': {
-            'count': len(FIXTURE_CODES),
-            'embedding_shape': list(embeddings.shape),
-            'embedding_dtype': str(embeddings.dtype),
-            'matrix_sha256': _sha256_bytes(embeddings.tobytes()),
-            'rows': fixture_rows,
+        "identity_id": "option-b-external-identity-v1",
+        "status": "IDENTITY_CAPTURE_COMPLETE",
+        "model": {
+            "repo_id": MODEL_ID,
+            "revision": model_revision,
+            "embedding_metadata": embedding_metadata,
         },
-        'environment': {
-            'python': platform.python_version(),
-            'platform': platform.platform(),
-            'numpy': np.__version__,
-            'torch': torch.__version__,
-            'transformers': _version('transformers'),
-            'tokenizers': _version('tokenizers'),
-            'datasets': _version('datasets'),
-            'huggingface_hub': _version('huggingface-hub'),
+        "dataset": {
+            "repo_id": DATASET_ID,
+            "revision": dataset_revision,
+            "subset": "python",
+        },
+        "tokenizer_file_sha256": tokenizer_hashes,
+        "pooling_implementation_sha256": _sha256_bytes(pooling_source),
+        "fixture": {
+            "count": len(FIXTURE_CODES),
+            "embedding_shape": list(embeddings.shape),
+            "embedding_dtype": str(embeddings.dtype),
+            "matrix_sha256": _sha256_bytes(embeddings.tobytes()),
+            "rows": fixture_rows,
+        },
+        "environment": {
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "numpy": np.__version__,
+            "torch": torch.__version__,
+            "transformers": _version("transformers"),
+            "tokenizers": _version("tokenizers"),
+            "datasets": _version("datasets"),
+            "huggingface_hub": _version("huggingface-hub"),
         },
     }
-    payload = json.dumps(result, indent=2, sort_keys=True) + '\n'
+    payload = json.dumps(result, indent=2, sort_keys=True) + "\n"
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(payload, encoding='utf-8')
-    result['manifest_sha256'] = _sha256_bytes(payload.encode())
+    output.write_text(payload, encoding="utf-8")
+    result["manifest_sha256"] = _sha256_bytes(payload.encode())
     return result
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path('runs/option-b/identity/option-b-external-identity-v1.json'),
+        default=Path("runs/option-b/identity/option-b-external-identity-v1.json"),
     )
-    parser.add_argument('--cache-dir', type=Path)
+    parser.add_argument("--cache-dir", type=Path)
     args = parser.parse_args()
     print(json.dumps(capture(args.output, args.cache_dir), indent=2, sort_keys=True))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

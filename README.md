@@ -24,28 +24,28 @@ Verification language is explicit:
 
 The original E01 composition thesis has been closed.
 
-The prospective thesis is now:
+The only prospective RELATE thesis remains:
 
-> **RELATE is a support-aware relational query runtime over frozen representations. It learns evidence-bearing primitive relations, executes declared compound queries over those primitives, propagates uncertainty through the query, and refuses when the primitive evidence or registered query algebra is insufficient.**
+> **A support-aware relational query system may expose objectively useful relations in a real frozen representation and refuse compound queries when calibrated primitive evidence cannot support them.**
 
-No future query-runtime result inherits success from E01.
+This is proposed and untested. No future result inherits success from E01.
 
-## Research sequence
+## Current decision
 
-Frozen historical experiment identifiers remain unchanged. The prospective sequence is:
+The former broad synthetic E02–E07 roadmap has been cancelled.
+
+The bounded path is:
 
 ```text
-E00    synthetic primitive recoverability and failure controls
-E01    historical weighted-product-space positive controls — CLOSED
-E01-A  external review and independent recomputation — COMPLETE
-E02    factorisation sufficiency and query-algebra boundary
-E03    primitive-support calibration
-E04    compound uncertainty propagation and refusal
-E05    limited real frozen-representation pilot
-E06    real-domain query execution
-E07    real-domain certified refusal
-E08    transfer study
+PUBLISH  finalize the E01 audit narrative and methodological case study
+B        one real frozen-representation premise test — maximum 10 working days
+C        one propagated-refusal test — maximum 15 working days, only if B passes
+STOP     close RELATE if either required kill test fails
 ```
+
+Maximum remaining RELATE research budget: **25 working days**.
+
+Read the full decision: [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md).
 
 ## Current status
 
@@ -60,7 +60,9 @@ E08    transfer study
 - E01 attainable ceiling: **saturated at the true-latent oracle**
 - E01 permutation diagnostic: **weight-separation effect, not semantic verification**
 - E01 general or novel composition line: **closed**
-- Support-aware relational query runtime: **proposed, untested**
+- Broad synthetic factorisation roadmap: **cancelled**
+- Option B real-representation premise test: **next, contract not yet frozen**
+- Option C propagated refusal: **conditional on B**
 - Promoted real-domain or RELATE algorithmic findings: **none**
 
 ## E01 final closure
@@ -76,7 +78,7 @@ The independent audit reproduced the headline E01 measurements and changed their
 | `b2_c` | `0.0788` | fail |
 | `a_b2_c3` | `0.0374` | fail |
 
-E01.2a therefore replicated the measurement pattern under a different substage rule; it did not replicate E01.1's original pass/fail rule.
+E01.2a reproduced the measurement pattern under a different substage rule; it did not replicate E01.1's original pass/fail rule.
 
 ### Saturation result
 
@@ -98,15 +100,18 @@ Mean recall@10 ranged from roughly `0.16` to `0.35`, despite triplet accuracies 
 E01 weighted-product-space composition line: CLOSED
 Historical numerical artifacts: PRESERVED
 General composition claim: NOT SUPPORTED
-Revised query-runtime thesis: PROPOSED
+Evidence-first methodological case study: READY FOR PUBLICATION
+Next research action: OPTION B
+Option C: CONDITIONAL ON B
 ```
 
 Read:
 
+- [Finalized E01 closure blog](docs/blog/closing-the-e01-composition-line.md)
 - [Independent recomputation checkpoint](docs/results/e01-independent-recomputation-checkpoint-v1.md)
-- [Final closure blog](docs/blog/closing-the-e01-composition-line.md)
 - [External-review audit](docs/audits/e01-external-review-audit-2026-08-01.md)
 - [Research reset](docs/research/e01-research-reset-2026-08-01.md)
+- [Post-E01 decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
 
 ## Evidence identities
 

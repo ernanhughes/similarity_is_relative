@@ -31,6 +31,7 @@ test_fraction: 0.20
 noise_standard_deviation: 0.10
 operator_ranks: [1, 4, 16]
 retrieval_k: 10
+retrieval_ks: [10, 25, 50, 100]
 ```
 
 The generator produces six regimes:
@@ -73,19 +74,36 @@ Exact exhaustive search is mandatory. Approximate search is not permitted in E00
 
 ## Evaluation
 
-For scalar-linear regimes:
+E00 does not rely on exact top-10 overlap alone. Continuous scalar targets can have many nearly equivalent neighbours, so a method may preserve the correct geometry while changing the identity of a few near-tied items.
 
-- Spearman rank correlation with oracle distance;
-- recall@10 of oracle neighbours;
-- mean oracle distance among retrieved neighbours.
+For scalar-induced retrieval, every method reports:
 
-For relational or binary regimes:
+- Spearman correlation between oracle and predicted candidate distances;
+- exact oracle-neighbour recall at 10, 25, 50 and 100;
+- mean true target distance among retrieved neighbours;
+- mean distance of the oracle-optimal neighbours;
+- relative neighbour error, defined as retrieved mean distance divided by oracle mean distance;
+- NDCG at 10, 25, 50 and 100 using relevance derived monotonically from oracle distance;
+- deterministic conditional triplet accuracy;
+- median and 90th-percentile predicted rank of the true oracle top-10 neighbours.
 
-- conditional triplet accuracy;
-- recall@10;
-- area under the precision-recall curve where applicable.
+The legacy fields `recall_at_k`, `mean_oracle_distance`, and `spearman` remain in the result artifact for compatibility. `mean_oracle_distance` retains its original meaning: the mean true/oracle distance of the neighbours retrieved by the evaluated method.
 
-Every result must include paired bootstrap confidence intervals over test queries.
+Interpretation:
+
+- exact recall measures identity agreement with the oracle set;
+- relative neighbour error measures the cost of near misses and equals 1.0 for oracle-optimal retrieval;
+- NDCG awards graded credit to candidates that are nearly as relevant as the oracle neighbours;
+- true-neighbour rank reveals whether missed oracle neighbours remain near the top or are displaced deeply;
+- triplet accuracy measures whether the learned geometry answers the relational question "which candidate is closer?" correctly.
+
+For relational or binary regimes, the same distance-ranking diagnostics are retained, with area under the precision-recall curve added when the complete operator suite is implemented.
+
+Every confirmatory result must include paired bootstrap confidence intervals over test queries. The current baseline checkpoint records deterministic point estimates only and cannot promote a scientific claim.
+
+## Independent metric verification
+
+The verifier must not trust the runner's metric summary. It reloads the hashed arrays, reconstructs the frozen splits, retrains the declared ridge baseline, recomputes every metric, and compares the complete metric tree against the manifest. A hash-valid artifact with altered or stale metrics must fail verification.
 
 ## Rotation test
 

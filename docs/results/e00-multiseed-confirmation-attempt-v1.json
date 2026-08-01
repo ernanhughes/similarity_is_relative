@@ -1,0 +1,49 @@
+{
+  "checkpoint_id": "e00-multiseed-confirmation-attempt-v1",
+  "experiment_id": "e00-multiseed-confirmation",
+  "scope": "registered synthetic E00 only",
+  "verification": {
+    "status": "PASS",
+    "errors": [],
+    "verified_seeds": [23, 41, 59, 83, 101],
+    "verified_model_selections": 5,
+    "verified_decisions": 7
+  },
+  "gate": {
+    "passed": false,
+    "claim_promotion_allowed": false,
+    "matched_required_decisions": 6,
+    "required_decisions": 7
+  },
+  "decisions": {
+    "axis_linear.rank1_multiseed": "SUPPORTED",
+    "rotated_linear.rank1_multiseed": "SUPPORTED",
+    "absent.rank1_multiseed": "UNSUPPORTED_AT_THRESHOLD",
+    "xor.linear_multiseed": "UNSUPPORTED_AT_THRESHOLD",
+    "xor.nonlinear_multiseed": "INSUFFICIENT_EVIDENCE",
+    "diagonal.basis_dependence_multiseed": "SUPPORTED",
+    "correlated_nuisance.shift_multiseed": "UNSTABLE_UNDER_SHIFT"
+  },
+  "aggregate_metrics": {
+    "axis_rank1_mean_triplet_accuracy": 0.9385085802812426,
+    "axis_rank1_seed_ci95": [0.9349829188845635, 0.9420342416779217],
+    "rotated_rank1_mean_triplet_accuracy": 0.9389616270755541,
+    "rotated_rank1_seed_ci95": [0.9350883500834192, 0.9425407166123778],
+    "diagonal_rotation_retention_mean": 0.596787869554858,
+    "diagonal_rotation_retention_seed_ci95": [0.5879317481810493, 0.6057300285182556],
+    "rank1_rotation_retention_mean": 1.0005218542119685,
+    "rank1_rotation_retention_seed_ci95": [0.9930598888441509, 1.0088985287324241],
+    "absent_rank1_mean_triplet_accuracy": 0.500789703662509,
+    "linear_xor_mean_triplet_accuracy": 0.4999273499589293,
+    "nonlinear_xor_mean_average_precision": 0.7545688635025127,
+    "nonlinear_xor_seed_ci95": [0.6153670427923268, 0.8639673730521397],
+    "nonlinear_xor_minimum_seed_average_precision": 0.501144056348525,
+    "correlated_nuisance_mean_shift_gap": 0.3524929183966285,
+    "correlated_nuisance_seed_ci95": [0.34554630169017514, 0.3594119516322683]
+  },
+  "evidence_identities": {
+    "aggregate_result_sha256": "8dd526eaa45a28f56c99cb1045138685b89982109dbf61fb9788a6a65937e86d",
+    "decision_tree_sha256": "25b52842a4d5fbfefa1145c8f406328dc70744659852b7aa0535cf06788f4c90"
+  },
+  "interpretation": "Independent verification passed. The all-or-nothing scientific gate failed because nonlinear XOR recovery did not satisfy the preregistered multi-seed thresholds. Historical E00.4 thresholds and outcomes remain immutable."
+}

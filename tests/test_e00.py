@@ -79,9 +79,7 @@ def test_e00_is_deterministic_and_verifiable(tmp_path: Path) -> None:
 
     assert result_a["rotation_sha256"] == result_b["rotation_sha256"]
     assert result_a["split_hashes"] == result_b["split_hashes"]
-    assert {
-        key: value["x_sha256"] for key, value in result_a["regimes"].items()
-    } == {
+    assert {key: value["x_sha256"] for key, value in result_a["regimes"].items()} == {
         key: value["x_sha256"] for key, value in result_b["regimes"].items()
     }
     assert result_a["regimes"] == result_b["regimes"]

@@ -10,42 +10,7 @@ from typing import Any
 import numpy as np
 from sklearn.linear_model import Ridge
 
-from relate.experiments.e00 import (
-    Config,
-    REGIMES,
-    array_hash,
-    evaluate_scalar_retrieval,
-    orthogonal_matrix,
-    split_indices,
-)
-
-
-def _compare_metric_tree(
-    expected: Any,
-    observed: Any,
-    path: str,
-    errors: list[str],
-) -> None:
-    if isinstance(expected, dict):
-        if not isinstance(observed, dict):
-            errors.append(f"metric type mismatch: {path}")
-            return
-        if set(expected) != set(observed):
-            errors.append(f"metric keys mismatch: {path}")
-            return
-        for key in expected:
-            _compare_metric_tree(expected[key], observed[key], f"{path}.{key}", errors)
-        return
-
-    if isinstance(expected, (int, float)) and isinstance(observed, (int, float)):
-        if not np.isclose(float(expected), float(observed), rtol=1e-12, atol=1e-12, equal_nan=True):
-            errors.append(
-                f"metric mismatch: {path}: recorded={expected!r}, recomputed={observed!r}"
-            )
-        return
-
-    if expected != observed:
-        errors.append(f"metric mismatch: {path}: recorded={expected!r}, recomputed={observed!r}")
+from relate.experiments.e00 import REGIMES, Config, array_hash, orthogonal_matrix, split_indices
 
 
 def verify(run_directory: Path) -> dict[str, object]:

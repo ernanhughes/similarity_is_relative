@@ -66,7 +66,7 @@ def test_embedding_cache_reuses_vectors_across_output_directories(tmp_path: Path
             stable_keys=keys,
             cache=cache,
             model_revision="model",
-            pooling_sha256="pooling",
+            implementation_sha256="implementation",
         )
         assert len(calls) == 2
         assert first["sqlite_cache_hits"] == 0
@@ -83,7 +83,7 @@ def test_embedding_cache_reuses_vectors_across_output_directories(tmp_path: Path
             stable_keys=keys,
             cache=cache,
             model_revision="model",
-            pooling_sha256="pooling",
+            implementation_sha256="implementation",
         )
 
     assert calls == []

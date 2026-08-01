@@ -2,7 +2,7 @@
 
 ## Status
 
-- Verification: `PASS`
+- Deterministic replay verification: `PASS`
 - Scientific gate: `FAIL`
 - Verified seeds: `23, 41, 59, 83, 101`
 - Verified model selections: `5`
@@ -10,7 +10,19 @@
 - Required decisions matched: `6 of 7`
 - Claim promotion: `BLOCKED`
 
-This is a scientifically failed but independently reproduced confirmation gate. It is not an implementation or verifier failure.
+This is a scientifically failed but deterministically reproduced confirmation gate. The replay verifier regenerated the result through the experiment implementation and reproduced the complete result tree. It did not independently reimplement the substantive mathematics.
+
+## Post-checkpoint audit
+
+A later audit found that one secondary nonlinear diagnostic mixed metrics: nonlinear average precision was compared against linear triplet accuracy while the quantity was labelled as an average-precision difference.
+
+The reported nonlinear-minus-linear lower interval of approximately `0.1169` is invalid and must not be used.
+
+The historical nonlinear decision and scientific gate remain unchanged because other preregistered conditions failed independently. See:
+
+[`docs/audits/e00-evidence-audit-2026-08-01.md`](../audits/e00-evidence-audit-2026-08-01.md)
+
+No frozen JSON artifact, evidence hash, threshold, model selection, decision, or gate outcome has been modified.
 
 ## Aggregate decisions
 
@@ -66,9 +78,9 @@ Aggregate nonlinear XOR evidence:
 - mean average precision: `0.7546`;
 - seed-level 95% interval: `0.6154–0.8640`;
 - minimum seed result: `0.5011`;
-- nonlinear-minus-linear lower seed-level interval: `0.1169`, below the frozen `0.15` requirement.
+- only one of five seeds reached average precision of at least `0.85`.
 
-The correct aggregate decision is therefore `INSUFFICIENT_EVIDENCE`.
+These conditions independently fail the frozen nonlinear confirmation rule. The correct aggregate decision remains `INSUFFICIENT_EVIDENCE`.
 
 ## Frozen evidence identities
 
@@ -82,8 +94,10 @@ Decision tree:
 
 ## Publication boundary
 
-The experiment supports bounded synthetic conclusions about multi-seed rank-one recovery, rotation retention, basis dependence, absent controls and shortcut instability.
+The experiment supports bounded synthetic conclusions about multi-seed supervised-direction recovery, rotation retention, basis dependence, absent controls and shortcut instability.
+
+It does not establish an algorithmic advantage over ridge predicted-value retrieval, because the scalar ridge geometries are ranking-equivalent in this setting.
 
 It does not permit promotion of the complete E00 claim because the nonlinear control failed its preregistered confirmation threshold.
 
-The E00.4 contract, thresholds, results and decisions must not be edited retroactively.
+The E00.4 contract, thresholds, frozen JSON results and decisions must not be edited retroactively.

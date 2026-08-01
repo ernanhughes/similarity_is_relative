@@ -66,7 +66,7 @@ def test_contract_produces_oof_candidates_and_hash_addressed_outputs() -> None:
         "deterministic balanced out-of-fold"
     )
     assert artifacts.report["prediction_rounding"] == "forbidden"
-    assert artifacts.report["canonical_probe_fitting_performed"] is False
+    assert artifacts.report["probe_fit_scope"].startswith("train labels only")
     assert artifacts.train_candidates.values.dtype == np.float64
     assert artifacts.validation_rows.values.dtype == np.float64
     assert artifacts.test_queries.values.dtype == np.float64

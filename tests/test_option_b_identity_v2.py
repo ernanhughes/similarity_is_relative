@@ -10,7 +10,6 @@ import pytest
 from relate.experiments import option_b_identity_v2
 from relate.experiments.option_b_embedding import MAX_LENGTH
 
-
 torch = pytest.importorskip("torch")
 
 

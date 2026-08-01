@@ -16,7 +16,6 @@ from relate.experiments.option_b_embedding import (
 )
 from relate.experiments.option_b_real_code import array_hash
 
-
 torch = pytest.importorskip("torch")
 
 

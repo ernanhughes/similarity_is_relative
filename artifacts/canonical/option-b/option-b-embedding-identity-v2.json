@@ -1,0 +1,134 @@
+{
+  "dataset": {
+    "repo_id": "code-search-net/code_search_net",
+    "revision": "bd0cf261e357a3eb5c8fba490d23ec1a1cd59555",
+    "subset": "python"
+  },
+  "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+  "environment": {
+    "canonical_device": "cpu",
+    "datasets": "5.0.1",
+    "huggingface_hub": "1.26.0",
+    "numpy": "2.4.6",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.4",
+    "tokenizers": "0.22.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  },
+  "fixture": {
+    "batch_invariance": {
+      "1": {
+        "array_sha256": "ebe26a27a8502d2e74cd8b55aa67337235068b813095ed3e4e7b4de633b1949b",
+        "exactly_equal_to_canonical": true
+      },
+      "10": {
+        "array_sha256": "ebe26a27a8502d2e74cd8b55aa67337235068b813095ed3e4e7b4de633b1949b",
+        "exactly_equal_to_canonical": true
+      },
+      "5": {
+        "array_sha256": "ebe26a27a8502d2e74cd8b55aa67337235068b813095ed3e4e7b4de633b1949b",
+        "exactly_equal_to_canonical": true
+      }
+    },
+    "count": 10,
+    "embedding_dtype": "float32",
+    "embedding_shape": [
+      10,
+      768
+    ],
+    "matrix_array_sha256": "ebe26a27a8502d2e74cd8b55aa67337235068b813095ed3e4e7b4de633b1949b",
+    "preflight_batch_size": 5,
+    "rows": [
+      {
+        "code_sha256": "9910e2fc297f8665cc0c7a6a0dcf2522dbe3ad118bdab9b9cb20a4df678557ac",
+        "embedding_array_sha256": "ba8946d999fffb0c5b7508ed8d3db77f07fe4f10aa532f407a5bbd54922bc305",
+        "index": 0
+      },
+      {
+        "code_sha256": "f365eda0bd562019d5f7917856005ae51e064a4d0a4796b310a052638bb49e5b",
+        "embedding_array_sha256": "be4a90114c467bcd84e7f54bfca58599f96a31c163eef23cb443a445c5444c98",
+        "index": 1
+      },
+      {
+        "code_sha256": "f97b46466c9421e6a51b9fc19be91b8b3442f24d48360eca7d633be8c98bdaf9",
+        "embedding_array_sha256": "4c31724707e00ed69ac378c247fda1ed272231dd4698840701eb64c606f41402",
+        "index": 2
+      },
+      {
+        "code_sha256": "b33c8cd20517b91a3845e539437d5fd0b8446cc9affa8533ed2689c2ad1ac201",
+        "embedding_array_sha256": "209ccc0177a167fec4a75f9f82a7e9752b5626f083cbf4ccad1665155fcaad80",
+        "index": 3
+      },
+      {
+        "code_sha256": "ee5f9cfee59ffbfd091f2889a5912cf88caffc6306f4889a74124be156d35603",
+        "embedding_array_sha256": "946dc7d8dc7a720a80b7f562501eef06b8da2f0bd442c0b8b7abfd16a207d5f1",
+        "index": 4
+      },
+      {
+        "code_sha256": "1bd908c2237e5b894073b81e13d6c011db949f560511866da561e9a5f2ad0f6f",
+        "embedding_array_sha256": "6992fb6e64d917242cf80798ac2302b0485e9b1fe1ffd3aa1e06789829b7bdc7",
+        "index": 5
+      },
+      {
+        "code_sha256": "ccf608bdd49a7f4c30d56d7e0ce6233fc30554bdb0a9cc324a1f98d4ae976f19",
+        "embedding_array_sha256": "6c1410d3f84ce88ce1c92779669734750a93884cd0f9fcbba0480fc9ffa295f6",
+        "index": 6
+      },
+      {
+        "code_sha256": "49c930c5816bbe2d36a579827044712f714a55205df2d82602159fb090565e57",
+        "embedding_array_sha256": "00890e71e82d2d8ec606f445c0f3e259618ff7341a2365d8f3efd9d1934b40a6",
+        "index": 7
+      },
+      {
+        "code_sha256": "361607fe7aa2ece0b4109d13595048e140dbd070fd554f45ec323f9dc0646299",
+        "embedding_array_sha256": "2d9ef04db54fd39ae03e4108268d48355a4d3399e889fc7bb7b5de4f85aab374",
+        "index": 8
+      },
+      {
+        "code_sha256": "236f746ae4abd6607f7a2fad6316a03eafb95dd24b26300136382d17730930ae",
+        "embedding_array_sha256": "d3a6fdfbc1efcfa175743071ca58583ffc1f2ba2d73eb389bfae92ba4049826c",
+        "index": 9
+      }
+    ]
+  },
+  "fixture_preflight_required": true,
+  "identity_id": "option-b-embedding-identity-v2",
+  "model": {
+    "repo_id": "microsoft/codebert-base",
+    "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+  },
+  "next_allowed_action": "CHUNK_CACHE_RECOVERY_HARDENING",
+  "predecessor": {
+    "file_sha256": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d",
+    "identity_id": "option-b-external-identity-v1",
+    "path": "artifacts/canonical/option-b/option-b-external-identity-v1.json"
+  },
+  "prohibited_actions": [
+    "canonical embedding publication before PR 6",
+    "primitive probe fitting",
+    "hard-negative generation",
+    "scientific metric evaluation"
+  ],
+  "scientific_result_observed": false,
+  "status": "EMBEDDING_IDENTITY_V2_COMPLETE",
+  "tokenization_config": {
+    "add_special_tokens": true,
+    "max_length": 256,
+    "output_dtype": "float32",
+    "padding": "max_length",
+    "padding_side": "right",
+    "pooling_policy": "attention-mask mean pooling",
+    "return_tensors": "pt",
+    "truncation": true,
+    "truncation_side": "right"
+  },
+  "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff",
+  "tokenizer_file_sha256": {
+    "config.json": "742474d6148a061fa975dadc09ce93725fa9673c55421ed316ef75532cc6b7aa",
+    "merges.txt": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+    "special_tokens_map.json": "7638f5bbbe86ef6d604ef28ad3647dc690d6d117c81c0d63e885416be8da1150",
+    "tokenizer_config.json": "994f46754c5bf4014f1aa92d34b1374319c3a6b3f702105cd5b742beaecd18ce",
+    "vocab.json": "06b4d46c8e752d410213d9548eb27a54db70fda0319b6271fb8d59dead5e1cab"
+  }
+}

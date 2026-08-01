@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from relate.experiments.e00 import Config, REGIMES, array_hash, orthogonal_matrix, split_indices
+from relate.experiments.e00 import REGIMES, Config, array_hash, orthogonal_matrix, split_indices
 
 
 def verify(run_directory: Path) -> dict[str, object]:

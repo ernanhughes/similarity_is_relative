@@ -188,7 +188,9 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=4096)
     parser.add_argument("--dimensions", type=int, default=64)
     args = parser.parse_args()
-    result = run(Config(seed=args.seed, samples=args.samples, dimensions=args.dimensions), args.output)
+    result = run(
+        Config(seed=args.seed, samples=args.samples, dimensions=args.dimensions), args.output
+    )
     print(json.dumps(result, indent=2, sort_keys=True))
 
 

@@ -6,7 +6,7 @@ import argparse
 import hashlib
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -152,7 +152,7 @@ def finalize(
         "claim_promotion_allowed": bool(report["claim_promotion_allowed"]),
         "verified_regimes": report["verified_regimes"],
         "verified_metric_sets": report["verified_metric_sets"],
-        "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        "recorded_at_utc": datetime.now(UTC).isoformat(),
         "git_commit_before_publication": _git_value("rev-parse", "HEAD"),
         "git_branch": _git_value("branch", "--show-current"),
         "manifest_sha256": _sha256(manifest_path),

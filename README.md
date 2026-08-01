@@ -39,6 +39,20 @@ The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-sy
 - E00 contract: **initial scaffold in progress**
 - Empirical findings: **none**
 
+<!-- RELATE:E00:CHECKPOINT:START -->
+## E00 baseline checkpoint
+
+- Checkpoint: **`e00-baseline-checkpoint-v1`**
+- Local artifact verification: **PASS**
+- Verified regimes / metric sets: **6 / 6**
+- Scientific claim promotion: **blocked**
+- Manifest: **`8558e1847918b08eb0db9ce512c4bcfb4e94e4a1f7dc4a222cdd2b99cd2c6220`**
+- Public record: [`docs/results/e00-baseline-checkpoint-v1.md`](docs/results/e00-baseline-checkpoint-v1.md)
+
+The ridge checkpoint validates the experiment machinery only. E00 remains incomplete
+until the registered operator and null suite is verified.
+<!-- RELATE:E00:CHECKPOINT:END -->
+
 ## Development
 
 ```bash

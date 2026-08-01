@@ -18,8 +18,6 @@ The experiment creates synthetic frozen embeddings where the encoded relation is
 
 ## Data contract
 
-Default canonical configuration:
-
 ```yaml
 experiment_id: e00-synthetic-recoverability
 seed: 17
@@ -32,6 +30,8 @@ noise_standard_deviation: 0.10
 operator_ranks: [1, 4, 16]
 retrieval_k: 10
 retrieval_ks: [10, 25, 50, 100]
+scalar_tolerance_fraction: 0.05
+relative_error_minimum_denominator: 1.0e-8
 ```
 
 The generator produces six regimes:
@@ -45,19 +45,9 @@ The generator produces six regimes:
 | `absent` | labels independent of embeddings | all learned methods should remain at null |
 | `correlated_nuisance` | nuisance predicts target in train but is decoupled in test | shortcut-dependent methods should fail out of distribution |
 
-## Frozen splits
+## Frozen splits and artifacts
 
-The canonical generator must persist:
-
-- row IDs;
-- train, validation and test assignments;
-- relation values or triplet labels;
-- rotation matrix hash;
-- nuisance state;
-- generator configuration;
-- source-array hashes.
-
-A verifier must reject any run where split membership, labels, rotation or source arrays do not match the manifest.
+The canonical generator persists train, validation and test assignments, relation values, rotation identity, generator configuration and source-array hashes. A verifier rejects any run where the arrays, splits, rotation or recomputed metrics differ from the manifest.
 
 ## Baselines and operator families
 
@@ -72,38 +62,44 @@ A verifier must reject any run where split membership, labels, rotation or sourc
 
 Exact exhaustive search is mandatory. Approximate search is not permitted in E00.
 
-## Evaluation
+## Target-specific evaluation
 
-E00 does not rely on exact top-10 overlap alone. Continuous scalar targets can have many nearly equivalent neighbours, so a method may preserve the correct geometry while changing the identity of a few near-tied items.
+E00 does not judge every target using one metric family.
 
-For scalar-induced retrieval, every method reports:
+### Continuous scalar regimes
 
-- Spearman correlation between oracle and predicted candidate distances;
+The axis-aligned, rotated, weak, absent and nuisance-shift regimes report:
+
+- Spearman correlation between oracle and predicted distances;
 - exact oracle-neighbour recall at 10, 25, 50 and 100;
-- mean true target distance among retrieved neighbours;
-- mean distance of the oracle-optimal neighbours;
-- relative neighbour error, defined as retrieved mean distance divided by oracle mean distance;
-- NDCG at 10, 25, 50 and 100 using relevance derived monotonically from oracle distance;
+- retrieved and oracle-optimal mean target distance;
+- **additive neighbour regret**, defined as retrieved mean distance minus oracle mean distance;
+- relative neighbour error only when the oracle denominator exceeds the frozen minimum;
+- NDCG at 10, 25, 50 and 100;
 - deterministic conditional triplet accuracy;
-- median and 90th-percentile predicted rank of the true oracle top-10 neighbours.
+- median and 90th-percentile predicted rank of the true oracle top-10 neighbours;
+- the fraction of retrieved candidates inside a fixed target tolerance equal to 5% of the candidate target standard deviation.
 
-The legacy fields `recall_at_k`, `mean_oracle_distance`, and `spearman` remain in the result artifact for compatibility. `mean_oracle_distance` retains its original meaning: the mean true/oracle distance of the neighbours retrieved by the evaluated method.
+When the oracle mean distance is zero or too small, relative neighbour error is recorded as `null`. Additive neighbour regret remains finite and is the primary oracle-relative distance measure.
 
-Interpretation:
+### Binary relational regime
 
-- exact recall measures identity agreement with the oracle set;
-- relative neighbour error measures the cost of near misses and equals 1.0 for oracle-optimal retrieval;
-- NDCG awards graded credit to candidates that are nearly as relevant as the oracle neighbours;
-- true-neighbour rank reveals whether missed oracle neighbours remain near the top or are displaced deeply;
-- triplet accuracy measures whether the learned geometry answers the relational question "which candidate is closer?" correctly.
+The XOR regime does not report scalar NDCG, scalar tolerance coverage or relative neighbour error. Because many candidates are exactly tied as valid matches, those values can look strong or explode numerically while the linear model is actually at chance.
 
-For relational or binary regimes, the same distance-ranking diagnostics are retained, with area under the precision-recall curve added when the complete operator suite is implemented.
+Instead XOR reports:
 
-Every confirmatory result must include paired bootstrap confidence intervals over test queries. The current baseline checkpoint records deterministic point estimates only and cannot promote a scientific claim.
+- class precision at 10, 25, 50 and 100;
+- class recall at the same cutoffs;
+- average precision across the complete candidate ranking;
+- exact oracle-set recall, triplet accuracy and true-neighbour rank as secondary diagnostics.
+
+Metrics from different target types are not treated as directly comparable.
+
+The legacy fields `recall_at_k`, `mean_oracle_distance` and `spearman` remain for compatibility. Every later confirmatory result must add paired bootstrap confidence intervals over test queries. The current baseline checkpoint records deterministic point estimates only and cannot promote a RELATE scientific claim.
 
 ## Independent metric verification
 
-The verifier must not trust the runner's metric summary. It reloads the hashed arrays, reconstructs the frozen splits, retrains the declared ridge baseline, recomputes every metric, and compares the complete metric tree against the manifest. A hash-valid artifact with altered or stale metrics must fail verification.
+The verifier does not trust the runner's summary. It reloads the hashed arrays, reconstructs the frozen splits, retrains the declared ridge baseline, recomputes the target-specific metric tree and fails if any recorded value differs.
 
 ## Rotation test
 
@@ -123,47 +119,12 @@ The initial certification output has three states:
 - `unsupported_at_threshold`;
 - `insufficient_evidence`.
 
-A relation may be `supported` only when:
-
-1. the held-out lower confidence bound exceeds the frozen performance threshold;
-2. performance exceeds the 95th percentile of the permutation null;
-3. at least four of five seeds pass independently in the later confirmatory run;
-4. no mandatory falsification check fails.
-
-The scaffold may implement one seed initially, but it must not mark a claim Verified until the confirmatory seed contract is completed.
+A relation may be `supported` only when the held-out lower confidence bound exceeds the frozen threshold, performance exceeds the permutation null, at least four of five confirmatory seeds pass, and no mandatory falsification check fails.
 
 ## Initial kill conditions
 
-The original raw-coordinate interpretation is rejected if diagonal performance is materially basis-dependent.
-
-The linear-operator hypothesis is bounded or rejected for a regime if the nonlinear probe materially outperforms every linear operator.
-
-Certification is rejected if the absent-signal regime is classified as supported.
-
-The broader research programme is not killed by these expected boundaries; they determine which representations and operator families are scientifically defensible.
-
-## Artifacts
-
-Local payloads:
-
-```text
-runs/e00/<run-id>/arrays/
-runs/e00/<run-id>/models/
-runs/e00/<run-id>/bootstrap/
-```
-
-Committed compact evidence:
-
-```text
-docs/results/e00-synthetic-recoverability.json
-docs/results/e00-synthetic-recoverability.md
-artifacts/canonical/e00/manifest.json
-```
+The raw-coordinate interpretation is rejected if diagonal performance is materially basis-dependent. The linear-operator hypothesis is bounded for a regime if the nonlinear probe materially outperforms every linear operator. Certification is rejected if the absent-signal regime is classified as supported.
 
 ## Publication boundary
 
-Before a canonical verified run, the blog may say only:
-
-> We designed a deterministic synthetic experiment to test recoverability, basis dependence and honest failure.
-
-It may not say that RELATE recovers, composes or certifies embedding relations.
+The verified ridge checkpoint may be described as a successful execution and baseline audit. It may not be described as evidence that RELATE recovers, composes or certifies embedding relations until the registered operator suite, nulls and confidence intervals are complete.

@@ -10,7 +10,50 @@ from typing import Any
 import numpy as np
 from sklearn.linear_model import Ridge
 
-from relate.experiments.e00 import REGIMES, Config, array_hash, orthogonal_matrix, split_indices
+from relate.experiments.e00 import (
+    BINARY_REGIMES,
+    REGIMES,
+    Config,
+    array_hash,
+    evaluate_scalar_retrieval,
+    orthogonal_matrix,
+    split_indices,
+)
+
+
+def _compare_metric_tree(
+    recorded: Any,
+    recomputed: Any,
+    path: str,
+    errors: list[str],
+) -> None:
+    """Recursively compare a recorded metric tree with recomputed values."""
+    if isinstance(recorded, dict) and isinstance(recomputed, dict):
+        recorded_keys = set(recorded)
+        recomputed_keys = set(recomputed)
+        for missing in sorted(recorded_keys - recomputed_keys):
+            errors.append(f"missing recomputed metric: {path}.{missing}")
+        for unexpected in sorted(recomputed_keys - recorded_keys):
+            errors.append(f"unexpected recomputed metric: {path}.{unexpected}")
+        for key in sorted(recorded_keys & recomputed_keys):
+            _compare_metric_tree(
+                recorded[key], recomputed[key], f"{path}.{key}", errors
+            )
+        return
+
+    if isinstance(recorded, (int, float)) and isinstance(recomputed, (int, float)):
+        if not np.isclose(float(recorded), float(recomputed), rtol=1e-12, atol=1e-12):
+            errors.append(
+                f"metric mismatch: {path}: recorded={recorded!r}, "
+                f"recomputed={recomputed!r}"
+            )
+        return
+
+    if recorded != recomputed:
+        errors.append(
+            f"metric mismatch: {path}: recorded={recorded!r}, "
+            f"recomputed={recomputed!r}"
+        )
 
 
 def verify(run_directory: Path) -> dict[str, object]:
@@ -62,6 +105,9 @@ def verify(run_directory: Path) -> dict[str, object]:
             predicted_queries=predictions[test],
             k=config.retrieval_k,
             ks=tuple(config.retrieval_ks),
+            target_kind="binary" if regime in BINARY_REGIMES else "continuous",
+            tolerance_fraction=config.scalar_tolerance_fraction,
+            relative_error_minimum_denominator=config.relative_error_minimum_denominator,
         )
         _compare_metric_tree(
             recorded["ridge_predicted_distance"],
@@ -79,7 +125,7 @@ def verify(run_directory: Path) -> dict[str, object]:
         "verified_metric_sets": verified_metrics,
         "claim_promotion_allowed": False,
         "note": (
-            "E00 verifies deterministic generation, artifact identity, and enhanced "
+            "E00 verifies deterministic generation, artifact identity, and target-specific "
             "ridge retrieval metrics only. The registered operator suite remains incomplete."
         ),
     }

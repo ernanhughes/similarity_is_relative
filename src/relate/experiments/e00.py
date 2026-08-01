@@ -1,9 +1,4 @@
-"""E00 deterministic synthetic recoverability experiment.
-
-The initial scaffold deliberately implements only data generation, exact-search
-baselines, ridge predicted-distance retrieval, and hash-addressed manifests.
-Learned diagonal and low-rank metric operators are the next registered step.
-"""
+"""E00 deterministic synthetic recoverability experiment."""
 
 from __future__ import annotations
 
@@ -17,6 +12,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import spearmanr
 from sklearn.linear_model import Ridge
+from sklearn.metrics import average_precision_score
 
 REGIMES = (
     "axis_linear",
@@ -26,6 +22,7 @@ REGIMES = (
     "absent",
     "correlated_nuisance",
 )
+BINARY_REGIMES = frozenset({"nonlinear_xor"})
 
 
 @dataclass(frozen=True)
@@ -38,6 +35,8 @@ class Config:
     noise_standard_deviation: float = 0.10
     retrieval_k: int = 10
     retrieval_ks: tuple[int, ...] = (10, 25, 50, 100)
+    scalar_tolerance_fraction: float = 0.05
+    relative_error_minimum_denominator: float = 1e-8
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -103,16 +102,11 @@ def generate_regime(
     return x.astype(np.float64), y.astype(np.float64)
 
 
-def nearest_by_distance(distance: np.ndarray, k: int) -> np.ndarray:
-    return np.argpartition(distance, kth=k - 1)[:k]
-
-
 def _mean_or_nan(values: list[float]) -> float:
     return float(np.mean(values)) if values else float("nan")
 
 
 def _ndcg_at_k(oracle_distance: np.ndarray, retrieved: np.ndarray, k: int) -> float:
-    """Return NDCG using smoothly decaying relevance derived from oracle distance."""
     positive = oracle_distance[oracle_distance > 0]
     scale = float(np.median(positive)) if positive.size else 1.0
     relevance = np.exp(-oracle_distance / max(scale, np.finfo(float).eps))
@@ -126,12 +120,6 @@ def _ndcg_at_k(oracle_distance: np.ndarray, retrieved: np.ndarray, k: int) -> fl
 def _deterministic_triplet_accuracy(
     oracle_distance: np.ndarray, predicted_distance: np.ndarray
 ) -> float:
-    """Compare a deterministic set of candidate pairs for one query.
-
-    Each candidate is paired with the candidate half a pool away. Oracle ties are
-    excluded. A predicted tie receives half credit. This avoids introducing an
-    additional random seed into the evidence artifact.
-    """
     count = len(oracle_distance)
     if count < 2:
         return float("nan")
@@ -155,12 +143,15 @@ def evaluate_scalar_retrieval(
     predicted_queries: np.ndarray,
     k: int,
     ks: tuple[int, ...] = (10, 25, 50, 100),
+    *,
+    target_kind: str = "continuous",
+    tolerance_fraction: float = 0.05,
+    relative_error_minimum_denominator: float = 1e-8,
 ) -> dict[str, Any]:
-    """Evaluate scalar-induced retrieval without over-relying on exact top-k overlap.
+    """Evaluate retrieval using metrics appropriate to the target type."""
+    if target_kind not in {"continuous", "binary"}:
+        raise ValueError(f"Unsupported target kind: {target_kind}")
 
-    The legacy primary-k fields remain for compatibility. Added metrics distinguish
-    globally correct orderings and close near misses from exact-neighbour identity.
-    """
     candidate_count = len(candidate_values)
     effective_ks = tuple(sorted({value for value in (*ks, k) if 0 < value <= candidate_count}))
     if not effective_ks:
@@ -170,12 +161,17 @@ def evaluate_scalar_retrieval(
     recall: dict[int, list[float]] = {value: [] for value in effective_ks}
     retrieved_error: dict[int, list[float]] = {value: [] for value in effective_ks}
     oracle_error: dict[int, list[float]] = {value: [] for value in effective_ks}
+    neighbour_regret: dict[int, list[float]] = {value: [] for value in effective_ks}
     relative_error: dict[int, list[float]] = {value: [] for value in effective_ks}
     ndcg: dict[int, list[float]] = {value: [] for value in effective_ks}
+    within_tolerance: dict[int, list[float]] = {value: [] for value in effective_ks}
+    class_precision: dict[int, list[float]] = {value: [] for value in effective_ks}
+    class_recall: dict[int, list[float]] = {value: [] for value in effective_ks}
+    average_precision: list[float] = []
     correlations: list[float] = []
     triplet_accuracies: list[float] = []
     oracle_neighbour_ranks: list[float] = []
-    epsilon = np.finfo(float).eps
+    tolerance = float(np.std(candidate_values) * tolerance_fraction)
 
     for true_q, predicted_q in zip(query_values, predicted_queries, strict=True):
         oracle_distance = np.abs(candidate_values - true_q)
@@ -185,14 +181,19 @@ def evaluate_scalar_retrieval(
         predicted_ranks = np.empty(candidate_count, dtype=np.int64)
         predicted_ranks[predicted_order] = np.arange(1, candidate_count + 1)
 
-        correlation = spearmanr(oracle_distance, predicted_distance).statistic
-        correlations.append(float(correlation))
+        correlations.append(float(spearmanr(oracle_distance, predicted_distance).statistic))
         triplet_accuracies.append(
             _deterministic_triplet_accuracy(oracle_distance, predicted_distance)
         )
         oracle_neighbour_ranks.extend(
             predicted_ranks[oracle_order[:primary_k]].astype(float).tolist()
         )
+
+        binary_relevance = candidate_values == true_q
+        if target_kind == "binary":
+            average_precision.append(
+                float(average_precision_score(binary_relevance.astype(int), -predicted_distance))
+            )
 
         for current_k in effective_ks:
             oracle = oracle_order[:current_k]
@@ -204,35 +205,45 @@ def evaluate_scalar_retrieval(
             current_oracle_error = float(np.mean(oracle_distance[oracle]))
             retrieved_error[current_k].append(current_retrieved_error)
             oracle_error[current_k].append(current_oracle_error)
-            relative_error[current_k].append(
-                current_retrieved_error / max(current_oracle_error, epsilon)
-            )
-            ndcg[current_k].append(_ndcg_at_k(oracle_distance, retrieved, current_k))
+            neighbour_regret[current_k].append(current_retrieved_error - current_oracle_error)
 
-    recall_summary = {str(value): _mean_or_nan(recall[value]) for value in effective_ks}
-    retrieved_error_summary = {
-        str(value): _mean_or_nan(retrieved_error[value]) for value in effective_ks
-    }
-    oracle_error_summary = {
-        str(value): _mean_or_nan(oracle_error[value]) for value in effective_ks
-    }
-    relative_error_summary = {
-        str(value): _mean_or_nan(relative_error[value]) for value in effective_ks
-    }
-    ndcg_summary = {str(value): _mean_or_nan(ndcg[value]) for value in effective_ks}
+            if target_kind == "continuous":
+                if current_oracle_error >= relative_error_minimum_denominator:
+                    relative_error[current_k].append(
+                        current_retrieved_error / current_oracle_error
+                    )
+                ndcg[current_k].append(_ndcg_at_k(oracle_distance, retrieved, current_k))
+                within_tolerance[current_k].append(
+                    float(np.mean(oracle_distance[retrieved] <= tolerance))
+                )
+            else:
+                matches = int(np.sum(binary_relevance[retrieved]))
+                total_matches = int(np.sum(binary_relevance))
+                class_precision[current_k].append(matches / current_k)
+                class_recall[current_k].append(
+                    matches / total_matches if total_matches else float("nan")
+                )
 
-    return {
-        # Backward-compatible primary fields.
+    def summarize(values: dict[int, list[float]]) -> dict[str, float | None]:
+        return {
+            str(value): (_mean_or_nan(values[value]) if values[value] else None)
+            for value in effective_ks
+        }
+
+    recall_summary = summarize(recall)
+    retrieved_error_summary = summarize(retrieved_error)
+    oracle_error_summary = summarize(oracle_error)
+
+    result: dict[str, Any] = {
+        "target_kind": target_kind,
         "recall_at_k": recall_summary[str(primary_k)],
         "mean_oracle_distance": retrieved_error_summary[str(primary_k)],
         "spearman": float(np.nanmean(correlations)),
-        # Enhanced retrieval diagnostics.
         "primary_k": primary_k,
         "recall_at": recall_summary,
         "retrieved_mean_oracle_distance_at": retrieved_error_summary,
         "oracle_mean_distance_at": oracle_error_summary,
-        "relative_neighbor_error_at": relative_error_summary,
-        "ndcg_at": ndcg_summary,
+        "neighbor_regret_at": summarize(neighbour_regret),
         "triplet_accuracy": float(np.nanmean(triplet_accuracies)),
         "oracle_neighbor_predicted_rank_median": float(
             np.nanmedian(oracle_neighbour_ranks)
@@ -241,6 +252,26 @@ def evaluate_scalar_retrieval(
             np.nanpercentile(oracle_neighbour_ranks, 90)
         ),
     }
+
+    if target_kind == "continuous":
+        result.update(
+            {
+                "target_tolerance": tolerance,
+                "within_tolerance_at": summarize(within_tolerance),
+                "relative_neighbor_error_at": summarize(relative_error),
+                "ndcg_at": summarize(ndcg),
+            }
+        )
+    else:
+        result.update(
+            {
+                "class_precision_at": summarize(class_precision),
+                "class_recall_at": summarize(class_recall),
+                "average_precision": float(np.nanmean(average_precision)),
+            }
+        )
+
+    return result
 
 
 def run(config: Config, output: Path) -> dict[str, Any]:
@@ -276,6 +307,9 @@ def run(config: Config, output: Path) -> dict[str, Any]:
             predicted_queries=predictions[test],
             k=config.retrieval_k,
             ks=config.retrieval_ks,
+            target_kind="binary" if regime in BINARY_REGIMES else "continuous",
+            tolerance_fraction=config.scalar_tolerance_fraction,
+            relative_error_minimum_denominator=config.relative_error_minimum_denominator,
         )
         result["regimes"][regime] = {
             "x_sha256": array_hash(x),

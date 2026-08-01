@@ -23,6 +23,8 @@ dev = [
 relate-e00 = "relate.experiments.e00:main"
 relate-verify-e00 = "relate.verification.e00:main"
 relate-finalize-e00 = "relate.publication.e00:main"
+relate-e00-operators = "relate.experiments.e00_operator_matrix:main"
+relate-verify-e00-operators = "relate.verification.e00_operator_matrix:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

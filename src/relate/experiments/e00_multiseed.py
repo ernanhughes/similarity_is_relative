@@ -12,24 +12,25 @@ import json
 import warnings
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
-from relate.experiments.e00 import BINARY_REGIMES, REGIMES, Config, run as run_e00
+from relate.experiments.e00 import REGIMES, Config
+from relate.experiments.e00 import run as run_e00
 from relate.experiments.e00_certification import (
+    CertificationConfig,
     _average_precision_scores,
     _bootstrap_interval,
     _diagonal_distances,
     _permutation_null,
     _ridge_distances,
     _triplet_scores,
-    CertificationConfig,
 )
 from relate.experiments.e00_operator_matrix import frozen_splits, sha256_file
 
@@ -69,7 +70,9 @@ def _seed_interval(values: list[float], rng: np.random.Generator, samples: int) 
     }
 
 
-def _probability_distances(probabilities: np.ndarray, train: np.ndarray, query: np.ndarray) -> np.ndarray:
+def _probability_distances(
+    probabilities: np.ndarray, train: np.ndarray, query: np.ndarray
+) -> np.ndarray:
     return np.abs(probabilities[query, None] - probabilities[train][None, :])
 
 
@@ -85,9 +88,7 @@ def _candidate_models(seed: int) -> list[tuple[str, Pipeline]]:
                         ("scale", StandardScaler()),
                         (
                             "poly",
-                            PolynomialFeatures(
-                                degree=2, interaction_only=True, include_bias=False
-                            ),
+                            PolynomialFeatures(degree=2, interaction_only=True, include_bias=False),
                         ),
                         (
                             "model",
@@ -178,7 +179,9 @@ def _validation_select(
     }
 
 
-def _load_arrays(seed_directory: Path) -> tuple[dict[str, Any], dict[str, tuple[np.ndarray, np.ndarray]]]:
+def _load_arrays(
+    seed_directory: Path,
+) -> tuple[dict[str, Any], dict[str, tuple[np.ndarray, np.ndarray]]]:
     manifest = json.loads((seed_directory / "manifest.json").read_text(encoding="utf-8"))
     arrays: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for regime in REGIMES:
@@ -219,9 +222,7 @@ def _seed_run(seed: int, root: Path, config: MultiSeedConfig) -> dict[str, Any]:
                 "triplet_accuracy": _bootstrap_interval(
                     scores, rng, config.query_bootstrap_samples, config.confidence_level
                 ),
-                "permutation_null": _permutation_null(
-                    x, y, train, test, rng, cert_config, builder
-                ),
+                "permutation_null": _permutation_null(x, y, train, test, rng, cert_config, builder),
             }
         evidence[regime] = {"methods": methods}
 
@@ -235,7 +236,9 @@ def _seed_run(seed: int, root: Path, config: MultiSeedConfig) -> dict[str, Any]:
 
     x_nuisance, y_nuisance = arrays["correlated_nuisance"]
     validation_distances = _ridge_distances(x_nuisance, y_nuisance, train, validation)
-    validation_scores = _triplet_scores(validation_distances, y_nuisance[train], y_nuisance[validation])
+    validation_scores = _triplet_scores(
+        validation_distances, y_nuisance[train], y_nuisance[validation]
+    )
     test_scores = caches[("correlated_nuisance", "rank1")]
     shift_gap = float(np.nanmean(validation_scores) - np.nanmean(test_scores))
 
@@ -274,8 +277,7 @@ def _aggregate(seed_results: list[dict[str, Any]], config: MultiSeedConfig) -> d
 
     def metric(regime: str, method: str, key: str = "triplet_accuracy") -> list[float]:
         return [
-            item["evidence"][regime]["methods"][method][key]["estimate"]
-            for item in seed_results
+            item["evidence"][regime]["methods"][method][key]["estimate"] for item in seed_results
         ]
 
     axis = metric("axis_linear", "rank1")
@@ -315,15 +317,19 @@ def _aggregate(seed_results: list[dict[str, Any]], config: MultiSeedConfig) -> d
             for item in seed_results
         ]
 
-    linear_support = lambda values, interval, regime: (
-        sum(value >= 0.85 for value in values) >= 4
-        and sum(null_exceeds[regime]) >= 4
-        and interval["lower"] >= 0.80
-        and min(values) >= 0.75
-    )
+    def linear_support(values, interval, regime):
+        return (
+            sum(value >= 0.85 for value in values) >= 4
+            and sum(null_exceeds[regime]) >= 4
+            and interval["lower"] >= 0.80
+            and min(values) >= 0.75
+        )
+
     decisions: dict[str, Any] = {}
     decisions["axis_linear.rank1_multiseed"] = _decision(
-        "SUPPORTED" if linear_support(axis, intervals["axis_rank1"], "axis_linear") else "INSUFFICIENT_EVIDENCE",
+        "SUPPORTED"
+        if linear_support(axis, intervals["axis_rank1"], "axis_linear")
+        else "INSUFFICIENT_EVIDENCE",
         intervals["axis_rank1"],
     )
     decisions["rotated_linear.rank1_multiseed"] = _decision(
@@ -371,7 +377,9 @@ def _aggregate(seed_results: list[dict[str, Any]], config: MultiSeedConfig) -> d
             "rank1_retention": intervals["rank1_retention"],
         },
     )
-    shift_ok = sum(value >= 0.15 for value in shifts) >= 4 and intervals["shift_gap"]["lower"] >= 0.10
+    shift_ok = (
+        sum(value >= 0.15 for value in shifts) >= 4 and intervals["shift_gap"]["lower"] >= 0.10
+    )
     decisions["correlated_nuisance.shift_multiseed"] = _decision(
         "UNSTABLE_UNDER_SHIFT" if shift_ok else "INSUFFICIENT_EVIDENCE",
         intervals["shift_gap"],

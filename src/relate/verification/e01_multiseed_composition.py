@@ -53,7 +53,9 @@ def verify(result_path: Path, output_path: Path) -> dict[str, Any]:
         "verified_compounds": len(recorded.get("aggregate", {})),
         "verified_decisions": len(recorded.get("decisions", {})),
         "gate_passed": bool(recorded.get("gate", {}).get("passed", False)),
-        "claim_promotion_allowed": bool(recorded.get("gate", {}).get("claim_promotion_allowed", False)),
+        "claim_promotion_allowed": bool(
+            recorded.get("gate", {}).get("claim_promotion_allowed", False)
+        ),
         "result_sha256": recorded.get("result_sha256"),
         "decision_tree_sha256": recorded.get("decision_tree_sha256"),
     }
@@ -66,8 +68,14 @@ def verify(result_path: Path, output_path: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result", type=Path, default=Path("runs/e01/multiseed-composition/multiseed-composition-result-with-hash.json"))
-    parser.add_argument("--output", type=Path, default=Path("runs/e01/multiseed-composition/verification.json"))
+    parser.add_argument(
+        "--result",
+        type=Path,
+        default=Path("runs/e01/multiseed-composition/multiseed-composition-result-with-hash.json"),
+    )
+    parser.add_argument(
+        "--output", type=Path, default=Path("runs/e01/multiseed-composition/verification.json")
+    )
     args = parser.parse_args()
     print(json.dumps(verify(args.result, args.output), indent=2, sort_keys=True))
 

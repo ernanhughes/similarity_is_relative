@@ -63,8 +63,13 @@ def _manifest(seed: int, queries: np.ndarray, candidates: np.ndarray, count: int
     return np.asarray(rows, dtype=np.int64)
 
 
-def _triplet_accuracy(distances: np.ndarray, oracle: np.ndarray, manifest: np.ndarray,
-                      queries: np.ndarray, candidates: np.ndarray) -> float:
+def _triplet_accuracy(
+    distances: np.ndarray,
+    oracle: np.ndarray,
+    manifest: np.ndarray,
+    queries: np.ndarray,
+    candidates: np.ndarray,
+) -> float:
     query_lookup = {int(value): index for index, value in enumerate(queries)}
     candidate_lookup = {int(value): index for index, value in enumerate(candidates)}
     scores: list[float] = []
@@ -76,22 +81,35 @@ def _triplet_accuracy(distances: np.ndarray, oracle: np.ndarray, manifest: np.nd
         if oracle_delta == 0:
             continue
         observed_delta = distances[q, a] - distances[q, b]
-        scores.append(0.5 if observed_delta == 0 else float(np.sign(observed_delta) == np.sign(oracle_delta)))
+        scores.append(
+            0.5 if observed_delta == 0 else float(np.sign(observed_delta) == np.sign(oracle_delta))
+        )
     return float(np.mean(scores))
 
 
-def _evaluate(distances: np.ndarray, oracle: np.ndarray, manifest: np.ndarray,
-              queries: np.ndarray, candidates: np.ndarray) -> dict[str, float]:
+def _evaluate(
+    distances: np.ndarray,
+    oracle: np.ndarray,
+    manifest: np.ndarray,
+    queries: np.ndarray,
+    candidates: np.ndarray,
+) -> dict[str, float]:
     return {
         "triplet_accuracy": _triplet_accuracy(distances, oracle, manifest, queries, candidates),
-        "spearman": float(np.nanmean([
-            spearmanr(left, right).statistic for left, right in zip(distances, oracle, strict=True)
-        ])),
+        "spearman": float(
+            np.nanmean(
+                [
+                    spearmanr(left, right).statistic
+                    for left, right in zip(distances, oracle, strict=True)
+                ]
+            )
+        ),
     }
 
 
-def _scalar_distance(values: np.ndarray, candidates: np.ndarray, queries: np.ndarray,
-                     projection: np.ndarray) -> np.ndarray:
+def _scalar_distance(
+    values: np.ndarray, candidates: np.ndarray, queries: np.ndarray, projection: np.ndarray
+) -> np.ndarray:
     scalar = values @ projection
     return np.abs(scalar[queries, None] - scalar[candidates][None, :])
 
@@ -158,9 +176,14 @@ def run(output: Path, config: MultiSeedCompositionConfig | None = None) -> dict[
             primitive_metrics[name] = {
                 split_name: {
                     "r2": float(r2_score(targets[indices, index], predictions[indices, index])),
-                    "mae": float(mean_absolute_error(targets[indices, index], predictions[indices, index])),
+                    "mae": float(
+                        mean_absolute_error(targets[indices, index], predictions[indices, index])
+                    ),
                 }
-                for split_name, indices in (("validation", splits["validation"]), ("test", splits["test"]))
+                for split_name, indices in (
+                    ("validation", splits["validation"]),
+                    ("test", splits["test"]),
+                )
             }
 
         seed_result: dict[str, Any] = {
@@ -175,33 +198,53 @@ def run(output: Path, config: MultiSeedCompositionConfig | None = None) -> dict[
             compound_result: dict[str, Any] = {"weights": list(raw_weights), "splits": {}}
             for split_offset, split_name in enumerate(("validation", "test")):
                 queries = splits[split_name]
-                manifest = _manifest(seed * 1000 + compound_index * 10 + split_offset, queries, train,
-                                     config.triplets_per_query)
+                manifest = _manifest(
+                    seed * 1000 + compound_index * 10 + split_offset,
+                    queries,
+                    train,
+                    config.triplets_per_query,
+                )
                 oracle = _weighted_relational_distance(targets, train, queries, weights)
                 methods: dict[str, Any] = {
                     "weighted_product_space": _evaluate(
-                        _weighted_relational_distance(predictions, train, queries, weights), oracle,
-                        manifest, queries, train
+                        _weighted_relational_distance(predictions, train, queries, weights),
+                        oracle,
+                        manifest,
+                        queries,
+                        train,
                     ),
                     "scalar_w": _evaluate(
-                        _scalar_distance(predictions, train, queries, weights), oracle,
-                        manifest, queries, train
+                        _scalar_distance(predictions, train, queries, weights),
+                        oracle,
+                        manifest,
+                        queries,
+                        train,
                     ),
                     "scalar_sqrt_w": _evaluate(
-                        _scalar_distance(predictions, train, queries, np.sqrt(weights)), oracle,
-                        manifest, queries, train
+                        _scalar_distance(predictions, train, queries, np.sqrt(weights)),
+                        oracle,
+                        manifest,
+                        queries,
+                        train,
                     ),
-                    "raw_cosine": _evaluate(_pairwise_cosine(x[queries], x[train]), oracle,
-                                             manifest, queries, train),
-                    "raw_euclidean": _evaluate(_pairwise_euclidean(x[queries], x[train]), oracle,
-                                                manifest, queries, train),
+                    "raw_cosine": _evaluate(
+                        _pairwise_cosine(x[queries], x[train]), oracle, manifest, queries, train
+                    ),
+                    "raw_euclidean": _evaluate(
+                        _pairwise_euclidean(x[queries], x[train]), oracle, manifest, queries, train
+                    ),
                 }
                 wrong: dict[str, Any] = {}
                 for permutation in NON_IDENTITY_PERMUTATIONS:
                     key = "_".join(map(str, permutation))
                     wrong[key] = _evaluate(
-                        _weighted_relational_distance(predictions[:, permutation], train, queries, weights),
-                        oracle, manifest, queries, train
+                        _weighted_relational_distance(
+                            predictions[:, permutation], train, queries, weights
+                        ),
+                        oracle,
+                        manifest,
+                        queries,
+                        train,
                     )
                 strongest_key = max(wrong, key=lambda key: wrong[key]["triplet_accuracy"])
                 methods["wrong_permutations"] = wrong
@@ -221,20 +264,41 @@ def run(output: Path, config: MultiSeedCompositionConfig | None = None) -> dict[
         result["seeds"][str(seed)] = seed_result
 
     for compound in COMPOUNDS:
-        composed = [result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"]["weighted_product_space"]["triplet_accuracy"] for seed in config.seeds]
-        scalar = [max(
-            result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"]["scalar_w"]["triplet_accuracy"],
-            result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"]["scalar_sqrt_w"]["triplet_accuracy"],
-        ) for seed in config.seeds]
-        wrong = [result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"]["strongest_wrong_permutation"]["triplet_accuracy"] for seed in config.seeds]
+        composed = [
+            result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"][
+                "weighted_product_space"
+            ]["triplet_accuracy"]
+            for seed in config.seeds
+        ]
+        scalar = [
+            max(
+                result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"][
+                    "scalar_w"
+                ]["triplet_accuracy"],
+                result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"][
+                    "scalar_sqrt_w"
+                ]["triplet_accuracy"],
+            )
+            for seed in config.seeds
+        ]
+        wrong = [
+            result["seeds"][str(seed)]["compounds"][compound]["splits"]["test"]["methods"][
+                "strongest_wrong_permutation"
+            ]["triplet_accuracy"]
+            for seed in config.seeds
+        ]
         summary = {
             "per_seed_composed": composed,
             "mean_composed": float(np.mean(composed)),
             "median_composed": float(np.median(composed)),
             "minimum_composed": float(np.min(composed)),
             "composed_ci95": _seed_interval(composed, config.confidence_level),
-            "scalar_margin_ci95": _seed_interval([a - b for a, b in zip(composed, scalar, strict=True)], config.confidence_level),
-            "wrong_alignment_margin_ci95": _seed_interval([a - b for a, b in zip(composed, wrong, strict=True)], config.confidence_level),
+            "scalar_margin_ci95": _seed_interval(
+                [a - b for a, b in zip(composed, scalar, strict=True)], config.confidence_level
+            ),
+            "wrong_alignment_margin_ci95": _seed_interval(
+                [a - b for a, b in zip(composed, wrong, strict=True)], config.confidence_level
+            ),
             "success_count": int(sum(value >= 0.88 for value in composed)),
         }
         result["aggregate"][compound] = summary
@@ -243,7 +307,7 @@ def run(output: Path, config: MultiSeedCompositionConfig | None = None) -> dict[
     result["gate"] = {
         "passed": all(value == "SUPPORTED_MULTI_SEED" for value in result["decisions"].values()),
         "claim_promotion_allowed": False,
-        "note": "E01.2a confirms only weighted product-space composition; support-aware and non-additive gates remain pending.",
+        "note": "E01.2a confirms only weighted product-space composition; support-aware and non-additive gates remain pending.", # NOQA E501 
     }
     result["decision_tree_sha256"] = _json_hash(result["decisions"])
     output.mkdir(parents=True, exist_ok=True)

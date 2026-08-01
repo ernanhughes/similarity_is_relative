@@ -260,7 +260,7 @@ def run(output: Path, config: CompositionConfig | None = None) -> dict[str, Any]
             item["status"] == "SUPPORTED_POINT_ESTIMATE" for item in result["decisions"].values()
         ),
         "claim_promotion_allowed": False,
-        "note": "E01.1 is a deterministic point-estimate stage; nulls and replication remain pending.", # NOQA E501
+        "note": "E01.1 is a deterministic point-estimate stage; nulls and replication remain pending.",  # NOQA E501
     }
     result["decision_tree_sha256"] = _json_hash(result["decisions"])
     output.mkdir(parents=True, exist_ok=True)

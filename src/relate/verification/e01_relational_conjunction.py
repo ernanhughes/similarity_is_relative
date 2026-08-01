@@ -74,8 +74,7 @@ def main() -> None:
         "--result",
         type=Path,
         default=Path(
-            "runs/e01/relational-conjunction-seed-307/"
-            "relational-conjunction-result-with-hash.json"
+            "runs/e01/relational-conjunction-seed-307/relational-conjunction-result-with-hash.json"
         ),
     )
     parser.add_argument(

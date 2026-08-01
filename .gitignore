@@ -28,6 +28,9 @@ venv/
 # Their hashes and compact verification records are committed separately.
 runs/
 
+# Local Writer/RELATE operational caches, including Option B SQLite databases.
+.writer/
+
 # Editors and OS
 .vscode/
 .idea/

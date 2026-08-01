@@ -9,6 +9,7 @@ from relate.experiments.e01_multiseed_composition import (
     _manifest,
     run,
 )
+from relate.verification.e01_multiseed_composition import _compare
 
 
 def test_frozen_seed_and_permutation_contract() -> None:
@@ -25,6 +26,17 @@ def test_manifest_is_deterministic_and_explicit() -> None:
     assert np.array_equal(left, right)
     assert left.shape == (16, 3)
     assert set(left[:, 0]) == {10, 11}
+
+
+def test_replay_compare_accepts_json_equivalent_sequences() -> None:
+    errors: list[str] = []
+    _compare(
+        {"seeds": [401, 433], "weights": [2.0, 1.0, 0.0]},
+        {"seeds": (401, 433), "weights": (2.0, 1.0, 0.0)},
+        "result",
+        errors,
+    )
+    assert errors == []
 
 
 def test_small_multiseed_run_writes_result(tmp_path: Path) -> None:

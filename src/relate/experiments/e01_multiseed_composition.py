@@ -307,7 +307,7 @@ def run(output: Path, config: MultiSeedCompositionConfig | None = None) -> dict[
     result["gate"] = {
         "passed": all(value == "SUPPORTED_MULTI_SEED" for value in result["decisions"].values()),
         "claim_promotion_allowed": False,
-        "note": "E01.2a confirms only weighted product-space composition; support-aware and non-additive gates remain pending.", # NOQA E501 
+        "note": "E01.2a confirms only weighted product-space composition; support-aware and non-additive gates remain pending.",  # NOQA E501
     }
     result["decision_tree_sha256"] = _json_hash(result["decisions"])
     output.mkdir(parents=True, exist_ok=True)

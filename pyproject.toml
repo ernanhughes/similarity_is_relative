@@ -35,6 +35,7 @@ relate-e01-relational = "relate.experiments.e01_relational_conjunction:main"
 relate-verify-e01-relational = "relate.verification.e01_relational_conjunction:main"
 relate-e01-multiseed = "relate.experiments.e01_multiseed_composition:main"
 relate-verify-e01-multiseed = "relate.verification.e01_multiseed_composition:main"
+relate-audit-e01 = "relate.audits.e01_independent_recomputation:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

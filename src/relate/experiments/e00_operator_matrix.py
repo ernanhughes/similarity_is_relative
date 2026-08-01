@@ -193,7 +193,10 @@ def run(source_directory: Path, output_directory: Path, config: OperatorConfig) 
         direction = np.asarray(ridge.coef_, dtype=np.float64)
         direction /= max(float(np.linalg.norm(direction)), np.finfo(float).eps)
         methods["rank1_ridge_projection"] = _distance_from_projection(
-            x, train, test, lambda values: values @ direction[:, None]
+            x,
+            train,
+            test,
+            lambda values, direction=direction: values @ direction[:, None],
         )
 
         if target_kind == "continuous":

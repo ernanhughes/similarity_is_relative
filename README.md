@@ -57,8 +57,10 @@ The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-sy
 - Complete E00 certification claim: **blocked**
 - E01.0 linear composition identity check: **implementation identity confirmed; no composition-generalisation claim**
 - E01.1 weighted product-space composition: **replay-verified single-seed positive control; 4 of 4 point-estimate decisions passed**
-- E01.1 algorithmic novelty: **not established**
-- General composition, support propagation and abstention: **not established**
+- E01.2a weighted product-space confirmation: **replicated across five fresh seeds; 4 of 4 multi-seed decisions passed**
+- E01.2a deterministic replay: **PASS**
+- E01.2a algorithmic novelty and support-aware refusal: **not established**
+- General non-additive composition, support propagation and abstention: **not established**
 - Promoted cross-domain or RELATE algorithmic findings: **none**
 
 ## E00 checkpoints
@@ -128,6 +130,24 @@ The replicated synthetic result is bounded: a supervised scalar direction strong
 - Claim promotion: **blocked**
 
 E01.1 shows that independently predicted primitive coordinates can support preregistered weighted product-space queries in one deliberately easy synthetic positive-control world. Weighted product-space score fusion is standard; algorithmic novelty, fresh-seed reliability, strong scalar baselines, exhaustive wrong alignments, unsupported-component refusal and real-representation transfer remain open.
+
+### Multi-seed weighted product-space confirmation
+
+- Checkpoint: **`e01-multiseed-composition-checkpoint-v1`**
+- Stage: **`E01.2a`**
+- Fresh seeds: **`401, 433, 467, 503, 557`**
+- Deterministic replay: **PASS**
+- Scientific gate: **PASS**
+- Multi-seed decisions passed: **4 of 4**
+- Successful seed-compound evaluations: **20 of 20**
+- Minimum composed triplet accuracy: **greater than `0.923`**
+- Result: **`b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168`**
+- Decision tree: **`321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48`**
+- Public record: [`docs/results/e01-multiseed-composition-checkpoint-v1.md`](docs/results/e01-multiseed-composition-checkpoint-v1.md)
+- Blog: [`docs/blog/e01-multiseed-composition-confirmation.md`](docs/blog/e01-multiseed-composition-confirmation.md)
+- Complete RELATE composition claim promotion: **blocked**
+
+E01.2a establishes a replicated synthetic result for standard weighted product-space score fusion over independently predicted primitive coordinates. Every included scalar and wrong-permutation margin remained positive, but the `a_b2_c3` margin over the strongest incorrect alignment was narrow—approximately `0.037`. Weak and absent primitives, support-aware refusal, conjunction, exclusion, Pareto retrieval, learned scalar and directly trained compound comparators, independent recomputation and real-domain transfer remain open.
 
 ## Development
 

@@ -5,10 +5,47 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from sklearn.linear_model import Ridge
 
-from relate.experiments.e00 import Config, REGIMES, array_hash, orthogonal_matrix, split_indices
+from relate.experiments.e00 import (
+    Config,
+    REGIMES,
+    array_hash,
+    evaluate_scalar_retrieval,
+    orthogonal_matrix,
+    split_indices,
+)
+
+
+def _compare_metric_tree(
+    expected: Any,
+    observed: Any,
+    path: str,
+    errors: list[str],
+) -> None:
+    if isinstance(expected, dict):
+        if not isinstance(observed, dict):
+            errors.append(f"metric type mismatch: {path}")
+            return
+        if set(expected) != set(observed):
+            errors.append(f"metric keys mismatch: {path}")
+            return
+        for key in expected:
+            _compare_metric_tree(expected[key], observed[key], f"{path}.{key}", errors)
+        return
+
+    if isinstance(expected, (int, float)) and isinstance(observed, (int, float)):
+        if not np.isclose(float(expected), float(observed), rtol=1e-12, atol=1e-12, equal_nan=True):
+            errors.append(
+                f"metric mismatch: {path}: recorded={expected!r}, recomputed={observed!r}"
+            )
+        return
+
+    if expected != observed:
+        errors.append(f"metric mismatch: {path}: recorded={expected!r}, recomputed={observed!r}")
 
 
 def verify(run_directory: Path) -> dict[str, object]:
@@ -30,6 +67,7 @@ def verify(run_directory: Path) -> dict[str, object]:
         if array_hash(indices) != manifest["split_hashes"][name]:
             errors.append(f"split hash mismatch: {name}")
 
+    verified_metrics = 0
     for regime in REGIMES:
         path = run_directory / "arrays" / f"{regime}.npz"
         if not path.exists():
@@ -48,13 +86,37 @@ def verify(run_directory: Path) -> dict[str, object]:
         if y.shape != (config.samples,):
             errors.append(f"unexpected y shape: {regime}: {y.shape}")
 
+        train = splits["train"]
+        test = splits["test"]
+        model = Ridge(alpha=1.0).fit(x[train], y[train])
+        predictions = model.predict(x)
+        recomputed = evaluate_scalar_retrieval(
+            candidate_values=y[train],
+            query_values=y[test],
+            predicted_candidates=predictions[train],
+            predicted_queries=predictions[test],
+            k=config.retrieval_k,
+            ks=tuple(config.retrieval_ks),
+        )
+        _compare_metric_tree(
+            recorded["ridge_predicted_distance"],
+            recomputed,
+            f"{regime}.ridge_predicted_distance",
+            errors,
+        )
+        verified_metrics += 1
+
     return {
         "experiment_id": manifest["experiment_id"],
         "status": "PASS" if not errors else "FAIL",
         "errors": errors,
         "verified_regimes": len(REGIMES) - sum(e.startswith("missing") for e in errors),
+        "verified_metric_sets": verified_metrics,
         "claim_promotion_allowed": False,
-        "note": "E00 currently verifies generation and ridge baseline artifacts only.",
+        "note": (
+            "E00 verifies deterministic generation, artifact identity, and enhanced "
+            "ridge retrieval metrics only. The registered operator suite remains incomplete."
+        ),
     }
 
 

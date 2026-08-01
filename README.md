@@ -24,17 +24,22 @@ Verification language is explicit:
 
 ## Research sequence
 
+Frozen historical experiment identifiers are retained. The prospective sequence is:
+
 ```text
-E00 synthetic recoverability
+E00    synthetic primitive recoverability
 → E00.5 nonlinear-boundary diagnosis
-→ E01 QM9 scalar-collapse gate
-→ E02 conditional-similarity replication
-→ E03 protein benchmark construction
-→ E04 protein primitive relations
-→ E05 unseen relational composition
-→ E06 certified abstention
-→ E07 sentence-embedding transfer
-→ E08 long-context transfer
+→ E01.0 linear composition identity check
+→ E01.1 weighted product-space composition positive control
+→ E01.2 multi-seed composition and support gate
+→ E01.3 support propagation and certified abstention
+→ E02    QM9 scalar-collapse falsification
+→ E03    conditional-similarity replication
+→ E04    protein benchmark construction
+→ E05    protein primitive relations
+→ E06    real-embedding composition
+→ E07    certified real-domain abstention
+→ E08    language transfer
 ```
 
 The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-synthetic-recoverability.md).
@@ -50,10 +55,12 @@ The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-sy
 - Synthetic linear recovery and basis-dependence components: **replicated across five seeds**
 - Reliable nonlinear XOR recovery: **insufficient evidence**
 - Complete E00 certification claim: **blocked**
-- E00 evidence audit: [`docs/audits/e00-evidence-audit-2026-08-01.md`](docs/audits/e00-evidence-audit-2026-08-01.md)
+- E01.0 linear composition identity check: **implementation identity confirmed; no composition-generalisation claim**
+- E01.1 weighted product-space composition: **replay-verified single-seed positive control; 4 of 4 point-estimate decisions passed**
+- E01.1 algorithmic novelty: **not established**
+- General composition, support propagation and abstention: **not established**
 - Promoted cross-domain or RELATE algorithmic findings: **none**
 
-<!-- RELATE:E00:CHECKPOINT:START -->
 ## E00 checkpoints
 
 ### Baseline checkpoint
@@ -96,7 +103,31 @@ The first experiment is [`E00: Synthetic Recoverability`](docs/experiments/00-sy
 - Complete E00 claim promotion: **blocked**
 
 The replicated synthetic result is bounded: a supervised scalar direction strongly recovered the registered linear relation in native and rotated bases, while raw cosine and Euclidean neighbourhoods exposed it poorly and diagonal coordinate weighting degraded after rotation. This is not an algorithmic advantage over ridge predicted-value retrieval; those scalar ridge geometries are ranking-equivalent in this setting.
-<!-- RELATE:E00:CHECKPOINT:END -->
+
+## E01 checkpoints
+
+### Linear composition identity check
+
+- Stage: **`E01.0`**
+- Deterministic replay: **PASS**
+- Interpretation: weighted primitive ridge predictions reproduce the corresponding weighted-target ridge solution by linearity
+- Scientific composition-generalisation claim: **not tested**
+
+### Weighted product-space positive control
+
+- Checkpoint: **`e01-relational-conjunction-checkpoint-v1`**
+- Stage: **`E01.1`**
+- Deterministic replay: **PASS**
+- Point-estimate gate: **PASS**
+- Frozen compounds passed: **4 of 4**
+- Classification: **synthetic composition positive control / harness validation**
+- Result: **`e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90`**
+- Decision tree: **`f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77`**
+- Public record: [`docs/results/e01-relational-conjunction-checkpoint-v1.md`](docs/results/e01-relational-conjunction-checkpoint-v1.md)
+- Blog: [`docs/blog/e01-relational-conjunction.md`](docs/blog/e01-relational-conjunction.md)
+- Claim promotion: **blocked**
+
+E01.1 shows that independently predicted primitive coordinates can support preregistered weighted product-space queries in one deliberately easy synthetic positive-control world. Weighted product-space score fusion is standard; algorithmic novelty, fresh-seed reliability, strong scalar baselines, exhaustive wrong alignments, unsupported-component refusal and real-representation transfer remain open.
 
 ## Development
 

@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 
 from relate.audits.e01_independent_recomputation import (
-    AuditConfig,
     NON_IDENTITY_PERMUTATIONS,
     WEIGHT_GRID,
+    AuditConfig,
     _distance,
     _original_status,
     run,

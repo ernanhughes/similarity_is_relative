@@ -85,7 +85,9 @@ def _generate(seed: int, config: AuditConfig) -> dict[str, Any]:
     }
 
 
-def _fit_predictions(data: dict[str, Any], config: AuditConfig) -> tuple[np.ndarray, dict[str, Any]]:
+def _fit_predictions(
+    data: dict[str, Any], config: AuditConfig
+) -> tuple[np.ndarray, dict[str, Any]]:
     x = data["x"]
     targets = data["targets"]
     train = data["splits"]["train"]
@@ -201,9 +203,7 @@ def _retrieval_metrics(
         "recall_at": {str(k): float(np.mean(recalls[k])) for k in ks},
         "neighbor_regret_at": {str(k): float(np.mean(regrets[k])) for k in ks},
         "oracle_neighbor_predicted_rank_median": float(np.median(ranks_of_oracle_neighbors)),
-        "oracle_neighbor_predicted_rank_p90": float(
-            np.percentile(ranks_of_oracle_neighbors, 90)
-        ),
+        "oracle_neighbor_predicted_rank_p90": float(np.percentile(ranks_of_oracle_neighbors, 90)),
     }
 
 
@@ -325,7 +325,9 @@ def _weight_separation(config: AuditConfig) -> dict[str, Any]:
             "margin": margin,
         }
     symmetric_zero = abs(margins[0]) <= 1e-12
-    non_decreasing = all(left <= right + 1e-12 for left, right in zip(margins, margins[1:]))
+    non_decreasing = all(
+        left <= right + 1e-12 for left, right in zip(margins, margins[1:], strict=False)
+    )
     return {
         "grid": results,
         "decision": (
@@ -341,24 +343,24 @@ def run(output: Path, config: AuditConfig | None = None) -> dict[str, Any]:
     seed_307 = _seed_record(config.seed_307, config, include_legacy=True)
     fresh = {str(seed): _seed_record(seed, config, include_legacy=False) for seed in config.seeds}
     all_fresh_compounds = [
-        compound
-        for seed_record in fresh.values()
-        for compound in seed_record["compounds"].values()
+        compound for seed_record in fresh.values() for compound in seed_record["compounds"].values()
     ]
     ceiling_fractions = [
         float(value["ceiling_fraction"])
         for value in all_fresh_compounds
         if value["ceiling_fraction"] is not None
     ]
-    saturated = all(
-        value["absolute_latent_gap"] <= config.saturation_absolute_gap
-        for value in all_fresh_compounds
-    ) and float(np.median(ceiling_fractions)) >= config.saturation_median_ceiling_fraction
+    saturated = (
+        all(
+            value["absolute_latent_gap"] <= config.saturation_absolute_gap
+            for value in all_fresh_compounds
+        )
+        and float(np.median(ceiling_fractions)) >= config.saturation_median_ceiling_fraction
+    )
     exhaustive_failures = [
         name
         for name, compound in seed_307["compounds"].items()
-        if compound["original_status_with_exhaustive_control"]
-        != "SUPPORTED_POINT_ESTIMATE"
+        if compound["original_status_with_exhaustive_control"] != "SUPPORTED_POINT_ESTIMATE"
     ]
     decisions = {
         "e01_1_exhaustive_control": (

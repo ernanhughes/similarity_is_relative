@@ -199,8 +199,21 @@ def _verify_run(
             raise ValueError(f"{report_path}: invalid {split} fingerprint schema")
         if _sha256_json(fingerprint_payload) != fingerprint_sha:
             raise ValueError(f"{report_path}: invalid {split} fingerprint hash")
+        identity_config = canonical["identity"]["tokenization_config"]
         expected_fingerprint_fields = {
             "identity_file_sha256": canonical["identity_file_sha256"],
+            "identity_id": canonical["identity"]["identity_id"],
+            "model": canonical["identity"]["model"],
+            "embedding_implementation_sha256": canonical["identity"][
+                "embedding_implementation_sha256"
+            ],
+            "tokenization_config_sha256": canonical["identity"][
+                "tokenization_config_sha256"
+            ],
+            "tokenization_config": identity_config,
+            "pooling_policy": identity_config["pooling_policy"],
+            "output_dtype": identity_config["output_dtype"],
+            "max_length": identity_config["max_length"],
             "split": split,
             "split_manifest_sha256": canonical_manifest["file_sha256"],
             "stable_key_sequence_sha256": canonical_manifest[

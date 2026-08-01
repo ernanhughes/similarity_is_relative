@@ -53,16 +53,14 @@ def verify(source: Path, operators: Path, certification: Path) -> dict[str, Any]
         "claim_promotion_allowed": False,
         "certification_sha256": recorded["certification_sha256"],
         "decision_tree_sha256": recorded["decision_tree_sha256"],
-        "note": "E00.3 verifies seed-17 nulls, intervals and decisions. Multi-seed confirmation remains required.",
+        "note": "E00.3 verifies seed-17 nulls, intervals and decisions. Multi-seed confirmation remains required.", # NOQA E501
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=Path("runs/e00/canonical-seed-17"))
-    parser.add_argument(
-        "--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17")
-    )
+    parser.add_argument("--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17"))
     parser.add_argument(
         "--certification", type=Path, default=Path("runs/e00/certification-seed-17")
     )

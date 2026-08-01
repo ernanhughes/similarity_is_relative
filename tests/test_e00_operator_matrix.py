@@ -2,12 +2,15 @@ from pathlib import Path
 
 import numpy as np
 
-from relate.experiments.e00 import Config, run as run_e00
+from relate.experiments.e00 import Config
+from relate.experiments.e00 import run as run_e00
 from relate.experiments.e00_operator_matrix import (
     OperatorConfig,
     _pairwise_cosine,
     _pairwise_euclidean,
     frozen_splits,
+)
+from relate.experiments.e00_operator_matrix import (
     run as run_operator_matrix,
 )
 from relate.verification.e00_operator_matrix import verify

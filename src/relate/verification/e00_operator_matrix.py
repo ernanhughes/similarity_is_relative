@@ -33,9 +33,7 @@ def _compare_tree(recorded: Any, recomputed: Any, path: str, errors: list[str]) 
         return
 
     if recorded != recomputed:
-        errors.append(
-            f"value mismatch: {path}: recorded={recorded!r}, recomputed={recomputed!r}"
-        )
+        errors.append(f"value mismatch: {path}: recorded={recorded!r}, recomputed={recomputed!r}")
 
 
 def verify(source_directory: Path, operator_directory: Path) -> dict[str, Any]:
@@ -62,7 +60,7 @@ def verify(source_directory: Path, operator_directory: Path) -> dict[str, Any]:
         errors.append("operator matrix hash mismatch")
 
     with tempfile.TemporaryDirectory(prefix="relate-e00-operator-verify-") as temp:
-        recomputed_result = run(source_directory, Path(temp), config)
+        run(source_directory, Path(temp), config)
         recomputed = json.loads((Path(temp) / "operator-matrix.json").read_text(encoding="utf-8"))
         _compare_tree(recorded, recomputed, "operator_matrix", errors)
 
@@ -87,12 +85,8 @@ def verify(source_directory: Path, operator_directory: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--source", type=Path, default=Path("runs/e00/canonical-seed-17")
-    )
-    parser.add_argument(
-        "--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17")
-    )
+    parser.add_argument("--source", type=Path, default=Path("runs/e00/canonical-seed-17"))
+    parser.add_argument("--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17"))
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     report = verify(args.source, args.operators)

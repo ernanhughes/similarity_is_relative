@@ -50,6 +50,7 @@ Read:
 - [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
 - [Option B domain selection](docs/research/option-b-domain-selection-2026-08-01.md)
 - [Option B frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
+- [Option B execution runbook](docs/runbooks/option-b-real-code.md)
 
 ## Option B frozen design
 
@@ -80,7 +81,7 @@ A gap below `0.10` produces `REAL_PREMISE_FAILED` and closes RELATE. Secondary m
 - E01 permutation diagnostic: **weight-separation effect, not semantic verification**
 - E01 general or novel composition line: **closed**
 - Broad synthetic factorisation roadmap: **cancelled**
-- Option B real-code premise test: **design contract frozen; implementation not started**
+- Option B real-code premise test: **contract frozen; implementation in progress; no canonical result**
 - Option C propagated refusal: **conditional on B**
 - Promoted real-domain or RELATE algorithmic findings: **none**
 
@@ -180,6 +181,13 @@ Decision tree:
 python -m pip install -e ".[dev]"
 pytest
 ruff check .
+```
+
+For Option B:
+
+```bash
+python -m pip install -e ".[dev,option-b]"
+relate-option-b --print-contract
 ```
 
 PowerShell entry points live under [`scripts/`](scripts/README.md).

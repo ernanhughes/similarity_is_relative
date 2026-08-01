@@ -10,17 +10,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.neural_network import MLPClassifier
 
-from relate.experiments.e00 import BINARY_REGIMES, REGIMES, Config, array_hash
+from relate.experiments.e00 import REGIMES, Config, array_hash
 from relate.experiments.e00_operator_matrix import (
-    _normalise_rows,
     _pairwise_euclidean,
     frozen_splits,
     sha256_file,
@@ -295,8 +295,7 @@ def run(
         interval = evidence["triplet_accuracy"]
         null = evidence["permutation_null"]
         supported = (
-            interval["lower"] >= config.support_triplet_floor
-            and interval["estimate"] > null["q99"]
+            interval["lower"] >= config.support_triplet_floor and interval["estimate"] > null["q99"]
         )
         result["decisions"][f"{regime}.rank1"] = _decision(
             "SUPPORTED" if supported else "INSUFFICIENT_EVIDENCE",
@@ -326,8 +325,7 @@ def run(
     xor_nonlinear = result["regimes"]["nonlinear_xor"]["methods"]["nonlinear_mlp"]
     result["decisions"]["xor.nonlinear"] = _decision(
         "SUPPORTED_NONLINEAR_ONLY"
-        if xor_nonlinear["average_precision"]["lower"]
-        >= config.nonlinear_average_precision_floor
+        if xor_nonlinear["average_precision"]["lower"] >= config.nonlinear_average_precision_floor
         else "INSUFFICIENT_EVIDENCE",
         "The nonlinear diagnostic must recover the known XOR relation.",
         xor_nonlinear,
@@ -361,9 +359,11 @@ def run(
     }
     result["gate"] = {
         "required": required,
-        "passed": all(result["decisions"][key]["status"] == value for key, value in required.items()),
+        "passed": all(
+            result["decisions"][key]["status"] == value for key, value in required.items()
+        ),
         "claim_promotion_allowed": False,
-        "note": "Seed-17 certification can pass, but confirmatory multi-seed replication is still required before claim promotion.",
+        "note": "Seed-17 certification can pass, but confirmatory multi-seed replication is still required before claim promotion.", # NOQA E501
     }
 
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -380,19 +380,17 @@ def run(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=Path("runs/e00/canonical-seed-17"))
-    parser.add_argument(
-        "--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17")
-    )
-    parser.add_argument(
-        "--output", type=Path, default=Path("runs/e00/certification-seed-17")
-    )
+    parser.add_argument("--operators", type=Path, default=Path("runs/e00/operator-matrix-seed-17"))
+    parser.add_argument("--output", type=Path, default=Path("runs/e00/certification-seed-17"))
     parser.add_argument("--permutations", type=int, default=100)
     parser.add_argument("--bootstrap-samples", type=int, default=1000)
     args = parser.parse_args()
     config = CertificationConfig(
         permutations=args.permutations, bootstrap_samples=args.bootstrap_samples
     )
-    print(json.dumps(run(args.source, args.operators, args.output, config), indent=2, sort_keys=True))
+    print(
+        json.dumps(run(args.source, args.operators, args.output, config), indent=2, sort_keys=True)
+    )
 
 
 if __name__ == "__main__":

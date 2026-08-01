@@ -27,9 +27,7 @@ def _sha256(path: Path) -> str:
 
 def _git_value(*args: str) -> str | None:
     try:
-        return subprocess.check_output(
-            ["git", *args], text=True, stderr=subprocess.DEVNULL
-        ).strip()
+        return subprocess.check_output(["git", *args], text=True, stderr=subprocess.DEVNULL).strip()
     except (OSError, subprocess.CalledProcessError):
         return None
 
@@ -67,13 +65,13 @@ def _markdown(checkpoint: dict[str, Any]) -> str:
     table = "\n".join(rows)
     return f"""# E00 Baseline Checkpoint v1
 
-- **Checkpoint:** `{checkpoint['checkpoint_id']}`
-- **Status:** `{checkpoint['status']}`
-- **Scientific status:** `{checkpoint['scientific_status']}`
-- **Manifest SHA-256:** `{checkpoint['manifest_sha256']}`
-- **Verification SHA-256:** `{checkpoint['verification_sha256']}`
-- **Claim promotion allowed:** `{str(checkpoint['claim_promotion_allowed']).lower()}`
-- **Recorded at:** `{checkpoint['recorded_at_utc']}`
+- **Checkpoint:** `{checkpoint["checkpoint_id"]}`
+- **Status:** `{checkpoint["status"]}`
+- **Scientific status:** `{checkpoint["scientific_status"]}`
+- **Manifest SHA-256:** `{checkpoint["manifest_sha256"]}`
+- **Verification SHA-256:** `{checkpoint["verification_sha256"]}`
+- **Claim promotion allowed:** `{str(checkpoint["claim_promotion_allowed"]).lower()}`
+- **Recorded at:** `{checkpoint["recorded_at_utc"]}`
 
 ## Baseline summary
 
@@ -103,11 +101,11 @@ def _update_readme(path: Path, checkpoint: dict[str, Any]) -> None:
     block = f"""{README_START}
 ## E00 baseline checkpoint
 
-- Checkpoint: **`{checkpoint['checkpoint_id']}`**
+- Checkpoint: **`{checkpoint["checkpoint_id"]}`**
 - Local artifact verification: **PASS**
 - Verified regimes / metric sets: **6 / 6**
 - Scientific claim promotion: **blocked**
-- Manifest: **`{checkpoint['manifest_sha256']}`**
+- Manifest: **`{checkpoint["manifest_sha256"]}`**
 - Public record: [`docs/results/{CHECKPOINT_ID}.md`](docs/results/{CHECKPOINT_ID}.md)
 
 The ridge checkpoint validates the experiment machinery only. E00 remains incomplete

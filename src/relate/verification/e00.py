@@ -36,24 +36,18 @@ def _compare_metric_tree(
         for unexpected in sorted(recomputed_keys - recorded_keys):
             errors.append(f"unexpected recomputed metric: {path}.{unexpected}")
         for key in sorted(recorded_keys & recomputed_keys):
-            _compare_metric_tree(
-                recorded[key], recomputed[key], f"{path}.{key}", errors
-            )
+            _compare_metric_tree(recorded[key], recomputed[key], f"{path}.{key}", errors)
         return
 
     if isinstance(recorded, (int, float)) and isinstance(recomputed, (int, float)):
         if not np.isclose(float(recorded), float(recomputed), rtol=1e-12, atol=1e-12):
             errors.append(
-                f"metric mismatch: {path}: recorded={recorded!r}, "
-                f"recomputed={recomputed!r}"
+                f"metric mismatch: {path}: recorded={recorded!r}, recomputed={recomputed!r}"
             )
         return
 
     if recorded != recomputed:
-        errors.append(
-            f"metric mismatch: {path}: recorded={recorded!r}, "
-            f"recomputed={recomputed!r}"
-        )
+        errors.append(f"metric mismatch: {path}: recorded={recorded!r}, recomputed={recomputed!r}")
 
 
 def verify(run_directory: Path) -> dict[str, object]:

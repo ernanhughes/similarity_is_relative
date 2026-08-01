@@ -8,9 +8,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from scipy.stats import spearmanr
@@ -125,9 +126,7 @@ def _evaluate_distance_matrix(
         "neighbor_regret_at": {str(k): float(np.mean(regret[k])) for k in effective_ks},
     }
     if target_kind == "binary":
-        result["class_precision_at"] = {
-            str(k): float(np.mean(precision[k])) for k in effective_ks
-        }
+        result["class_precision_at"] = {str(k): float(np.mean(precision[k])) for k in effective_ks}
         result["average_precision"] = float(np.mean(aps))
     return result
 
@@ -193,7 +192,10 @@ def run(source_directory: Path, output_directory: Path, config: OperatorConfig) 
         direction = np.asarray(ridge.coef_, dtype=np.float64)
         direction /= max(float(np.linalg.norm(direction)), np.finfo(float).eps)
         methods["rank1_ridge_projection"] = _distance_from_projection(
-            x, train, test, lambda values: values @ direction[:, None]
+            x,
+            train,
+            test,
+            lambda values, direction=direction: values @ direction[:, None],
         )
 
         if target_kind == "continuous":
@@ -236,9 +238,7 @@ def run(source_directory: Path, output_directory: Path, config: OperatorConfig) 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=Path("runs/e00/canonical-seed-17"))
-    parser.add_argument(
-        "--output", type=Path, default=Path("runs/e00/operator-matrix-seed-17")
-    )
+    parser.add_argument("--output", type=Path, default=Path("runs/e00/operator-matrix-seed-17"))
     args = parser.parse_args()
     print(json.dumps(run(args.source, args.output, OperatorConfig()), indent=2, sort_keys=True))
 

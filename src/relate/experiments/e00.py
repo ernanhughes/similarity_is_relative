@@ -209,9 +209,7 @@ def evaluate_scalar_retrieval(
 
             if target_kind == "continuous":
                 if current_oracle_error >= relative_error_minimum_denominator:
-                    relative_error[current_k].append(
-                        current_retrieved_error / current_oracle_error
-                    )
+                    relative_error[current_k].append(current_retrieved_error / current_oracle_error)
                 ndcg[current_k].append(_ndcg_at_k(oracle_distance, retrieved, current_k))
                 within_tolerance[current_k].append(
                     float(np.mean(oracle_distance[retrieved] <= tolerance))
@@ -245,12 +243,8 @@ def evaluate_scalar_retrieval(
         "oracle_mean_distance_at": oracle_error_summary,
         "neighbor_regret_at": summarize(neighbour_regret),
         "triplet_accuracy": float(np.nanmean(triplet_accuracies)),
-        "oracle_neighbor_predicted_rank_median": float(
-            np.nanmedian(oracle_neighbour_ranks)
-        ),
-        "oracle_neighbor_predicted_rank_p90": float(
-            np.nanpercentile(oracle_neighbour_ranks, 90)
-        ),
+        "oracle_neighbor_predicted_rank_median": float(np.nanmedian(oracle_neighbour_ranks)),
+        "oracle_neighbor_predicted_rank_p90": float(np.nanpercentile(oracle_neighbour_ranks, 90)),
     }
 
     if target_kind == "continuous":

@@ -20,11 +20,13 @@ Verification language is explicit:
 - **independent recomputation** requires separate substantive metric and decision code;
 - neither term alone implies that a scientific claim passed.
 
+Exploratory measurements are labelled separately. C0 development evidence may select a hypothesis for later confirmation, but it cannot support an Option C publication claim.
+
 ## Current thesis
 
 The original E01 composition thesis is closed.
 
-Option B has now established the real-premise half of the revised RELATE thesis:
+Option B established the real-premise half of the revised RELATE thesis:
 
 > **A frozen representation can contain objectively useful structural relations that its default cosine and Euclidean geometry materially underexpose.**
 
@@ -32,7 +34,16 @@ The remaining prospective thesis is narrower and still untested:
 
 > **A support-aware relational query system can propagate calibrated primitive evidence through a compound query and refuse when that evidence is insufficient, outperforming simpler calibrated abstention baselines at matched coverage.**
 
-Option B does not establish support propagation, calibrated refusal, semantic binding, a general query algebra or algorithmic novelty. Those questions belong to a separately frozen Option C contract.
+Option B does not establish support propagation, calibrated refusal, semantic binding, a general query algebra or algorithmic novelty.
+
+Option C is therefore split into two phases:
+
+```text
+C0  bounded mechanism discovery with no promoted claim
+C1  separately frozen confirmatory refusal experiment
+```
+
+This preserves freedom to discover the right support mechanism without using final calibration or test evidence to choose it.
 
 ## Current decision
 
@@ -43,14 +54,25 @@ The bounded path is now:
 ```text
 E01      synthetic composition line — CLOSED
 B        real frozen-representation premise test — PASSED
-C        propagated-refusal test — AUTHORISED, CONTRACT NOT YET FROZEN
-STOP     close the novelty line if Option C fails its future frozen gate
+C0       refusal-mechanism discovery protocol — FROZEN, IMPLEMENTATION NOT STARTED
+C1       confirmatory refusal test — BLOCKED UNTIL C0 CHECKPOINT
+STOP     close the novelty line if C0 cannot justify C1 or C1 fails its gate
 ```
 
-The post-E01 decision originally allowed at most ten working days for Option B and fifteen additional working days for Option C. Option B is complete. No Option C implementation is authorised until its prospective contract, baselines, calibration procedure, selective-risk metric and kill threshold are reviewed and merged.
+The remaining Option C budget is at most fifteen working days in total:
+
+```text
+C0 maximum: 5 working days
+C1: remaining budget after C0
+Option C total: <= 15 working days
+```
+
+No final Option C mechanism, material margin or C1 data row has been selected.
 
 Read:
 
+- [Option C0 discovery and confirmation protocol](docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md)
+- [Option C0 discovery-preservation decision](docs/research/option-c0-discovery-preservation-decision-2026-08-02.md)
 - [Option B result checkpoint](docs/results/option-b-real-code-premise-checkpoint-v1.md)
 - [Option B result article](docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md)
 - [Option B frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
@@ -152,6 +174,63 @@ It does **not** show that:
 - RELATE refuses unsupported queries better than simpler calibrated methods;
 - the method is novel relative to a directly trained compound model.
 
+## Option C0 protocol
+
+C0 freezes the exploration process rather than a favourite mechanism.
+
+### Five data roles
+
+```text
+C0 fit
+C0 iteration
+C0 selection
+C1 calibration reserve
+C1 test reserve
+```
+
+All roles must be repository-separated. C1 reserve repositories must also be disjoint from every repository represented in the canonical Option B selected manifests.
+
+Final C1 calibration and test rows are not selected during C0. A later C1 contract must freeze a deterministic selection algorithm, and final row identities are derived only after that contract merges.
+
+### What C0 may explore
+
+C0 may investigate a bounded family of:
+
+- coordinate-wise or worst-coordinate support;
+- set or interval propagation;
+- joint residual or nonconformity propagation;
+- sampling-based uncertainty propagation;
+- carefully separated learned post-hoc support combination.
+
+It may examine at most three bounded query forms.
+
+### Required C0 baselines
+
+- independent per-primitive split-conformal abstention;
+- directly trained compound model with its own conformal wrapper;
+- propagated-support candidates;
+- an uncalibrated confidence baseline where meaningful;
+- oracle-support headroom diagnostics.
+
+### Candidate and discovery records
+
+Every explored candidate version must be tied to a commit in an append-only candidate registry. Every material planned or unexpected observation must be recorded in an append-only discovery ledger.
+
+Unexpected discoveries may shape the later C1 contract when found before C1 freezes. They cannot be presented as confirmed findings, inspect C1 evidence, rescue a failed C1 result or inherit support from Option B.
+
+### C0 outcomes
+
+Exactly one C0 outcome will be published:
+
+```text
+C1_CONTRACT_JUSTIFIED
+C1_NOT_JUSTIFIED
+C0_DATA_FIREWALL_FAILED
+C0_BUDGET_EXHAUSTED
+```
+
+Only `C1_CONTRACT_JUSTIFIED` permits a documentation-only C1 contract PR. It does not itself support C-REFUSE-001.
+
 ## Current status
 
 - E00 linear recovery and basis-dependence components: **replicated synthetic**
@@ -167,7 +246,8 @@ It does **not** show that:
 - E01 general or novel composition line: **closed**
 - Broad synthetic factorisation roadmap: **cancelled**
 - Option B real-code premise test: **complete; independently verified; `REAL_PREMISE_SUPPORTED`**
-- Option C propagated refusal: **authorised; prospective contract not yet frozen**
+- Option C0 discovery protocol: **frozen; implementation not started**
+- Option C1 confirmatory refusal test: **blocked pending C0 checkpoint**
 - Promoted real-domain finding: **B-PREM-001**
 - Promoted refusal or novelty finding: **none**
 
@@ -234,6 +314,12 @@ Configuration:
 
 ## Research records
 
+### Option C
+
+- [C0 discovery and confirmation protocol](docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md)
+- [C0 discovery-preservation decision](docs/research/option-c0-discovery-preservation-decision-2026-08-02.md)
+- [Post-E01 and Option B decision record](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
+
 ### Option B
 
 - [Frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
@@ -273,6 +359,8 @@ python -m pip install -e ".[dev,option-b]"
 relate-option-b --print-contract
 ```
 
-The canonical Option B result must not be rerun or modified. Any Option C work begins with a new documentation-only prospective contract.
+The canonical Option B result must not be rerun or modified.
+
+The next permitted Option C change is implementation of C0 data allocation and evidence-ledger infrastructure only. Mechanism discovery remains blocked until the data firewall is reviewed, and C1 remains blocked until C0 publishes one explicit exit outcome.
 
 PowerShell entry points live under [`scripts/`](scripts/README.md).

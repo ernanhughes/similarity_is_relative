@@ -67,6 +67,7 @@ MAX_EXHAUSTIVE_SIMHASH_RADIUS: Final = 3
 CANDIDATE_COMPARISON_BATCH_SIZE: Final = 10_000
 INJECT_AFTER_CANDIDATE_BUCKETS: int | None = None
 INJECT_AFTER_COMPARISON_BATCHES: int | None = None
+INJECT_DURING_COMPARISON_BATCH_TRANSACTION: bool = False
 FAMILY_SUFFIXES: Final = frozenset(
     {
         "backup",
@@ -785,6 +786,65 @@ class IntegrityAuditCache:
         )
         self.connection.commit()
 
+    def count_near_pairs(self, context_sha256: str) -> int:
+        row = self.connection.execute(
+            "SELECT COUNT(*) FROM near_pairs WHERE context_sha256 = ?",
+            (context_sha256,),
+        ).fetchone()
+        return int(row[0])
+
+    def commit_comparison_batch(
+        self,
+        context_sha256: str,
+        *,
+        cursor: str,
+        near_pairs: Sequence[tuple[str, str, int]],
+        metadata: Mapping[str, Any],
+    ) -> int:
+        try:
+            self.connection.execute("BEGIN IMMEDIATE")
+            self.connection.executemany(
+                """
+                INSERT INTO near_pairs(
+                    context_sha256, left_key, right_key, hamming_distance
+                ) VALUES (?, ?, ?, ?)
+                ON CONFLICT(context_sha256, left_key, right_key) DO UPDATE SET
+                    hamming_distance = excluded.hamming_distance
+                """,
+                [
+                    (context_sha256, left_key, right_key, distance)
+                    for left_key, right_key, distance in near_pairs
+                ],
+            )
+            if INJECT_DURING_COMPARISON_BATCH_TRANSACTION:
+                raise RuntimeError("injected comparison-batch transaction interruption")
+            row = self.connection.execute(
+                "SELECT COUNT(*) FROM near_pairs WHERE context_sha256 = ?",
+                (context_sha256,),
+            ).fetchone()
+            near_pair_count = int(row[0])
+            checkpoint_metadata = {
+                **metadata,
+                "near_pairs_found": near_pair_count,
+                "near_pair_count": near_pair_count,
+            }
+            self.connection.execute(
+                """
+                INSERT INTO phase_checkpoints(
+                    context_sha256, phase_name, cursor_text, metadata_json
+                ) VALUES (?, 'pair_comparison', ?, ?)
+                ON CONFLICT(context_sha256, phase_name) DO UPDATE SET
+                    cursor_text = excluded.cursor_text,
+                    metadata_json = excluded.metadata_json
+                """,
+                (context_sha256, cursor, _canonical_json(checkpoint_metadata)),
+            )
+            self.connection.execute("COMMIT")
+            return near_pair_count
+        except Exception:
+            self.connection.execute("ROLLBACK")
+            raise
+
     def load_near_pairs(self, context_sha256: str) -> tuple[tuple[str, str, int], ...]:
         values = self.connection.execute(
             """
@@ -1246,12 +1306,22 @@ def _compute_near_pairs(
     checkpoint = cache.load_phase_checkpoint(context_sha256, "candidate_generation")
     candidate_generation_resumed = checkpoint is not None
     resume_bucket = ""
+    resume_bucket_position = 0
     oversized_buckets = 0
     candidate_buckets_processed = 0
     if checkpoint is not None:
         resume_bucket, generation_meta = checkpoint
         oversized_buckets = int(generation_meta.get("oversized_buckets_skipped", 0))
         candidate_buckets_processed = int(generation_meta.get("candidate_buckets_processed", 0))
+        resume_bucket_position = int(generation_meta.get("last_completed_bucket_position", 0))
+        if resume_bucket_position:
+            if resume_bucket_position < 1 or resume_bucket_position > len(ordered_buckets):
+                raise ValueError("candidate-generation checkpoint bucket position is corrupt")
+            expected_bucket = ordered_buckets[resume_bucket_position - 1][0]
+            stored_band = int(generation_meta.get("last_completed_band", -1))
+            stored_value = int(generation_meta.get("last_completed_band_value", -1))
+            if (stored_band, stored_value) != expected_bucket:
+                raise ValueError("candidate-generation checkpoint bucket key is corrupt")
     candidate_generation_truncated = False
     candidate_limit_reached = cache.count_candidate_pairs(context_sha256) >= max_candidate_pairs
     candidate_generation_new_pairs = 0
@@ -1268,7 +1338,7 @@ def _compute_near_pairs(
     )
     for position, (bucket_key, indices) in enumerate(ordered_buckets, start=1):
         bucket_text = f"{bucket_key[0]}:{bucket_key[1]}"
-        if resume_bucket and bucket_text <= resume_bucket:
+        if position <= resume_bucket_position:
             continue
         candidate_buckets_processed = position
         if len(indices) > max_bucket:
@@ -1314,6 +1384,10 @@ def _compute_near_pairs(
         generation_checkpoint = {
             "candidate_buckets_total": len(ordered_buckets),
             "candidate_buckets_processed": candidate_buckets_processed,
+            "last_completed_bucket_position": position,
+            "last_completed_band": bucket_key[0],
+            "last_completed_band_value": bucket_key[1],
+            "last_completed_bucket_display": bucket_text,
             "candidate_pair_count": cache.count_candidate_pairs(context_sha256),
             "oversized_buckets_skipped": oversized_buckets,
             "candidate_generation_truncated": candidate_generation_truncated,
@@ -1383,8 +1457,8 @@ def _compute_near_pairs(
         cursor, comparison_meta = comparison_checkpoint
         cursor_left, _, cursor_right = cursor.partition("\0")
         candidate_pairs_compared = int(comparison_meta.get("candidate_pairs_compared_total", 0))
-        near_pairs_found = int(comparison_meta.get("near_pairs_found", 0))
         comparison_batches_completed = int(comparison_meta.get("comparison_batches_completed", 0))
+    near_pairs_found = cache.count_near_pairs(context_sha256)
     compared_this_run = 0
     cache.set_phase_status(
         context_sha256,
@@ -1414,8 +1488,6 @@ def _compute_near_pairs(
             elif distance <= max_hamming:
                 comparison_truncated = True
                 break
-        if new_near_pairs:
-            cache.put_near_pairs(context_sha256, new_near_pairs)
         processed = len(batch) if not comparison_truncated else batch.index((left_key, right_key))
         if comparison_truncated:
             processed = max(processed, 0)
@@ -1425,7 +1497,6 @@ def _compute_near_pairs(
             cursor_left, cursor_right = batch[-1]
         candidate_pairs_compared += processed
         compared_this_run += processed
-        near_pairs_found += len(new_near_pairs)
         comparison_batches_completed += 1
         checkpoint_metadata = {
             "last_compared_left_key": cursor_left,
@@ -1436,11 +1507,11 @@ def _compute_near_pairs(
             "comparison_truncated": comparison_truncated,
             "comparison_batches_completed": comparison_batches_completed,
         }
-        cache.save_phase_checkpoint(
+        near_pairs_found = cache.commit_comparison_batch(
             context_sha256,
-            "pair_comparison",
-            f"{cursor_left}\0{cursor_right}",
-            checkpoint_metadata,
+            cursor=f"{cursor_left}\0{cursor_right}",
+            near_pairs=new_near_pairs,
+            metadata=checkpoint_metadata,
         )
         reporter.rows(
             f"compare SimHash candidates resume={cursor_left}:{cursor_right}",

@@ -28,18 +28,35 @@ fingerprints. It validates visible row counts before reuse and resumes completed
 near-duplicate scans only when the cached phase metadata matches the active
 context parameters.
 
+The context includes the D1 source identity, discovery runner, mechanism
+harness, Option B reconstruction helpers, Python version, canonical input
+identities, normalization constants, SimHash constants, banding constants, and
+all near-duplicate limits.
+
+Visible-row and near-pair phases have ordered SHA-256 commitments. Same-count
+row corruption and stale near-pair distances are rejected.
+
 Skipped oversized buckets or truncated candidate-pair output mark the
 near-duplicate scan incomplete.
 
+Candidate-pair generation is SQLite-backed and bounded by
+`near_max_candidate_pairs`; hitting that bound marks candidate generation and
+the near scan incomplete.
+
 ## Provenance
 
-The runner records Git-object byte hashes for the C0 v1 execution composition at
-`07cf6fc5ea9c261b10df272215a8afb404612e76` and for the D1 execution
+The runner records Git-object byte hashes for the C0 v1 runtime source
+composition at `13466976195abeed56367a449ebd5a6678e3ef7e`, the publication
+artifacts at `07cf6fc5ea9c261b10df272215a8afb404612e76`, and the D1 execution
 composition at the running `HEAD`. Missing paths are recorded explicitly and
 mark the manifest incomplete.
 
 The manifest distinguishes the registered candidate implementation commit, the
 published v1 result commit, and the D1 execution commit.
+
+It also compares runtime source files between the runtime source commit and the
+publication commit. Byte identity is recorded as provenance only; it does not
+make those evidence roles interchangeable.
 
 ## Scientific Exclusions
 

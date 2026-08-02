@@ -4,6 +4,7 @@
     "c1_reserve"
   ],
   "cache": {
+    "cryptographic_phase_commitments_required": true,
     "context_bound": true,
     "local_recovery_only": true,
     "path": ".writer/option-c0/cache/option-c0-d1-integrity-v1.sqlite3",
@@ -17,6 +18,11 @@
   "contract_id": "option-c0-d1-audit-contract-v1",
   "final_contamination_judgment_automatic": false,
   "hidden_row_content_accessed": false,
+  "input_identities": {
+    "allocation_context_sha256": "a3ae0b5dcbef0ae8e5056900ba44eeb53b4fd53a20f7cea8d842f67197ab02ed",
+    "allocation_manifest_sha256": "41e48447171ac2f0553b795f2b3e50dfc5ac389b68fb30607b7d1c496bdb5bfc",
+    "source_identity_sha256": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d"
+  },
   "mechanism_result_observed": false,
   "near_duplicate_output": "heuristic_candidates_not_proof",
   "next_allowed_action_after_implementation_merge": "RUN_AND_REVIEW_OPTION_C0_D1_INTEGRITY_AUDIT",
@@ -30,8 +36,14 @@
   ],
   "repository_family_input": "published_repository_names_only",
   "result_status": "C0_D1_AUDIT_COMPLETE_PENDING_HUMAN_REVIEW",
+  "status_must_reflect_incomplete_evidence": true,
   "schema_id": "option-c0-d1-audit-contract-v1",
   "scientific_result_observed": false,
+  "v1_commit_identities": {
+    "registered_candidate_implementation_commit": "d36436209d95eca555215a83856f042d241a90f4",
+    "v1_result_publication_commit": "07cf6fc5ea9c261b10df272215a8afb404612e76",
+    "v1_runtime_source_commit": "13466976195abeed56367a449ebd5a6678e3ef7e"
+  },
   "visible_row_roles": [
     "c0_fit",
     "c0_iteration"

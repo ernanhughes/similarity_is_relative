@@ -3,9 +3,11 @@ param(
     [string]$FirewallDir = "artifacts/canonical/option-c0/data-firewall-v1",
     [string]$Output = "runs/option-c0/d1-integrity-audit-v1/option-c0-d1-integrity-audit-v1.json",
     [string]$Cache = ".writer/option-c0/cache/option-c0-d1-integrity-v1.sqlite3",
-    [string]$V1ExecutionRef = "07cf6fc5ea9c261b10df272215a8afb404612e76",
+    [string]$V1RuntimeSourceCommit = "13466976195abeed56367a449ebd5a6678e3ef7e",
+    [string]$V1ResultPublicationCommit = "07cf6fc5ea9c261b10df272215a8afb404612e76",
     [int]$NearHamming = 3,
     [int]$NearMaxBucket = 250,
+    [int]$NearMaxCandidatePairs = 1000000,
     [int]$NearMaxPairs = 50000
 )
 
@@ -41,9 +43,11 @@ $Arguments = @(
     "--output", $Output,
     "--cache", $Cache,
     "--repo-root", $RepoRoot,
-    "--v1-execution-ref", $V1ExecutionRef,
+    "--v1-runtime-source-commit", $V1RuntimeSourceCommit,
+    "--v1-result-publication-commit", $V1ResultPublicationCommit,
     "--near-hamming", $NearHamming,
     "--near-max-bucket", $NearMaxBucket,
+    "--near-max-candidate-pairs", $NearMaxCandidatePairs,
     "--near-max-pairs", $NearMaxPairs
 )
 

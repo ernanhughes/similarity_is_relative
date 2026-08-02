@@ -26,6 +26,10 @@ runs/option-c0/d1-integrity-audit-v1/option-c0-d1-integrity-audit-v1.json
 
 The command refuses to overwrite an existing output.
 
+The public command enforces the canonical source identity, allocation manifest,
+allocation context, and allocation role counts. Fixture inputs require the
+Python-level `allow_test_fixture_inputs` override used only by tests.
+
 ## Cache
 
 The local SQLite cache is:
@@ -40,6 +44,11 @@ reconstruction implementation hash, visible roles, normalization identity,
 near-duplicate algorithm and parameters, and cache schema version.
 
 The cache uses WAL mode, `synchronous=FULL`, and foreign keys.
+
+Visible-row reuse requires a completed phase commitment over every ordered row
+identity and fingerprint. Near-pair reuse requires a completed phase commitment,
+matching scan parameters, an ordered near-pair SHA-256, and recomputed Hamming
+distances for every loaded pair.
 
 ## Progress
 
@@ -57,6 +66,21 @@ hits and misses where applicable, throughput, elapsed time, and ETA.
 Exact code and normalized-AST overlaps are evidence for human review. Near
 duplicates and repository-family groups are heuristic candidates only. D1 never
 emits a final material-contamination conclusion.
+
+The near-duplicate index splits 64-bit SimHash into four exact 16-bit bands. By
+the pigeonhole principle, the implementation treats radius 3 as the maximum
+exhaustive radius. Larger radii are rejected.
+
+The v1 manifest separates:
+
+```text
+registered candidate implementation: d36436209d95eca555215a83856f042d241a90f4
+runtime source commit:                 13466976195abeed56367a449ebd5a6678e3ef7e
+result publication commit:             07cf6fc5ea9c261b10df272215a8afb404612e76
+```
+
+Incomplete source manifests or incomplete bounded near scans receive incomplete
+statuses and do not unblock D2.
 
 The only permitted next action after the implementation merges is:
 

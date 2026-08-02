@@ -1,0 +1,32 @@
+{
+  "candidate_families": [
+    "joint_max_residual_box",
+    "empirical_residual_mass"
+  ],
+  "candidate_plan_sha256": "f8254d5fed4ab168f48e0c519a03c5e322ac2ae0ad52fc97cdbf43d1dac66e94",
+  "candidate_registry_entries": 6,
+  "candidate_registry_head_sha256": "d8c9e32008e80ebdc6a31af432f621f4ac9e80a5fa6bf5be4673febd28c89ea7",
+  "candidate_registry_sha256": "a34bf7696c0586c2683de817515fa5f849be7cab5ccf07a6a844474c94017282",
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "checkpoint_id": "option-c0-candidate-plan-publication-v1",
+  "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+  "mechanism_result_observed": false,
+  "merge_requirement": "regular merge commit; do not squash because registered candidates reference implementation_commit_sha",
+  "next_allowed_action": "REVIEWED_ONE_TIME_C0_ITERATION_EXECUTION",
+  "prohibited_actions": [
+    "candidate evaluation before this checkpoint merges",
+    "C0 selection access",
+    "C1 reserve access",
+    "C1 row selection",
+    "Option C scientific decision"
+  ],
+  "query_forms": [
+    "all_primitives_above_fit_median",
+    "any_primitive_above_fit_median",
+    "two_of_three_primitives_above_fit_median"
+  ],
+  "registration_commit_sha": "92960f3a448220ddd2cac7ca79dda62fb5779972",
+  "scientific_result_observed": false,
+  "status": "C0_INITIAL_CANDIDATE_PLAN_REGISTERED_PENDING_ITERATION_EXECUTION"
+}

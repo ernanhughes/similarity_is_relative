@@ -22,9 +22,7 @@ def _write_json(path: Path, value: dict) -> str:
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> str:
-    payload = "".join(
-        json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows
-    )
+    payload = "".join(json.dumps(row, sort_keys=True, separators=(",", ":")) + "\n" for row in rows)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(payload, encoding="utf-8", newline="\n")
     return hashlib.sha256(payload.encode()).hexdigest()
@@ -106,8 +104,7 @@ def _fixture(tmp_path: Path) -> dict[str, Path]:
     )
 
     matrices = {
-        split: np.arange(count * dimensions, dtype=np.float32).reshape(count, dimensions)
-        / 10.0
+        split: np.arange(count * dimensions, dtype=np.float32).reshape(count, dimensions) / 10.0
         for split, count in sizes.items()
     }
     report_artifacts = {}

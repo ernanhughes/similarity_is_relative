@@ -6,9 +6,10 @@ import argparse
 import hashlib
 import json
 import os
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -23,8 +24,7 @@ from relate.experiments.option_b_real_code import (
 
 DEFAULT_SELECTION_DIR = Path("artifacts/canonical/option-b/selection")
 DEFAULT_PROBE_CHECKPOINT = Path(
-    "artifacts/canonical/option-b/probes-v1/"
-    "option-b-primitive-probe-publication-v1.json"
+    "artifacts/canonical/option-b/probes-v1/option-b-primitive-probe-publication-v1.json"
 )
 DEFAULT_OUTPUT_DIR = Path("runs/option-b/hard-negative-manifest-v1")
 SELECTION_REPORT_NAME = "option-b-canonical-row-selection-v2.json"
@@ -44,6 +44,9 @@ class FrozenManifestConfig:
     max_rank_separation: int = OptionBConfig().max_rank_separation
     max_pairs_per_query: int = OptionBConfig().max_pairs_per_query
     sparse_pair_threshold: int = SPARSE_PAIR_THRESHOLD
+
+
+DEFAULT_MANIFEST_CONFIG = FrozenManifestConfig()
 
 
 @dataclass(frozen=True)
@@ -86,8 +89,7 @@ def _load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 def _jsonl_line(value: Mapping[str, Any]) -> bytes:
     return (
-        json.dumps(dict(value), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-        + "\n"
+        json.dumps(dict(value), sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n"
     ).encode("utf-8")
 
 
@@ -104,9 +106,7 @@ def _verify_probe_checkpoint(path: Path) -> dict[str, Any]:
         raise ValueError("primitive-probe artifacts are not published")
     if checkpoint.get("scientific_result_observed") is not False:
         raise ValueError("probe checkpoint crossed the scientific-result boundary")
-    if checkpoint.get("next_allowed_action") != (
-        "HARD_NEGATIVE_MANIFEST_IMPLEMENTATION_REVIEW"
-    ):
+    if checkpoint.get("next_allowed_action") != ("HARD_NEGATIVE_MANIFEST_IMPLEMENTATION_REVIEW"):
         raise ValueError("probe checkpoint does not permit manifest implementation")
     source_fit = checkpoint.get("source_fit", {})
     if source_fit.get("test_primitive_labels_loaded") is not False:
@@ -298,7 +298,7 @@ def construct_query_manifest(
     train_true_scaled: np.ndarray,
     candidate_deciles: np.ndarray,
     query_decile: int,
-    config: FrozenManifestConfig = FrozenManifestConfig(),
+    config: FrozenManifestConfig = DEFAULT_MANIFEST_CONFIG,
 ) -> QueryManifest:
     """Construct one query's pair list without consulting any method representation."""
     candidate_pool = np.flatnonzero(candidate_deciles == query_decile)
@@ -385,7 +385,7 @@ def construct_query_manifest(
 def iter_manifest(
     inputs: VerifiedManifestInputs,
     *,
-    config: FrozenManifestConfig = FrozenManifestConfig(),
+    config: FrozenManifestConfig = DEFAULT_MANIFEST_CONFIG,
 ) -> Iterator[QueryManifest]:
     """Yield every test query in exact canonical order, including zero-pair queries."""
     train_median, train_scale = robust_scale_fit(inputs.train.true_primitives)
@@ -436,9 +436,7 @@ def _write_manifest_stream(
     pair_count = 0
     sparse_count = 0
     zero_count = 0
-    per_decile = {
-        str(index): {"queries": 0, "pairs": 0} for index in range(TOKEN_DECILES)
-    }
+    per_decile = {str(index): {"queries": 0, "pairs": 0} for index in range(TOKEN_DECILES)}
 
     try:
         with (
@@ -573,12 +571,8 @@ def generate_hard_negative_manifest(
             "fit_split": "train",
             "median": train_median.tolist(),
             "scale": train_scale.tolist(),
-            "median_array_sha256": array_hash(
-                np.asarray(train_median, dtype=np.float64)
-            ),
-            "scale_array_sha256": array_hash(
-                np.asarray(train_scale, dtype=np.float64)
-            ),
+            "median_array_sha256": array_hash(np.asarray(train_median, dtype=np.float64)),
+            "scale_array_sha256": array_hash(np.asarray(train_scale, dtype=np.float64)),
         },
         "token_decile_boundaries": boundaries.tolist(),
         "token_decile_boundaries_array_sha256": array_hash(boundaries),

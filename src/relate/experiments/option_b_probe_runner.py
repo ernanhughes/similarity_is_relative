@@ -23,18 +23,12 @@ from relate.experiments.option_b_real_code import ALPHAS, PRIMITIVES, array_hash
 SPLITS = ("train", "validation", "test")
 LABELED_SPLITS = ("train", "validation")
 DEFAULT_SELECTION_DIR = Path("artifacts/canonical/option-b/selection")
-DEFAULT_REPRODUCTION_DIR = Path(
-    "artifacts/canonical/option-b/embedding-reproduction-v2"
-)
+DEFAULT_REPRODUCTION_DIR = Path("artifacts/canonical/option-b/embedding-reproduction-v2")
 DEFAULT_EMBEDDING_CHECKPOINT = (
     DEFAULT_REPRODUCTION_DIR / "option-b-independent-embedding-reproduction-v2.json"
 )
-DEFAULT_GPU_AMENDMENT = (
-    DEFAULT_REPRODUCTION_DIR / "option-b-gpu-fixed-batch10-reproduction-v1.json"
-)
-DEFAULT_EMBEDDING_REPORT = (
-    DEFAULT_REPRODUCTION_DIR / "option-b-canonical-embeddings-v2-run-a.json"
-)
+DEFAULT_GPU_AMENDMENT = DEFAULT_REPRODUCTION_DIR / "option-b-gpu-fixed-batch10-reproduction-v1.json"
+DEFAULT_EMBEDDING_REPORT = DEFAULT_REPRODUCTION_DIR / "option-b-canonical-embeddings-v2-run-a.json"
 DEFAULT_EMBEDDING_DIR = Path("runs/option-b/gpu-fixed-batch-10/embeddings-a")
 DEFAULT_OUTPUT_DIR = Path("runs/option-b/probes-v1")
 SELECTION_REPORT_NAME = "option-b-canonical-row-selection-v2.json"
@@ -146,15 +140,13 @@ def _verify_reproduction_checkpoints(
     amendment = _load_json(amendment_path)
     if amendment.get("checkpoint_id") != "option-b-gpu-fixed-batch10-reproduction-v1":
         raise ValueError("unexpected GPU amendment checkpoint id")
-    if amendment.get("status") != (
-        "GPU_FIXED_BATCH_EMBEDDINGS_REPRODUCED_NOT_YET_CANONICAL"
-    ):
+    if amendment.get("status") != ("GPU_FIXED_BATCH_EMBEDDINGS_REPRODUCED_NOT_YET_CANONICAL"):
         raise ValueError("GPU fixed-batch reproduction checkpoint is incomplete")
     if amendment.get("scientific_result_observed") is not False:
         raise ValueError("GPU amendment crossed the scientific-result boundary")
-    if amendment.get("gpu_identity", {}).get("file_sha256") != checkpoint.get(
-        "identity", {}
-    ).get("file_sha256"):
+    if amendment.get("gpu_identity", {}).get("file_sha256") != checkpoint.get("identity", {}).get(
+        "file_sha256"
+    ):
         raise ValueError("GPU amendment and independent checkpoint identity hashes differ")
     frozen = amendment.get("protocol_amendment", {}).get("frozen_execution", {})
     required = {
@@ -315,9 +307,7 @@ def _load_verified_embeddings(
             raise ValueError(f"{split} embedding file hash is not the reproduced artifact")
         if file_sha != reported["file_sha256"]:
             raise ValueError(f"{split} embedding file hash differs from its run report")
-        if reported["extraction_fingerprint_sha256"] != expected[
-            "extraction_fingerprint_sha256"
-        ]:
+        if reported["extraction_fingerprint_sha256"] != expected["extraction_fingerprint_sha256"]:
             raise ValueError(f"{split} extraction fingerprint mismatch")
         matrices[split] = matrix
         evidence[split] = {
@@ -341,15 +331,11 @@ def verify_probe_inputs(
     embedding_dir: Path = DEFAULT_EMBEDDING_DIR,
 ) -> VerifiedProbeInputs:
     """Verify all inputs without parsing test primitive labels."""
-    checkpoint, amendment = _verify_reproduction_checkpoints(
-        checkpoint_path, amendment_path
-    )
+    checkpoint, amendment = _verify_reproduction_checkpoints(checkpoint_path, amendment_path)
     stable_keys, manifest_evidence, primitive_evidence = _verify_selection(
         selection_dir, checkpoint
     )
-    embedding_report, source_run = _verify_embedding_report(
-        embedding_report_path, checkpoint
-    )
+    embedding_report, source_run = _verify_embedding_report(embedding_report_path, checkpoint)
     embeddings, embedding_evidence = _load_verified_embeddings(
         embedding_dir,
         embedding_report,

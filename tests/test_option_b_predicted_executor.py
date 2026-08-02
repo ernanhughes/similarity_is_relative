@@ -81,9 +81,7 @@ def test_contract_produces_oof_candidates_and_hash_addressed_outputs() -> None:
     assert artifacts.report["fold_assignment_sha256"]
     for primitive in artifacts.report["primitives"].values():
         assert primitive["refit_policy"] == "refit selected alpha on all training rows"
-        assert primitive["alpha_tie_break"] == (
-            "largest alpha among equal validation MAE values"
-        )
+        assert primitive["alpha_tie_break"] == ("largest alpha among equal validation MAE values")
         assert len(primitive["out_of_fold_models"]) == 5
 
 
@@ -99,14 +97,13 @@ def test_candidate_predictions_are_not_full_train_in_sample_predictions() -> Non
 
 def test_executor_requires_predicted_roles_on_both_sides() -> None:
     artifacts = fit_predicted_executor_contract(**_fixture())
-    distances = predicted_executor_distance(
-        artifacts.test_queries, artifacts.train_candidates
-    )
+    distances = predicted_executor_distance(artifacts.test_queries, artifacts.train_candidates)
     assert distances.shape == (2, 10)
 
     with pytest.raises(TypeError):
         predicted_executor_distance(
-            artifacts.test_queries.values, artifacts.train_candidates  # type: ignore[arg-type]
+            artifacts.test_queries.values,
+            artifacts.train_candidates,  # type: ignore[arg-type]
         )
 
     oracle_candidates = PredictedPrimitiveVectors(

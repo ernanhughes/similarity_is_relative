@@ -232,9 +232,7 @@ def test_full_runner_writes_every_query_and_no_method_evidence(tmp_path: Path) -
     assert report["all_test_queries_represented"] is True
     assert report["construction_scope"]["embeddings_loaded"] is False
     assert report["construction_scope"]["probe_predictions_loaded"] is False
-    query_lines = (
-        output / "option-b-hard-negative-queries-v1.jsonl"
-    ).read_text().splitlines()
+    query_lines = (output / "option-b-hard-negative-queries-v1.jsonl").read_text().splitlines()
     assert len(query_lines) == 3
 
     with pytest.raises(FileExistsError, match="already contains canonical files"):

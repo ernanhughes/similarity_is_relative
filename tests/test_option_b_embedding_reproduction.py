@@ -118,12 +118,8 @@ def _write_run(
             "max_length": 256,
             "split": split,
             "split_manifest_sha256": manifest_hash,
-            "stable_key_sequence_sha256": _sequence_hash(
-                [row["stable_key"] for row in rows]
-            ),
-            "source_sequence_sha256": _sequence_hash(
-                [row["code_sha256"] for row in rows]
-            ),
+            "stable_key_sequence_sha256": _sequence_hash([row["stable_key"] for row in rows]),
+            "source_sequence_sha256": _sequence_hash([row["code_sha256"] for row in rows]),
             "rows": len(rows),
             "batch_size": 2,
             "runtime": runtime,

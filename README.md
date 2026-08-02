@@ -18,54 +18,139 @@ Verification language is explicit:
 
 - **deterministic replay** means the same implementation reproduced the result tree;
 - **independent recomputation** requires separate substantive metric and decision code;
-- neither term alone implies a scientific claim passed.
+- neither term alone implies that a scientific claim passed.
 
 ## Current thesis
 
-The original E01 composition thesis has been closed.
+The original E01 composition thesis is closed.
 
-The only prospective RELATE thesis remains:
+Option B has now established the real-premise half of the revised RELATE thesis:
 
-> **A support-aware relational query system may expose objectively useful relations in a real frozen representation and refuse compound queries when calibrated primitive evidence cannot support them.**
+> **A frozen representation can contain objectively useful structural relations that its default cosine and Euclidean geometry materially underexpose.**
 
-This is proposed and untested. No future result inherits success from E01.
+The remaining prospective thesis is narrower and still untested:
+
+> **A support-aware relational query system can propagate calibrated primitive evidence through a compound query and refuse when that evidence is insufficient, outperforming simpler calibrated abstention baselines at matched coverage.**
+
+Option B does not establish support propagation, calibrated refusal, semantic binding, a general query algebra or algorithmic novelty. Those questions belong to a separately frozen Option C contract.
 
 ## Current decision
 
-The former broad synthetic E02–E07 roadmap has been cancelled.
+The former broad synthetic E02–E07 roadmap remains cancelled.
 
-The bounded path is:
+The bounded path is now:
 
 ```text
-PUBLISH  finalize the E01 audit narrative and methodological case study
-B        one real frozen-representation premise test — maximum 10 working days
-C        one propagated-refusal test — maximum 15 working days, only if B passes
-STOP     close RELATE if either required kill test fails
+E01      synthetic composition line — CLOSED
+B        real frozen-representation premise test — PASSED
+C        propagated-refusal test — AUTHORISED, CONTRACT NOT YET FROZEN
+STOP     close the novelty line if Option C fails its future frozen gate
 ```
 
-Maximum remaining RELATE research budget: **25 working days**.
+The post-E01 decision originally allowed at most ten working days for Option B and fifteen additional working days for Option C. Option B is complete. No Option C implementation is authorised until its prospective contract, baselines, calibration procedure, selective-risk metric and kill threshold are reviewed and merged.
 
 Read:
 
-- [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
-- [Option B domain selection](docs/research/option-b-domain-selection-2026-08-01.md)
+- [Option B result checkpoint](docs/results/option-b-real-code-premise-checkpoint-v1.md)
+- [Option B result article](docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md)
 - [Option B frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
-- [Option B execution runbook](docs/runbooks/option-b-real-code.md)
+- [Post-E01 publication and kill-test decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
+- [Finalized E01 closure article](docs/blog/closing-the-e01-composition-line.md)
 
-## Option B frozen design
+## Option B result
+
+Option B tested one frozen external representation and one preregistered real-code relation:
 
 ```text
 domain: CodeSearchNet Python functions
 representation: microsoft/codebert-base, frozen
 primitives: cyclomatic complexity, maximum control nesting depth,
             distinct call-site count
-query: joint similarity under true and predicted Chebyshev geometry
-primary metric: hard-negative triplet accuracy
-continuation threshold: predicted executor - strongest raw geometry >= 0.10
-budget: 10 working days
+query: joint similarity under Chebyshev distance
+candidate pool: 20,000 selected training functions
+queries: 4,000 selected test functions
+hard negatives: 128 frozen pairs per query, 512,000 pairs total
+primary metric: equal-weighted per-query hard-negative triplet accuracy
 ```
 
-A gap below `0.10` produces `REAL_PREMISE_FAILED` and closes RELATE. Secondary metrics cannot rescue the decision. A pass authorises only the separately contracted Option C refusal test.
+The frozen comparison was:
+
+```text
+raw_best = max(raw_cosine_accuracy, raw_euclidean_accuracy)
+gap = predicted_executor_accuracy - raw_best
+
+support when gap >= 0.10
+failure when gap < 0.10
+```
+
+### Registered primary result
+
+| Method | Hard-negative triplet accuracy |
+|---|---:|
+| Raw CodeBERT cosine | `0.532458984375` |
+| Raw CodeBERT Euclidean | `0.533314453125` |
+| Token-length diagnostic | `0.498683593750` |
+| Predicted primitive executor | `0.732851562500` |
+| True-primitive oracle | `1.000000000000` |
+
+```text
+raw best:  0.533314453125
+gap:       0.199537109375
+threshold: 0.100000000000
+outcome:   REAL_PREMISE_SUPPORTED
+```
+
+The predicted executor exceeded the strongest raw embedding geometry by approximately **19.95 percentage points**, almost twice the preregistered continuation threshold.
+
+### Independent verification
+
+The standalone verifier:
+
+- did not import the experiment evaluator;
+- reverified the selected manifests, embedding arrays, primitive predictions and hard-negative stream;
+- recomputed all `4,000 × 5` primary query-score values;
+- required exact score-matrix equality;
+- independently recomputed the point estimates, registered gap and final outcome.
+
+The independently recomputed result matched exactly.
+
+### Secondary context
+
+The primary decision did not rely on secondary metrics, but they help interpret the result:
+
+| Diagnostic | Raw cosine | Raw Euclidean | Predicted executor |
+|---|---:|---:|---:|
+| Spearman with oracle distance | `0.11198` | `0.11045` | `0.72308` |
+| Recall@10 | `0.00325` | `0.00303` | `0.00908` |
+| Neighbour regret@10 | `0.86783` | `0.86895` | `0.49885` |
+| Constraint error@10 | `1.58963` | `1.59063` | `0.99638` |
+
+The executor improved relation-specific ordering, rank correlation, regret and constraint error. Exact nearest-neighbour recall remained low in absolute terms, so Option B supports a representation-and-geometry premise rather than a claim that the retrieval problem is solved.
+
+Repository bootstrap gave a descriptive 95% gap interval of approximately `[0.19566, 0.20306]`. Every token-length decile retained a positive gap above `0.12`, and leave-one-large-repository-out gaps remained close to `0.20`. These diagnostics were not allowed to rescue or overturn the registered point-estimate decision.
+
+## What Option B establishes
+
+The promoted claim is deliberately narrow:
+
+> In repository-separated real Python code, independently predicted AST primitive coordinates exposed a frozen three-way structural relation materially better than raw CodeBERT cosine or Euclidean geometry on the preregistered hard-negative test.
+
+This result shows that:
+
+- a real frozen representation contained recoverable structural signals not well expressed by its default geometry;
+- separately predicted primitive coordinates provided useful query-specific geometry without compound supervision;
+- the improvement was not explained by token length alone;
+- the result survived exact independent recomputation and repository-level diagnostics.
+
+It does **not** show that:
+
+- RELATE has a general composition algorithm;
+- the chosen primitives are semantically complete descriptions of code;
+- predicted geometry matches the true oracle;
+- exact nearest-neighbour retrieval is solved;
+- uncertainty can be propagated correctly;
+- RELATE refuses unsupported queries better than simpler calibrated methods;
+- the method is novel relative to a directly trained compound model.
 
 ## Current status
 
@@ -81,9 +166,10 @@ A gap below `0.10` produces `REAL_PREMISE_FAILED` and closes RELATE. Secondary m
 - E01 permutation diagnostic: **weight-separation effect, not semantic verification**
 - E01 general or novel composition line: **closed**
 - Broad synthetic factorisation roadmap: **cancelled**
-- Option B real-code premise test: **contract frozen; implementation in progress; no canonical result**
-- Option C propagated refusal: **conditional on B**
-- Promoted real-domain or RELATE algorithmic findings: **none**
+- Option B real-code premise test: **complete; independently verified; `REAL_PREMISE_SUPPORTED`**
+- Option C propagated refusal: **authorised; prospective contract not yet frozen**
+- Promoted real-domain finding: **B-PREM-001**
+- Promoted refusal or novelty finding: **none**
 
 ## E01 final closure
 
@@ -100,40 +186,38 @@ The independent audit reproduced the headline E01 measurements and changed their
 
 E01.2a reproduced the measurement pattern under a different substage rule; it did not replicate E01.1's original pass/fail rule.
 
-### Saturation result
+The predicted-primitive executor was effectively indistinguishable from applying the same query to the true noiseless latent primitives. The exchangeable-primitives permutation margin was principally a weight-separation diagnostic rather than semantic verification.
 
-The predicted-primitive executor was effectively indistinguishable from applying the same query to the true noiseless latent primitives. Median ceiling fractions were approximately `1.0` for all four compounds.
-
-The narrow cross-seed intervals reflected a saturated generator with almost no headroom.
-
-### Weight-separation result
-
-For exchangeable primitives, the strongest wrong-permutation margin increased monotonically with weight separation and was exactly zero for equal weights. The E01 permutation control therefore did not test semantic relation-name identity.
-
-### Retrieval context
-
-Mean recall@10 ranged from roughly `0.16` to `0.35`, despite triplet accuracies around `0.92–0.93`. The latent oracle showed almost the same retrieval profile.
-
-### Final classification
-
-```text
-E01 weighted-product-space composition line: CLOSED
-Historical numerical artifacts: PRESERVED
-General composition claim: NOT SUPPORTED
-Evidence-first methodological case study: READY FOR PUBLICATION
-Next research action: OPTION B
-Option C: CONDITIONAL ON B
-```
-
-Read:
-
-- [Finalized E01 closure blog](docs/blog/closing-the-e01-composition-line.md)
-- [Independent recomputation checkpoint](docs/results/e01-independent-recomputation-checkpoint-v1.md)
-- [External-review audit](docs/audits/e01-external-review-audit-2026-08-01.md)
-- [Research reset](docs/research/e01-research-reset-2026-08-01.md)
-- [Post-E01 decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
+Option B did not revive the closed E01 composition claim. It answered a different, narrower question in a real external representation.
 
 ## Evidence identities
+
+### Option B canonical result
+
+```text
+Implementation merge commit:
+211e6f1a5fd827f55f89c69692acc9453f38f09f
+
+Publication merge commit:
+78e7da18a15a393cbedf1fdb7d6023ea42a32967
+
+Full result SHA-256:
+31223e02b807bbecb6603a76921677a6f79bac88609243bb20cf11ec30a68158
+
+Primary score array SHA-256:
+dccf0698934142ceaf1fe0ccd5d35713600ef45f9719e3864468c40a5274dc70
+
+Raw query-metrics SHA-256:
+784ded45280c99325f2ac285244dd4905b5718688c765831cd07f26fb9e184a7
+
+Independent verification SHA-256:
+da1b9cf1244b47c71ac7adce91b7db502b4fd2d3b663e126d8cde7c87e239d6c
+```
+
+Canonical evidence:
+
+- [`artifacts/canonical/option-b/method-evaluation-v1/`](artifacts/canonical/option-b/method-evaluation-v1/)
+- [Human-readable Option B checkpoint](docs/results/option-b-real-code-premise-checkpoint-v1.md)
 
 ### E01 independent recomputation
 
@@ -148,27 +232,26 @@ Configuration:
 6e236067860e3a671a3bb489393e8bef8c6f9aeb085c0b630826351ac4a427a6
 ```
 
-### Historical E01.1
+## Research records
 
-```text
-Result:
-e8144a17e2acaf3e1efda9522b5cb5775f37dbd63a0bb1611a97944a78d64c90
+### Option B
 
-Decision tree:
-f7ead1c9c70f276ee3c5dbe4689c50bcbb649c9fe6f272b5ca52c5fdae3a7a77
-```
+- [Frozen experiment contract](docs/experiments/08-option-b-real-code-premise-test.md)
+- [Domain selection](docs/research/option-b-domain-selection-2026-08-01.md)
+- [Canonical row-selection checkpoint](docs/research/option-b-canonical-row-selection-complete-2026-08-01.md)
+- [Method-evaluation runner contract](docs/research/option-b-method-evaluation-runner-2026-08-02.md)
+- [Result checkpoint](docs/results/option-b-real-code-premise-checkpoint-v1.md)
+- [Result article](docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md)
 
-### Historical E01.2a
+### E01
 
-```text
-Result:
-b2c2bf4484b57a087496e65fb6e7587a57b9b3530401dfd9cdf9cf7556e86168
+- [Finalized E01 closure article](docs/blog/closing-the-e01-composition-line.md)
+- [Independent recomputation checkpoint](docs/results/e01-independent-recomputation-checkpoint-v1.md)
+- [External-review audit](docs/audits/e01-external-review-audit-2026-08-01.md)
+- [Research reset](docs/research/e01-research-reset-2026-08-01.md)
+- [Post-E01 decision](docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md)
 
-Decision tree:
-321914813b4f342bea9edc3e92c267a919bc91c466cc95a1d66730fc779e6b48
-```
-
-## E00 records
+### E00
 
 - [Baseline checkpoint](docs/results/e00-baseline-checkpoint-v1.md)
 - [Operator-matrix checkpoint](docs/results/e00-operator-matrix-checkpoint-v1.md)
@@ -183,11 +266,13 @@ pytest
 ruff check .
 ```
 
-For Option B:
+For the completed Option B pipeline:
 
 ```bash
 python -m pip install -e ".[dev,option-b]"
 relate-option-b --print-contract
 ```
+
+The canonical Option B result must not be rerun or modified. Any Option C work begins with a new documentation-only prospective contract.
 
 PowerShell entry points live under [`scripts/`](scripts/README.md).

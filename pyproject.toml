@@ -57,7 +57,7 @@ relate-option-b-verify-evaluation = "relate.experiments.option_b_method_evaluati
 relate-option-c0-prepare-firewall = "relate.experiments.option_c0_data_firewall:main"
 relate-option-c0-verify-firewall = "relate.experiments.option_c0_data_firewall_independent:main"
 relate-option-c0-validate-harness = "relate.experiments.option_c0_mechanism_harness:main"
-relate-option-c0-discover = "relate.experiments.option_c0_discovery_runner:main"
+relate-option-c0-discover = "relate.experiments.option_c0_discovery_entrypoint:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

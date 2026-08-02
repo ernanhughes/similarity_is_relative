@@ -923,3 +923,318 @@ def test_incomplete_source_manifest_and_near_scan_change_status(
     assert incomplete_near["status"] == "C0_D1_AUDIT_INCOMPLETE_NEAR_SCAN"
     assert "execution_environment" in incomplete_near
     assert incomplete_near["execution_environment"]["argv"]
+
+
+def test_candidate_generation_interruption_resumes_without_clearing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+    ]
+    ctx = context(tmp_path)
+    monkeypatch.setattr(d1, "INJECT_AFTER_CANDIDATE_BUCKETS", 1)
+    with d1.IntegrityAuditCache(tmp_path / "cache.sqlite3") as cache:
+        cache.register_context(ctx)
+        with pytest.raises(RuntimeError, match="candidate-generation"):
+            d1.near_duplicate_report(
+                rows,
+                cache=cache,
+                context=ctx,
+                max_hamming=3,
+                max_bucket=20,
+                max_candidate_pairs=50,
+                max_pairs=50,
+                reporter=d1.ProgressReporter(),
+            )
+        persisted = cache.count_candidate_pairs(ctx.sha256)
+        monkeypatch.setattr(d1, "INJECT_AFTER_CANDIDATE_BUCKETS", None)
+        report = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=50,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+    assert persisted == 1
+    assert report["candidate_generation_resumed"] is True
+    assert report["candidate_generation_cache_hits"] == 1
+    assert report["candidate_pairs_generated"] == 1
+
+
+def test_pair_comparison_interruption_resumes_without_duplicate_near_pairs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_fit", "d/repo", "fit-2", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+        row("c0_iteration", "c/repo", "iter-2", same),
+    ]
+    ctx = context(tmp_path)
+    monkeypatch.setattr(d1, "CANDIDATE_COMPARISON_BATCH_SIZE", 1)
+    monkeypatch.setattr(d1, "INJECT_AFTER_COMPARISON_BATCHES", 1)
+    with d1.IntegrityAuditCache(tmp_path / "cache.sqlite3") as cache:
+        cache.register_context(ctx)
+        with pytest.raises(RuntimeError, match="pair-comparison"):
+            d1.near_duplicate_report(
+                rows,
+                cache=cache,
+                context=ctx,
+                max_hamming=3,
+                max_bucket=20,
+                max_candidate_pairs=50,
+                max_pairs=50,
+                reporter=d1.ProgressReporter(),
+            )
+        near_after_interrupt = len(cache.load_near_pairs(ctx.sha256))
+        monkeypatch.setattr(d1, "INJECT_AFTER_COMPARISON_BATCHES", None)
+        report = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=50,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+        final_near = len(cache.load_near_pairs(ctx.sha256))
+    assert near_after_interrupt == 1
+    assert report["pair_comparison_resumed"] is True
+    assert report["candidate_pairs_compared_this_run"] < report["candidate_pairs_compared_total"]
+    assert final_near == report["near_pair_count"]
+
+
+def test_candidate_pair_bound_strictness_and_exact_final_completion(tmp_path: Path) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    two_rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+    ]
+    ctx = context(tmp_path)
+    with d1.IntegrityAuditCache(tmp_path / "exact.sqlite3") as cache:
+        cache.register_context(ctx)
+        exact = d1.near_duplicate_report(
+            two_rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=1,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+        assert cache.count_candidate_pairs(ctx.sha256) == 1
+    assert exact["candidate_limit_reached"] is True
+    assert exact["candidate_generation_truncated"] is False
+    assert exact["near_duplicate_scan_complete"] is True
+
+    many_rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_fit", "d/repo", "fit-2", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+        row("c0_iteration", "c/repo", "iter-2", same),
+    ]
+    ctx2 = context(tmp_path, source="other")
+    with d1.IntegrityAuditCache(tmp_path / "truncated.sqlite3") as cache:
+        cache.register_context(ctx2)
+        truncated = d1.near_duplicate_report(
+            many_rows,
+            cache=cache,
+            context=ctx2,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=1,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+        assert cache.count_candidate_pairs(ctx2.sha256) == 1
+    assert truncated["candidate_limit_reached"] is True
+    assert truncated["candidate_generation_truncated"] is True
+
+
+def test_duplicate_bands_do_not_consume_candidate_capacity(tmp_path: Path) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+    ]
+    ctx = context(tmp_path)
+    with d1.IntegrityAuditCache(tmp_path / "cache.sqlite3") as cache:
+        cache.register_context(ctx)
+        report = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=1,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+        assert cache.count_candidate_pairs(ctx.sha256) == 1
+    assert report["candidate_pairs_generated"] == 1
+
+
+def test_candidate_commitment_detects_same_count_corruption(tmp_path: Path) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+    ]
+    ctx = context(tmp_path)
+    with d1.IntegrityAuditCache(tmp_path / "cache.sqlite3") as cache:
+        cache.register_context(ctx)
+        d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=50,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+        cache.connection.execute(
+            "UPDATE candidate_pairs SET right_key = ? WHERE right_key = ?",
+            ("fit-1", "iter-1"),
+        )
+        cache.connection.commit()
+        with pytest.raises(ValueError, match="candidate-pair"):
+            d1.near_duplicate_report(
+                rows,
+                cache=cache,
+                context=ctx,
+                max_hamming=3,
+                max_bucket=20,
+                max_candidate_pairs=50,
+                max_pairs=50,
+                reporter=d1.ProgressReporter(),
+            )
+
+
+def test_comparison_uses_bounded_sql_batches(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", f"fit/repo{i}", f"fit-{i}", same) for i in range(3)
+    ] + [
+        row("c0_iteration", f"iter/repo{i}", f"iter-{i}", same) for i in range(3)
+    ]
+    ctx = context(tmp_path)
+    monkeypatch.setattr(d1, "CANDIDATE_COMPARISON_BATCH_SIZE", 2)
+    with d1.IntegrityAuditCache(tmp_path / "cache.sqlite3") as cache:
+        cache.register_context(ctx)
+        report = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=1_000_000,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+        )
+    assert not hasattr(d1.IntegrityAuditCache, "load_candidate_pairs")
+    assert report["comparison_batches_completed"] > 1
+    assert report["candidate_comparison_batch_size"] == 2
+
+
+def test_provenance_refs_refused_and_fixture_override_allows(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="provenance refs"):
+        d1.run_d1_integrity_audit(
+            identity_path=tmp_path / "identity.json",
+            firewall_dir=tmp_path,
+            allocation_path=tmp_path / "allocation.jsonl",
+            output_path=tmp_path / "result.json",
+            v1_runtime_source_commit="HEAD",
+            allow_dirty=True,
+            allow_test_fixture_inputs=True,
+        )
+
+    output = tmp_path / "exists.json"
+    output.write_text("exists", encoding="utf-8")
+    with pytest.raises(FileExistsError):
+        d1.run_d1_integrity_audit(
+            identity_path=tmp_path / "identity.json",
+            firewall_dir=tmp_path,
+            allocation_path=tmp_path / "allocation.jsonl",
+            output_path=output,
+            v1_runtime_source_commit="HEAD",
+            allow_dirty=True,
+            allow_test_fixture_inputs=True,
+            allow_test_fixture_provenance=True,
+        )
+
+
+def test_public_script_has_no_mutable_provenance_ref_parameters() -> None:
+    script = Path("scripts/run-option-c0-d1-integrity-audit.ps1").read_text(encoding="utf-8")
+    assert "$V1RuntimeSourceCommit" not in script
+    assert "$V1ResultPublicationCommit" not in script
+
+
+def test_d1_source_manifest_paths_exist_at_head() -> None:
+    manifest = d1._hash_paths_at_ref(
+        Path.cwd(),
+        "HEAD",
+        d1.D1_EXECUTION_PATHS,
+        d1.ProgressReporter(),
+        evidence_role="d1_execution_source",
+    )
+    assert all(item["available"] for item in manifest.values())
+    for required in d1.D1_CONTEXT_SOURCE_PATHS:
+        assert required in d1.D1_EXECUTION_PATHS
+
+
+def test_output_truncated_distinct_from_sample_truncated(tmp_path: Path) -> None:
+    same = "def f(x):\n    return x + 1\n"
+    rows = [
+        row("c0_fit", "a/repo", "fit-1", same),
+        row("c0_fit", "d/repo", "fit-2", same),
+        row("c0_iteration", "b/repo", "iter-1", same),
+        row("c0_iteration", "c/repo", "iter-2", same),
+    ]
+    ctx = context(tmp_path)
+    with d1.IntegrityAuditCache(tmp_path / "truncated.sqlite3") as cache:
+        cache.register_context(ctx)
+        truncated = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=50,
+            max_pairs=1,
+            reporter=d1.ProgressReporter(),
+        )
+    assert truncated["comparison_truncated"] is True
+    assert truncated["near_pair_limit_reached"] is True
+    assert truncated["output_truncated"] is True
+
+    ctx2 = context(tmp_path, source="sample-only")
+    with d1.IntegrityAuditCache(tmp_path / "sample.sqlite3") as cache:
+        cache.register_context(ctx2)
+        sample_only = d1.near_duplicate_report(
+            rows,
+            cache=cache,
+            context=ctx2,
+            max_hamming=3,
+            max_bucket=20,
+            max_candidate_pairs=50,
+            max_pairs=50,
+            reporter=d1.ProgressReporter(),
+            sample_limit=1,
+        )
+    assert sample_only["near_duplicate_scan_complete"] is True
+    assert sample_only["output_truncated"] is False
+    assert sample_only["sample_truncated"] is True

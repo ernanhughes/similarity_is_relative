@@ -43,6 +43,16 @@ Candidate-pair generation is SQLite-backed and bounded by
 `near_max_candidate_pairs`; hitting that bound marks candidate generation and
 the near scan incomplete.
 
+Candidate generation now checkpoints each completed bucket and resumes after the
+last durable bucket checkpoint. Pair comparison uses keyset pagination with a
+bounded batch size and resumes after the last committed candidate key. The
+canonical comparison path does not materialize the complete candidate table in
+Python memory.
+
+Completed-scan reuse is separate from partial recovery: reusable near-scan
+metadata is accepted only after candidate-pair and near-pair commitments are
+recomputed and verified.
+
 ## Provenance
 
 The runner records Git-object byte hashes for the C0 v1 runtime source

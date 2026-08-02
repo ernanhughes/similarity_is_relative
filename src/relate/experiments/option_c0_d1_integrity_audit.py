@@ -64,6 +64,9 @@ SIMHASH_BITS: Final = 64
 SIMHASH_SHINGLE_SIZE: Final = 5
 SIMHASH_BANDS: Final = 4
 MAX_EXHAUSTIVE_SIMHASH_RADIUS: Final = 3
+CANDIDATE_COMPARISON_BATCH_SIZE: Final = 10_000
+INJECT_AFTER_CANDIDATE_BUCKETS: int | None = None
+INJECT_AFTER_COMPARISON_BATCHES: int | None = None
 FAMILY_SUFFIXES: Final = frozenset(
     {
         "backup",
@@ -112,7 +115,14 @@ D1_EXECUTION_PATHS: Final = (
     "pyproject.toml",
     "scripts/run-option-c0-d1-integrity-audit.ps1",
     "src/relate/experiments/option_c0_d1_integrity_audit.py",
+    "src/relate/experiments/option_b_embedding.py",
+    "src/relate/experiments/option_b_identity.py",
     "src/relate/experiments/option_c0_discovery_runner.py",
+    "src/relate/experiments/option_b_selection.py",
+    "src/relate/experiments/option_b_selection_resilient.py",
+    "src/relate/experiments/option_c0_data_firewall.py",
+    "src/relate/experiments/option_c0_diagnostics.py",
+    "src/relate/experiments/option_c0_selective_baselines.py",
     "src/relate/experiments/option_c0_mechanism_harness.py",
     "src/relate/experiments/option_b_real_code.py",
     "artifacts/canonical/option-c0/review-v1/option-c0-d-remediation-status-v1.json",
@@ -120,10 +130,16 @@ D1_EXECUTION_PATHS: Final = (
 )
 D1_CONTEXT_SOURCE_PATHS: Final = (
     "src/relate/experiments/option_c0_d1_integrity_audit.py",
+    "src/relate/experiments/option_b_embedding.py",
+    "src/relate/experiments/option_b_identity.py",
     "src/relate/experiments/option_c0_discovery_runner.py",
+    "src/relate/experiments/option_b_selection.py",
     "src/relate/experiments/option_c0_mechanism_harness.py",
     "src/relate/experiments/option_b_real_code.py",
     "src/relate/experiments/option_b_selection_resilient.py",
+    "src/relate/experiments/option_c0_data_firewall.py",
+    "src/relate/experiments/option_c0_diagnostics.py",
+    "src/relate/experiments/option_c0_selective_baselines.py",
 )
 
 
@@ -528,6 +544,17 @@ class IntegrityAuditCache:
         context_sha256: str,
         phase_name: str,
     ) -> dict[str, Any] | None:
+        state = self.phase_state(context_sha256, phase_name)
+        if state is None:
+            return None
+        status, value = state
+        return value if status == "COMPLETE" else None
+
+    def phase_state(
+        self,
+        context_sha256: str,
+        phase_name: str,
+    ) -> tuple[str, dict[str, Any]] | None:
         row = self.connection.execute(
             """
             SELECT status, metadata_json FROM phases
@@ -538,12 +565,10 @@ class IntegrityAuditCache:
         if row is None:
             return None
         status, metadata_json = row
-        if status != "COMPLETE":
-            return None
         value = json.loads(str(metadata_json))
         if not isinstance(value, dict):
             raise ValueError("integrity cache phase metadata is corrupt")
-        return value
+        return str(status), value
 
     def mark_phase_complete(
         self,
@@ -560,6 +585,75 @@ class IntegrityAuditCache:
                 metadata_json = excluded.metadata_json
             """,
             (context_sha256, phase_name, _canonical_json(metadata)),
+        )
+        self.connection.commit()
+
+    def set_phase_status(
+        self,
+        context_sha256: str,
+        phase_name: str,
+        status: str,
+        metadata: Mapping[str, Any],
+    ) -> None:
+        if status not in {"IN_PROGRESS", "COMPLETE", "TRUNCATED", "CORRUPT"}:
+            raise ValueError(f"unexpected phase status: {status}")
+        self.connection.execute(
+            """
+            INSERT INTO phases(context_sha256, phase_name, status, metadata_json)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(context_sha256, phase_name) DO UPDATE SET
+                status = excluded.status,
+                metadata_json = excluded.metadata_json
+            """,
+            (context_sha256, phase_name, status, _canonical_json(metadata)),
+        )
+        self.connection.commit()
+
+    def load_phase_checkpoint(
+        self,
+        context_sha256: str,
+        phase_name: str,
+    ) -> tuple[str, dict[str, Any]] | None:
+        row = self.connection.execute(
+            """
+            SELECT cursor_text, metadata_json
+            FROM phase_checkpoints
+            WHERE context_sha256 = ? AND phase_name = ?
+            """,
+            (context_sha256, phase_name),
+        ).fetchone()
+        if row is None:
+            return None
+        cursor, metadata_json = row
+        metadata = json.loads(str(metadata_json))
+        if not isinstance(metadata, dict):
+            raise ValueError("phase checkpoint metadata is corrupt")
+        return str(cursor), metadata
+
+    def save_phase_checkpoint(
+        self,
+        context_sha256: str,
+        phase_name: str,
+        cursor: str,
+        metadata: Mapping[str, Any],
+    ) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO phase_checkpoints(
+                context_sha256, phase_name, cursor_text, metadata_json
+            ) VALUES (?, ?, ?, ?)
+            ON CONFLICT(context_sha256, phase_name) DO UPDATE SET
+                cursor_text = excluded.cursor_text,
+                metadata_json = excluded.metadata_json
+            """,
+            (context_sha256, phase_name, cursor, _canonical_json(metadata)),
+        )
+        self.connection.commit()
+
+    def clear_phase_checkpoint(self, context_sha256: str, phase_name: str) -> None:
+        self.connection.execute(
+            "DELETE FROM phase_checkpoints WHERE context_sha256 = ? AND phase_name = ?",
+            (context_sha256, phase_name),
         )
         self.connection.commit()
 
@@ -594,14 +688,22 @@ class IntegrityAuditCache:
         self,
         context_sha256: str,
         pairs: Sequence[tuple[str, str]],
+        *,
+        limit: int | None = None,
     ) -> None:
+        selected = list(pairs)
+        if limit is not None:
+            remaining = max(limit - self.count_candidate_pairs(context_sha256), 0)
+            selected = selected[:remaining]
+        if not selected:
+            return
         self.connection.executemany(
             """
             INSERT INTO candidate_pairs(context_sha256, left_key, right_key)
             VALUES (?, ?, ?)
             ON CONFLICT(context_sha256, left_key, right_key) DO NOTHING
             """,
-            [(context_sha256, left, right) for left, right in pairs],
+            [(context_sha256, left, right) for left, right in selected],
         )
         self.connection.commit()
 
@@ -612,18 +714,54 @@ class IntegrityAuditCache:
         ).fetchone()
         return int(row[0])
 
-    def load_candidate_pairs(
+    def candidate_pair_exists(self, context_sha256: str, left: str, right: str) -> bool:
+        row = self.connection.execute(
+            """
+            SELECT 1 FROM candidate_pairs
+            WHERE context_sha256 = ? AND left_key = ? AND right_key = ?
+            """,
+            (context_sha256, left, right),
+        ).fetchone()
+        return row is not None
+
+    def candidate_pair_commitment(self, context_sha256: str) -> tuple[int, str]:
+        digest = hashlib.sha256()
+        count = 0
+        cursor_left = ""
+        cursor_right = ""
+        while True:
+            batch = self.fetch_candidate_pair_batch(
+                context_sha256,
+                after_left=cursor_left,
+                after_right=cursor_right,
+                limit=10_000,
+            )
+            if not batch:
+                break
+            for left, right in batch:
+                digest.update((_canonical_json({"left": left, "right": right}) + "\n").encode())
+                count += 1
+            cursor_left, cursor_right = batch[-1]
+        return count, digest.hexdigest()
+
+    def fetch_candidate_pair_batch(
         self,
         context_sha256: str,
+        *,
+        after_left: str,
+        after_right: str,
+        limit: int,
     ) -> tuple[tuple[str, str], ...]:
         values = self.connection.execute(
             """
             SELECT left_key, right_key
             FROM candidate_pairs
             WHERE context_sha256 = ?
+              AND (left_key > ? OR (left_key = ? AND right_key > ?))
             ORDER BY left_key, right_key
+            LIMIT ?
             """,
-            (context_sha256,),
+            (context_sha256, after_left, after_left, after_right, limit),
         ).fetchall()
         return tuple((str(left), str(right)) for left, right in values)
 
@@ -802,6 +940,16 @@ def validate_d1_contract(path: Path) -> dict[str, Any]:
         raise ValueError("D1 contract must keep hidden_row_content_accessed=false")
     if tuple(value.get("visible_row_roles", ())) != VISIBLE_ROLES:
         raise ValueError("D1 contract visible roles changed")
+    commits = value.get("v1_commit_identities", {})
+    expected = {
+        "registered_candidate_implementation_commit": (
+            REGISTERED_CANDIDATE_IMPLEMENTATION_COMMIT
+        ),
+        "v1_runtime_source_commit": V1_RUNTIME_SOURCE_COMMIT,
+        "v1_result_publication_commit": V1_RESULT_PUBLICATION_COMMIT,
+    }
+    if commits != expected:
+        raise ValueError("D1 contract commit identities changed")
     return {
         "path": str(path).replace("\\", "/"),
         "sha256": _sha256_file(path),
@@ -874,6 +1022,7 @@ def _audit_context(
         "near_max_bucket": near_max_bucket,
         "near_max_candidate_pairs": near_max_candidate_pairs,
         "near_max_pairs": near_max_pairs,
+        "candidate_comparison_batch_size": CANDIDATE_COMPARISON_BATCH_SIZE,
     }
     return AuditContext.from_payload(payload)
 
@@ -1093,18 +1242,34 @@ def _compute_near_pairs(
         if index % 1000 == 0 or index == len(rows):
             reporter.rows("index SimHash bands", index, len(rows), started=started)
 
-    cache.connection.execute(
-        "DELETE FROM candidate_pairs WHERE context_sha256 = ?",
-        (context_sha256,),
-    )
-    cache.connection.commit()
-    oversized_buckets = 0
-    candidate_generation_truncated = False
     ordered_buckets = sorted(buckets.items())
-    candidate_pairs_generated = 0
+    checkpoint = cache.load_phase_checkpoint(context_sha256, "candidate_generation")
+    candidate_generation_resumed = checkpoint is not None
+    resume_bucket = ""
+    oversized_buckets = 0
     candidate_buckets_processed = 0
+    if checkpoint is not None:
+        resume_bucket, generation_meta = checkpoint
+        oversized_buckets = int(generation_meta.get("oversized_buckets_skipped", 0))
+        candidate_buckets_processed = int(generation_meta.get("candidate_buckets_processed", 0))
+    candidate_generation_truncated = False
+    candidate_limit_reached = cache.count_candidate_pairs(context_sha256) >= max_candidate_pairs
+    candidate_generation_new_pairs = 0
+    candidate_generation_cache_hits = cache.count_candidate_pairs(context_sha256)
     scan_started = time.perf_counter()
-    for position, (_, indices) in enumerate(ordered_buckets, start=1):
+    cache.set_phase_status(
+        context_sha256,
+        "candidate_generation",
+        "IN_PROGRESS",
+        {
+            "candidate_buckets_total": len(ordered_buckets),
+            "candidate_buckets_processed": candidate_buckets_processed,
+        },
+    )
+    for position, (bucket_key, indices) in enumerate(ordered_buckets, start=1):
+        bucket_text = f"{bucket_key[0]}:{bucket_key[1]}"
+        if resume_bucket and bucket_text <= resume_bucket:
+            continue
         candidate_buckets_processed = position
         if len(indices) > max_bucket:
             oversized_buckets += 1
@@ -1118,25 +1283,52 @@ def _compute_near_pairs(
                     if left.role == right.role or left.repository == right.repository:
                         continue
                     left_key, right_key = sorted((left.stable_key, right.stable_key))
+                    if candidate_limit_reached:
+                        if not cache.candidate_pair_exists(context_sha256, left_key, right_key):
+                            candidate_generation_truncated = True
+                            break
+                        continue
                     staged.append((left_key, right_key))
                     if len(staged) >= 1000:
                         before = cache.count_candidate_pairs(context_sha256)
-                        cache.put_candidate_pairs(context_sha256, staged)
-                        candidate_pairs_generated += (
-                            cache.count_candidate_pairs(context_sha256) - before
+                        cache.put_candidate_pairs(
+                            context_sha256,
+                            staged,
+                            limit=max_candidate_pairs,
                         )
+                        after = cache.count_candidate_pairs(context_sha256)
+                        candidate_generation_new_pairs += after - before
                         staged = []
-                        if candidate_pairs_generated >= max_candidate_pairs:
-                            candidate_generation_truncated = True
+                        if after >= max_candidate_pairs:
+                            candidate_limit_reached = True
                             break
                 if candidate_generation_truncated:
                     break
             if staged and not candidate_generation_truncated:
                 before = cache.count_candidate_pairs(context_sha256)
-                cache.put_candidate_pairs(context_sha256, staged)
-                candidate_pairs_generated += cache.count_candidate_pairs(context_sha256) - before
-                if candidate_pairs_generated >= max_candidate_pairs:
-                    candidate_generation_truncated = True
+                cache.put_candidate_pairs(context_sha256, staged, limit=max_candidate_pairs)
+                after = cache.count_candidate_pairs(context_sha256)
+                candidate_generation_new_pairs += after - before
+                if after >= max_candidate_pairs:
+                    candidate_limit_reached = True
+        generation_checkpoint = {
+            "candidate_buckets_total": len(ordered_buckets),
+            "candidate_buckets_processed": candidate_buckets_processed,
+            "candidate_pair_count": cache.count_candidate_pairs(context_sha256),
+            "oversized_buckets_skipped": oversized_buckets,
+            "candidate_generation_truncated": candidate_generation_truncated,
+            "candidate_limit_reached": candidate_limit_reached,
+        }
+        cache.save_phase_checkpoint(
+            context_sha256,
+            "candidate_generation",
+            bucket_text,
+            generation_checkpoint,
+        )
+        if INJECT_AFTER_CANDIDATE_BUCKETS is not None and (
+            candidate_buckets_processed >= INJECT_AFTER_CANDIDATE_BUCKETS
+        ):
+            raise RuntimeError("injected candidate-generation interruption")
         if position % 250 == 0 or position == len(ordered_buckets):
             reporter.rows(
                 "scan SimHash buckets",
@@ -1147,55 +1339,188 @@ def _compute_near_pairs(
         if candidate_generation_truncated:
             break
 
-    results: list[tuple[str, str, int]] = []
+    candidate_pair_count, candidate_pair_sha = cache.candidate_pair_commitment(context_sha256)
+    generation_complete = (
+        candidate_buckets_processed == len(ordered_buckets) and not candidate_generation_truncated
+    )
+    generation_status = "COMPLETE" if generation_complete else "TRUNCATED"
+    generation_metadata = {
+        "candidate_buckets_total": len(ordered_buckets),
+        "candidate_buckets_processed": candidate_buckets_processed,
+        "oversized_buckets_skipped": oversized_buckets,
+        "candidate_pair_count": candidate_pair_count,
+        "ordered_candidate_pair_sha256": candidate_pair_sha,
+        "candidate_generation_complete": generation_complete,
+        "candidate_generation_truncated": candidate_generation_truncated,
+        "candidate_limit_reached": candidate_limit_reached,
+        "candidate_generation_resumed": candidate_generation_resumed,
+        "candidate_generation_resume_bucket": resume_bucket,
+        "candidate_generation_cache_hits": candidate_generation_cache_hits,
+        "candidate_generation_new_pairs": candidate_generation_new_pairs,
+    }
+    cache.set_phase_status(
+        context_sha256,
+        "candidate_generation",
+        generation_status,
+        generation_metadata,
+    )
+
+    # Verify candidate-pair commitment before comparison or comparison resume.
+    observed_count, observed_sha = cache.candidate_pair_commitment(context_sha256)
+    if observed_count != candidate_pair_count or observed_sha != candidate_pair_sha:
+        raise ValueError("candidate-pair commitment mismatch")
+
     comparison_truncated = False
     compare_started = time.perf_counter()
-    ordered_candidates = cache.load_candidate_pairs(context_sha256)
+    comparison_checkpoint = cache.load_phase_checkpoint(context_sha256, "pair_comparison")
+    pair_comparison_resumed = comparison_checkpoint is not None
+    cursor_left = ""
+    cursor_right = ""
     candidate_pairs_compared = 0
-    for position, (left_key, right_key) in enumerate(ordered_candidates, start=1):
-        candidate_pairs_compared = position
-        left = by_key[left_key]
-        right = by_key[right_key]
-        distance = simhash_hamming(left.simhash_hex, right.simhash_hex)
-        if distance <= max_hamming:
-            results.append((left_key, right_key, distance))
-            if len(results) >= max_pairs:
-                comparison_truncated = position < len(ordered_candidates)
+    near_pairs_found = 0
+    comparison_batches_completed = 0
+    if comparison_checkpoint is not None:
+        cursor, comparison_meta = comparison_checkpoint
+        cursor_left, _, cursor_right = cursor.partition("\0")
+        candidate_pairs_compared = int(comparison_meta.get("candidate_pairs_compared_total", 0))
+        near_pairs_found = int(comparison_meta.get("near_pairs_found", 0))
+        comparison_batches_completed = int(comparison_meta.get("comparison_batches_completed", 0))
+    compared_this_run = 0
+    cache.set_phase_status(
+        context_sha256,
+        "pair_comparison",
+        "IN_PROGRESS",
+        {
+            "candidate_pairs_compared_total": candidate_pairs_compared,
+            "candidate_pair_count": candidate_pair_count,
+        },
+    )
+    while True:
+        batch = cache.fetch_candidate_pair_batch(
+            context_sha256,
+            after_left=cursor_left,
+            after_right=cursor_right,
+            limit=CANDIDATE_COMPARISON_BATCH_SIZE,
+        )
+        if not batch:
+            break
+        new_near_pairs: list[tuple[str, str, int]] = []
+        for left_key, right_key in batch:
+            left = by_key[left_key]
+            right = by_key[right_key]
+            distance = simhash_hamming(left.simhash_hex, right.simhash_hex)
+            if distance <= max_hamming and near_pairs_found + len(new_near_pairs) < max_pairs:
+                new_near_pairs.append((left_key, right_key, distance))
+            elif distance <= max_hamming:
+                comparison_truncated = True
                 break
-        if position % 10000 == 0 or position == len(ordered_candidates):
-            reporter.rows(
-                "compare SimHash candidates",
-                position,
-                len(ordered_candidates),
-                started=compare_started,
-            )
-    results.sort(key=lambda item: (item[2], item[0], item[1]))
+        if new_near_pairs:
+            cache.put_near_pairs(context_sha256, new_near_pairs)
+        processed = len(batch) if not comparison_truncated else batch.index((left_key, right_key))
+        if comparison_truncated:
+            processed = max(processed, 0)
+            if processed:
+                cursor_left, cursor_right = batch[processed - 1]
+        else:
+            cursor_left, cursor_right = batch[-1]
+        candidate_pairs_compared += processed
+        compared_this_run += processed
+        near_pairs_found += len(new_near_pairs)
+        comparison_batches_completed += 1
+        checkpoint_metadata = {
+            "last_compared_left_key": cursor_left,
+            "last_compared_right_key": cursor_right,
+            "candidate_pairs_compared_total": candidate_pairs_compared,
+            "candidate_pairs_compared_this_run": compared_this_run,
+            "near_pairs_found": near_pairs_found,
+            "comparison_truncated": comparison_truncated,
+            "comparison_batches_completed": comparison_batches_completed,
+        }
+        cache.save_phase_checkpoint(
+            context_sha256,
+            "pair_comparison",
+            f"{cursor_left}\0{cursor_right}",
+            checkpoint_metadata,
+        )
+        reporter.rows(
+            f"compare SimHash candidates resume={cursor_left}:{cursor_right}",
+            candidate_pairs_compared,
+            candidate_pair_count,
+            started=compare_started,
+        )
+        if INJECT_AFTER_COMPARISON_BATCHES is not None and (
+            comparison_batches_completed >= INJECT_AFTER_COMPARISON_BATCHES
+        ):
+            raise RuntimeError("injected pair-comparison interruption")
+        if comparison_truncated:
+            break
+    if candidate_pair_count == 0:
+        reporter.rows(
+            "compare SimHash candidates resume=:",
+            0,
+            0,
+            started=compare_started,
+        )
+    pairs = cache.load_near_pairs(context_sha256)
+    pair_count, pair_sha = len(pairs), near_pair_commitment(pairs)
+    comparison_complete = (
+        candidate_pairs_compared == candidate_pair_count and not comparison_truncated
+    )
+    comparison_status = "COMPLETE" if comparison_complete else "TRUNCATED"
+    comparison_metadata = {
+        "last_compared_left_key": cursor_left,
+        "last_compared_right_key": cursor_right,
+        "candidate_pairs_compared_total": candidate_pairs_compared,
+        "candidate_pairs_compared_this_run": compared_this_run,
+        "near_pairs_found": pair_count,
+        "near_pair_count": pair_count,
+        "ordered_near_pair_sha256": pair_sha,
+        "comparison_truncated": comparison_truncated,
+        "near_pair_limit_reached": comparison_truncated,
+        "comparison_batches_completed": comparison_batches_completed,
+        "pair_comparison_resumed": pair_comparison_resumed,
+        "pair_comparison_resume_key": f"{cursor_left}\0{cursor_right}"
+        if pair_comparison_resumed
+        else "",
+    }
+    cache.set_phase_status(
+        context_sha256,
+        "pair_comparison",
+        comparison_status,
+        comparison_metadata,
+    )
     scan_complete = (
         oversized_buckets == 0
         and not candidate_generation_truncated
         and not comparison_truncated
         and max_hamming <= MAX_EXHAUSTIVE_SIMHASH_RADIUS
     )
-    return tuple(results), {
+    metadata = {
+        **generation_metadata,
+        **comparison_metadata,
         "candidate_buckets_total": len(ordered_buckets),
         "candidate_buckets_processed": candidate_buckets_processed,
-        "candidate_pairs_generated": len(ordered_candidates),
+        "candidate_pairs_generated": candidate_pair_count,
         "candidate_pairs_compared": candidate_pairs_compared,
         "verified_pair_count": candidate_pairs_compared,
-        "near_pairs": len(results),
-        "near_pair_count": len(results),
+        "near_pairs": pair_count,
+        "near_pair_count": pair_count,
         "oversized_buckets_skipped": oversized_buckets,
         "candidate_generation_truncated": candidate_generation_truncated,
         "comparison_truncated": comparison_truncated,
         "pair_truncated": comparison_truncated,
-        "output_truncated": False,
+        "output_truncated": comparison_truncated,
         "scan_complete": scan_complete,
         "max_hamming": max_hamming,
         "max_bucket": max_bucket,
         "max_candidate_pairs": max_candidate_pairs,
         "max_pairs": max_pairs,
-        "ordered_near_pair_sha256": near_pair_commitment(results),
+        "candidate_comparison_batch_size": CANDIDATE_COMPARISON_BATCH_SIZE,
+        "ordered_near_pair_sha256": pair_sha,
     }
+    phase_status = "COMPLETE" if scan_complete else "TRUNCATED"
+    cache.set_phase_status(context_sha256, "near_duplicate_scan", phase_status, metadata)
+    return pairs, metadata
 
 
 def near_duplicate_report(
@@ -1212,7 +1537,10 @@ def near_duplicate_report(
 ) -> dict[str, Any]:
     if not 0 <= max_hamming <= MAX_EXHAUSTIVE_SIMHASH_RADIUS:
         raise ValueError("near_hamming must lie between zero and three for exhaustive banding")
-    cached_metadata = cache.phase_metadata(context.sha256, "near_duplicate_scan")
+    cached_state = cache.phase_state(context.sha256, "near_duplicate_scan")
+    cached_metadata = None
+    if cached_state is not None and cached_state[0] in {"COMPLETE", "TRUNCATED"}:
+        cached_metadata = cached_state[1]
     expected_cache_fields = {
         "max_hamming": max_hamming,
         "max_bucket": max_bucket,
@@ -1223,6 +1551,12 @@ def near_duplicate_report(
         cached_metadata.get(key) == value for key, value in expected_cache_fields.items()
     ):
         reporter.message("near-duplicate cache: completed scan hit")
+        candidate_count, candidate_sha = cache.candidate_pair_commitment(context.sha256)
+        if (
+            candidate_count != int(cached_metadata.get("candidate_pair_count", -1))
+            or candidate_sha != cached_metadata.get("ordered_candidate_pair_sha256")
+        ):
+            raise ValueError("candidate-pair cache commitment mismatch")
         pairs = cache.load_near_pairs(context.sha256)
         if near_pair_commitment(pairs) != cached_metadata.get("ordered_near_pair_sha256"):
             raise ValueError("near-duplicate cache commitment mismatch")
@@ -1237,7 +1571,7 @@ def near_duplicate_report(
     else:
         if cached_metadata is not None:
             reporter.message("discarding near-duplicate cache with mismatched parameters")
-        cache.clear_near_pairs(context.sha256)
+            cache.clear_near_pairs(context.sha256)
         pairs, metadata = _compute_near_pairs(
             rows,
             cache=cache,
@@ -1248,9 +1582,6 @@ def near_duplicate_report(
             max_pairs=max_pairs,
             reporter=reporter,
         )
-        for start in range(0, len(pairs), 1000):
-            cache.put_near_pairs(context.sha256, pairs[start : start + 1000])
-        cache.mark_phase_complete(context.sha256, "near_duplicate_scan", metadata)
         metadata = {**metadata, "cache_reused": False}
 
     by_key = {row.stable_key: row for row in rows}
@@ -1485,6 +1816,7 @@ def run_d1_integrity_audit(
     near_max_pairs: int = 50_000,
     allow_dirty: bool = False,
     allow_test_fixture_inputs: bool = False,
+    allow_test_fixture_provenance: bool = False,
     argv: Sequence[str] | None = None,
     reporter: ProgressReporter | None = None,
 ) -> dict[str, Any]:
@@ -1496,6 +1828,14 @@ def run_d1_integrity_audit(
         raise ValueError("near_hamming must lie between zero and three")
     if near_max_bucket < 1 or near_max_pairs < 1 or near_max_candidate_pairs < 1:
         raise ValueError("near duplicate limits must be positive")
+    if (
+        (
+            v1_runtime_source_commit != V1_RUNTIME_SOURCE_COMMIT
+            or v1_result_publication_commit != V1_RESULT_PUBLICATION_COMMIT
+        )
+        and not allow_test_fixture_provenance
+    ):
+        raise ValueError("D1 provenance refs must match the frozen contract values")
     active_reporter = reporter or ProgressReporter()
     overall_started = time.perf_counter()
     started_at = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()

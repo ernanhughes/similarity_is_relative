@@ -50,6 +50,18 @@ identity and fingerprint. Near-pair reuse requires a completed phase commitment,
 matching scan parameters, an ordered near-pair SHA-256, and recomputed Hamming
 distances for every loaded pair.
 
+Recovery has four distinct layers:
+
+- Visible reconstruction recovery reuses completed visible rows only after the
+  ordered row commitment is recomputed and matched.
+- Candidate-generation recovery stages cross-role candidate pairs in SQLite by
+  deterministic SimHash bucket. Each completed bucket is checkpointed after
+  durable insertion; an interrupted bucket is safely reprocessed.
+- Candidate-comparison recovery uses keyset pagination over staged candidates,
+  checkpointing the last compared key after each durable batch.
+- Completed-scan reuse verifies the candidate-pair and near-pair commitments
+  before reusing either a complete scan or a deliberately truncated scan.
+
 ## Progress
 
 Progress is streamed to the console and preserved in:
@@ -70,6 +82,11 @@ emits a final material-contamination conclusion.
 The near-duplicate index splits 64-bit SimHash into four exact 16-bit bands. By
 the pigeonhole principle, the implementation treats radius 3 as the maximum
 exhaustive radius. Larger radii are rejected.
+
+`output_truncated` means pair comparison stopped before all staged candidates
+were compared because the near-pair output limit was reached. `sample_truncated`
+only means the human-readable sample list is bounded; it does not invalidate an
+otherwise complete scan.
 
 The v1 manifest separates:
 

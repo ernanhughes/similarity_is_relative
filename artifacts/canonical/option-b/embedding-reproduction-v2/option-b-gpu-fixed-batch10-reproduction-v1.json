@@ -1,0 +1,81 @@
+{
+  "checkpoint_id": "option-b-gpu-fixed-batch10-reproduction-v1",
+  "gpu_identity": {
+    "file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+    "fixture_matrix_array_sha256": "29a048c9483b1652890ebc1852065f495cbae2183acff83b2e3242b5771ff5d7",
+    "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/identity/option-b-embedding-identity-v2-gpu-batch10.json"
+  },
+  "independent_verifier": {
+    "file_sha256": "864d1976e445efc18915ce971ecb5e6ba47b7e552db41d288dfddc11e9f9d967",
+    "original_status": "CANONICAL_EMBEDDINGS_V2_REPRODUCED",
+    "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/reproduction/option-b-independent-embedding-reproduction-v2.json"
+  },
+  "next_required_action": "REVIEW_AND_MERGE_EXPLICIT_GPU_FIXED_BATCH_PROTOCOL_AMENDMENT",
+  "prohibited_actions": [
+    "claiming this as the frozen CPU canonical checkpoint",
+    "changing device or batch size",
+    "scientific metric evaluation before amendment review",
+    "silently replacing the merged CPU identity"
+  ],
+  "protocol_amendment": {
+    "frozen_cpu_identity_file_sha256": "5d80df8dece9c1adba882774dca2890ef9124dd8e9ed12a834687eaf3a2c5389",
+    "frozen_cpu_identity_path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/option-b-embedding-identity-v2.json",
+    "frozen_execution": {
+      "allow_tf32": false,
+      "batch_size": 10,
+      "cublas_workspace_config": ":4096:8",
+      "deterministic_algorithms": true,
+      "device": "cuda"
+    },
+    "promotion_requires_explicit_review": true,
+    "reason": "CUDA was not bit-identical to the frozen CPU fixture and was not invariant across GPU batch shapes. The amended execution identity therefore freezes device=cuda and batch_size=10 before any probes, hard negatives, retrieval metrics, or scientific result.",
+    "status": "LOCAL_GPU_EXECUTION_AMENDMENT_NOT_YET_CANONICAL",
+    "unchanged": [
+      "dataset revision",
+      "model revision",
+      "canonical selected rows and order",
+      "tokenization configuration",
+      "pooling implementation",
+      "query",
+      "threshold",
+      "registered outcomes"
+    ]
+  },
+  "scientific_result_observed": false,
+  "splits": {
+    "test": {
+      "array_sha256": "e24c9797f5068e9c84a170bacdc85e06a1c4fe6bbc2d7b1f64045bc166ef4320",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "149dc0147a9e7c1ea0f05fe9d2525614a2db86d693f8e1dc376e346f9812666d",
+      "file_sha256_equal": true,
+      "rows": 4000,
+      "run_a_file_sha256": "43c4845734af3231a32025bb8515c5c577255c020b26d3253c94892916e1f47f",
+      "run_b_file_sha256": "43c4845734af3231a32025bb8515c5c577255c020b26d3253c94892916e1f47f"
+    },
+    "train": {
+      "array_sha256": "ac23f6b58076c4f5aaa5eeb44046480ebafe93793a100abd764749d3f5c13767",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "c49d7f417c95f121cea39bb4d72ae27c0e427d7a66f45b47d8529bd0bfd6eef1",
+      "file_sha256_equal": true,
+      "rows": 20000,
+      "run_a_file_sha256": "8900ad5e9824dae71d6c5ef9b0e4b95e99f2ecedb9d1da99b123d6e35d0bd133",
+      "run_b_file_sha256": "8900ad5e9824dae71d6c5ef9b0e4b95e99f2ecedb9d1da99b123d6e35d0bd133"
+    },
+    "validation": {
+      "array_sha256": "7e74953f4bb69d598b663b88e6e42b6a1105bd75ebdc264ccbbd0300346fe242",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "bd181da134ff61f12164c1e804914cffce672db5b5a1c2d339e3a82c18f73780",
+      "file_sha256_equal": true,
+      "rows": 4000,
+      "run_a_file_sha256": "5b258edbda111cd01e13370b22f3033c87ffaf976e7ccff57716efef15b1eebd",
+      "run_b_file_sha256": "5b258edbda111cd01e13370b22f3033c87ffaf976e7ccff57716efef15b1eebd"
+    }
+  },
+  "status": "GPU_FIXED_BATCH_EMBEDDINGS_REPRODUCED_NOT_YET_CANONICAL"
+}

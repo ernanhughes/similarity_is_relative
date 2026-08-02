@@ -1,0 +1,100 @@
+{
+  "checkpoint_id": "option-b-independent-embedding-reproduction-v2",
+  "identity": {
+    "file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+    "identity_id": "option-b-embedding-identity-v2",
+    "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/identity/option-b-embedding-identity-v2-gpu-batch10.json"
+  },
+  "next_allowed_action": "PRIMITIVE_PROBE_FITTING",
+  "prohibited_actions": [
+    "scientific metric evaluation before probe and hard-negative checkpoints",
+    "threshold, query, model, language, or canonical-row changes"
+  ],
+  "required_device": "cuda",
+  "runs": {
+    "a": {
+      "cache_path": "C:/Projects/similarity_is_relative/.writer/option-b/cache/gpu-batch10-a.sqlite3",
+      "report_file_sha256": "418b9f30ccb7a199714332aba175cbb12f7ffd6904d752981f2ff318ba5ee26e",
+      "report_path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/embeddings-a/option-b-canonical-embeddings-v2.json"
+    },
+    "b": {
+      "cache_path": "C:/Projects/similarity_is_relative/.writer/option-b/cache/gpu-batch10-b.sqlite3",
+      "report_file_sha256": "d269dc5d8365995315fb76b31a990c2a10d02a35a316e7441ad254b5fa75ea80",
+      "report_path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/embeddings-b/option-b-canonical-embeddings-v2.json"
+    }
+  },
+  "runtime": {
+    "cuda_runtime": "12.8",
+    "device": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 2060",
+    "numpy": "2.4.6",
+    "python": "3.11.4",
+    "tokenizers": "0.22.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  },
+  "scientific_result_observed": false,
+  "selection": {
+    "directory": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection",
+    "manifests": {
+      "test": {
+        "file_sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+        "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-selected-test-v2.jsonl",
+        "rows": 4000,
+        "source_sequence_sha256": "d87652867dbb5cb76437667187dc03e8b65b96e556348be2bb9c9a4de14bcc1e",
+        "stable_key_sequence_sha256": "00114579fee44cedb3fc583490bb2d0d9333a8a62b288668691068ce5804f1d6"
+      },
+      "train": {
+        "file_sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+        "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-selected-train-v2.jsonl",
+        "rows": 20000,
+        "source_sequence_sha256": "0c4e90abadaa36902ff0181289a7646e81cf1c07d7ded7290401785daf6c9139",
+        "stable_key_sequence_sha256": "79570ccf2c6617566c71a6c5b732839f803439e658f63b2215df7a3c2ef25548"
+      },
+      "validation": {
+        "file_sha256": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d",
+        "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-selected-validation-v2.jsonl",
+        "rows": 4000,
+        "source_sequence_sha256": "133677c4adfe05019e5de4621de5c8ccfe1def876e09d27ab5445dc14ba123fe",
+        "stable_key_sequence_sha256": "3a7d88f6eff63b95fc39a65bc91bf78787e1e80e92351d72a9be34aacc8f3b5b"
+      }
+    },
+    "report_file_sha256": "a12d5d9ce0a6b96ff9a4209a447447a5259196d83a0d9720cbd97dba8d2bf922"
+  },
+  "splits": {
+    "test": {
+      "array_sha256": "e24c9797f5068e9c84a170bacdc85e06a1c4fe6bbc2d7b1f64045bc166ef4320",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "149dc0147a9e7c1ea0f05fe9d2525614a2db86d693f8e1dc376e346f9812666d",
+      "file_sha256_equal": true,
+      "rows": 4000,
+      "run_a_file_sha256": "43c4845734af3231a32025bb8515c5c577255c020b26d3253c94892916e1f47f",
+      "run_b_file_sha256": "43c4845734af3231a32025bb8515c5c577255c020b26d3253c94892916e1f47f"
+    },
+    "train": {
+      "array_sha256": "ac23f6b58076c4f5aaa5eeb44046480ebafe93793a100abd764749d3f5c13767",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "c49d7f417c95f121cea39bb4d72ae27c0e427d7a66f45b47d8529bd0bfd6eef1",
+      "file_sha256_equal": true,
+      "rows": 20000,
+      "run_a_file_sha256": "8900ad5e9824dae71d6c5ef9b0e4b95e99f2ecedb9d1da99b123d6e35d0bd133",
+      "run_b_file_sha256": "8900ad5e9824dae71d6c5ef9b0e4b95e99f2ecedb9d1da99b123d6e35d0bd133"
+    },
+    "validation": {
+      "array_sha256": "7e74953f4bb69d598b663b88e6e42b6a1105bd75ebdc264ccbbd0300346fe242",
+      "dimensions": 768,
+      "dtype": "float32",
+      "exact_array_equal": true,
+      "extraction_fingerprint_sha256": "bd181da134ff61f12164c1e804914cffce672db5b5a1c2d339e3a82c18f73780",
+      "file_sha256_equal": true,
+      "rows": 4000,
+      "run_a_file_sha256": "5b258edbda111cd01e13370b22f3033c87ffaf976e7ccff57716efef15b1eebd",
+      "run_b_file_sha256": "5b258edbda111cd01e13370b22f3033c87ffaf976e7ccff57716efef15b1eebd"
+    }
+  },
+  "status": "CANONICAL_EMBEDDINGS_V2_REPRODUCED"
+}

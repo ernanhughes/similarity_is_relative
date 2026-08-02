@@ -1,0 +1,163 @@
+{
+  "dataset": {
+    "repo_id": "code-search-net/code_search_net",
+    "revision": "bd0cf261e357a3eb5c8fba490d23ec1a1cd59555",
+    "subset": "python"
+  },
+  "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+  "environment": {
+    "allow_tf32": false,
+    "canonical_batch_size": 10,
+    "canonical_device": "cuda",
+    "cublas_workspace_config": ":4096:8",
+    "cuda_runtime": "12.8",
+    "datasets": "5.0.1",
+    "deterministic_algorithms": true,
+    "gpu_name": "NVIDIA GeForce RTX 2060",
+    "huggingface_hub": "1.26.0",
+    "numpy": "2.4.6",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python": "3.11.4",
+    "tokenizers": "0.22.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  },
+  "fixture": {
+    "batch_invariance": {
+      "10": {
+        "array_sha256": "29a048c9483b1652890ebc1852065f495cbae2183acff83b2e3242b5771ff5d7",
+        "exactly_equal_to_canonical": true
+      }
+    },
+    "count": 10,
+    "embedding_dtype": "float32",
+    "embedding_shape": [
+      10,
+      768
+    ],
+    "fixed_batch_identity": {
+      "batch_size": 10,
+      "cross_batch_invariance_required": false,
+      "reason": "GPU execution is batch-shape specific."
+    },
+    "matrix_array_sha256": "29a048c9483b1652890ebc1852065f495cbae2183acff83b2e3242b5771ff5d7",
+    "preflight_batch_size": 10,
+    "rows": [
+      {
+        "code_sha256": "9910e2fc297f8665cc0c7a6a0dcf2522dbe3ad118bdab9b9cb20a4df678557ac",
+        "embedding_array_sha256": "076086e583df3be094bfc90497d990f1ed65d19ff9f4deb3a8e7f1b3d5eee7bb",
+        "index": 0
+      },
+      {
+        "code_sha256": "f365eda0bd562019d5f7917856005ae51e064a4d0a4796b310a052638bb49e5b",
+        "embedding_array_sha256": "6070bd88e36988affdaf15237507a2b4d14f8286176d7408f987a661efe4013b",
+        "index": 1
+      },
+      {
+        "code_sha256": "f97b46466c9421e6a51b9fc19be91b8b3442f24d48360eca7d633be8c98bdaf9",
+        "embedding_array_sha256": "652e1699f1290eddafc2da6d47b0c798c5921055bde524ed5bb1f01c7b08f66d",
+        "index": 2
+      },
+      {
+        "code_sha256": "b33c8cd20517b91a3845e539437d5fd0b8446cc9affa8533ed2689c2ad1ac201",
+        "embedding_array_sha256": "4642f57d2acd12b9632321fba28feec0b359041938aca221ca86490df283d5e2",
+        "index": 3
+      },
+      {
+        "code_sha256": "ee5f9cfee59ffbfd091f2889a5912cf88caffc6306f4889a74124be156d35603",
+        "embedding_array_sha256": "2fb2fae3e21df1958932ee5b5b18624a5632a618d122e03c6576553c54cdec6f",
+        "index": 4
+      },
+      {
+        "code_sha256": "1bd908c2237e5b894073b81e13d6c011db949f560511866da561e9a5f2ad0f6f",
+        "embedding_array_sha256": "dc4bc6bb7ba23fb5570c05799c8c2f3dc7d01ffb1bf80f4a50bc867731577277",
+        "index": 5
+      },
+      {
+        "code_sha256": "ccf608bdd49a7f4c30d56d7e0ce6233fc30554bdb0a9cc324a1f98d4ae976f19",
+        "embedding_array_sha256": "1102c076b3e93b38d84b31cf7abc8b08ce817ad2f16809db847ab4062850c90c",
+        "index": 6
+      },
+      {
+        "code_sha256": "49c930c5816bbe2d36a579827044712f714a55205df2d82602159fb090565e57",
+        "embedding_array_sha256": "a8232c33ae8fbdab35f3892609641c8196728d87c19e12f4cb78c2a7d83eacd7",
+        "index": 7
+      },
+      {
+        "code_sha256": "361607fe7aa2ece0b4109d13595048e140dbd070fd554f45ec323f9dc0646299",
+        "embedding_array_sha256": "5889bffb651297cba454b420729e0931f2e7d86d13e3b8e88eb16ca0226e80ab",
+        "index": 8
+      },
+      {
+        "code_sha256": "236f746ae4abd6607f7a2fad6316a03eafb95dd24b26300136382d17730930ae",
+        "embedding_array_sha256": "125eeeae608cf4c9b7d4d4903d29c2071c4557093bae87216cdb83d2913d3781",
+        "index": 9
+      }
+    ]
+  },
+  "fixture_preflight_required": true,
+  "identity_id": "option-b-embedding-identity-v2",
+  "identity_variant": "gpu-fixed-batch10-amendment-v1",
+  "model": {
+    "repo_id": "microsoft/codebert-base",
+    "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+  },
+  "next_allowed_action": "INDEPENDENT_GPU_EMBEDDING_REPRODUCTION",
+  "predecessor": {
+    "file_sha256": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d",
+    "identity_id": "option-b-external-identity-v1",
+    "path": "artifacts/canonical/option-b/option-b-external-identity-v1.json"
+  },
+  "prohibited_actions": [
+    "promotion as canonical evidence without protocol-amendment review",
+    "changing GPU batch size after identity capture",
+    "primitive probe fitting before independent A/B agreement",
+    "hard-negative generation before independent A/B agreement",
+    "scientific metric evaluation before checkpoint review"
+  ],
+  "protocol_amendment": {
+    "frozen_cpu_identity_file_sha256": "5d80df8dece9c1adba882774dca2890ef9124dd8e9ed12a834687eaf3a2c5389",
+    "frozen_cpu_identity_path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/option-b-embedding-identity-v2.json",
+    "frozen_execution": {
+      "allow_tf32": false,
+      "batch_size": 10,
+      "cublas_workspace_config": ":4096:8",
+      "deterministic_algorithms": true,
+      "device": "cuda"
+    },
+    "promotion_requires_explicit_review": true,
+    "reason": "CUDA was not bit-identical to the frozen CPU fixture and was not invariant across GPU batch shapes. The amended execution identity therefore freezes device=cuda and batch_size=10 before any probes, hard negatives, retrieval metrics, or scientific result.",
+    "status": "LOCAL_GPU_EXECUTION_AMENDMENT_NOT_YET_CANONICAL",
+    "unchanged": [
+      "dataset revision",
+      "model revision",
+      "canonical selected rows and order",
+      "tokenization configuration",
+      "pooling implementation",
+      "query",
+      "threshold",
+      "registered outcomes"
+    ]
+  },
+  "scientific_result_observed": false,
+  "status": "EMBEDDING_IDENTITY_V2_COMPLETE",
+  "tokenization_config": {
+    "add_special_tokens": true,
+    "max_length": 256,
+    "output_dtype": "float32",
+    "padding": "max_length",
+    "padding_side": "right",
+    "pooling_policy": "attention-mask mean pooling",
+    "return_tensors": "pt",
+    "truncation": true,
+    "truncation_side": "right"
+  },
+  "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff",
+  "tokenizer_file_sha256": {
+    "config.json": "742474d6148a061fa975dadc09ce93725fa9673c55421ed316ef75532cc6b7aa",
+    "merges.txt": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+    "special_tokens_map.json": "7638f5bbbe86ef6d604ef28ad3647dc690d6d117c81c0d63e885416be8da1150",
+    "tokenizer_config.json": "994f46754c5bf4014f1aa92d34b1374319c3a6b3f702105cd5b742beaecd18ce",
+    "vocab.json": "06b4d46c8e752d410213d9548eb27a54db70fda0319b6271fb8d59dead5e1cab"
+  }
+}

@@ -532,7 +532,7 @@ for split, value in amended["splits"].items():
     print(
         split,
         value["array_sha256"],
-        value["arrays_exactly_equal"],
+        value["exact_array_equal"],
     )
 '@ | python -
 

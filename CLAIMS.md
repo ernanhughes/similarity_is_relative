@@ -1,14 +1,17 @@
 # RELATE Claim Ledger
 
-This ledger separates established prior art, implemented tests, point estimates, replicated results, independently audited interpretations, unsupported hypotheses and blocked composite claims.
+This ledger separates established prior art, implemented tests, point estimates, replicated results, independently verified real-domain findings, independently audited interpretations, unsupported hypotheses and blocked composite claims.
 
 ## Status vocabulary
 
 - **Prior art:** established by earlier work; not a RELATE contribution.
 - **Proposed:** falsifiable claim recorded before implementation.
+- **Proposed, authorised:** the preceding gate passed, but the new experiment contract is not yet frozen and no result exists.
 - **Implemented:** executable test exists; canonical result not yet verified.
 - **Replay-verified point estimate:** one registered run passed its frozen rule and deterministic replay.
 - **Replicated synthetic:** a registered synthetic measurement reproduced across fresh dataset seeds.
+- **Independently verified real-domain:** a registered real-domain result passed its frozen rule and a separate substantive implementation exactly recomputed the primary evidence and decision.
+- **Independently audited:** a separate substantive implementation reproduced an interpretation-changing audit result.
 - **Refined:** later evidence supports a narrower interpretation than the original status implied.
 - **Closed:** the line has been evaluated and will not be advanced under its former thesis.
 - **Unsupported at threshold:** the declared operator family was not certified at the frozen threshold.
@@ -37,8 +40,8 @@ This ledger separates established prior art, implemented tests, point estimates,
 | E01-PERM-001 | In the exchangeable E01 generator, the strongest wrong-permutation margin is primarily determined by weight separation and is zero for symmetric weights. | Independently audited | E01 independent recomputation | Frozen weight-separation sweep | A non-exchangeable semantic-identity experiment shows the same diagnostic has semantic validity. |
 | E01-LINE-001 | The E01 weighted-product-space line supports a general or novel relational-composition claim. | Closed | E01.0–E01.2a | Direct compound models, non-saturated primitives, semantic identity, support boundaries | This former thesis is closed. Any future support-aware query-runtime claim begins under a new experiment contract and does not inherit E01 success. |
 | H-005 | The cancelled broad E02–E07 synthetic roadmap can establish a support-aware relational query runtime through a large factorisation and supervision matrix. | Closed | Post-E01 decision | Real-premise test and bounded refusal test | This roadmap is cancelled. It may not be revived without a new explicit project decision. |
-| B-PREM-001 | In repository-separated real Python code, independently predicted AST primitives expose the frozen three-way structural conjunction materially better than the strongest default CodeBERT geometry. | Proposed | Option B | Raw CodeBERT cosine, raw CodeBERT Euclidean, token-length diagnostic, true-primitive oracle | `predicted_primitive_hard_triplet_accuracy - max(raw_cosine, raw_euclidean) < 0.10`. This outcome closes RELATE; secondary metrics cannot rescue it. |
-| C-REFUSE-001 | Propagated compound support can improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper. | Proposed, conditional | Option C | Independent primitive conformal abstention and direct compound conformal model | Option B fails, or propagated support does not beat the frozen baselines by the future preregistered material margin. Option C may not be implemented unless B-PREM-001 passes. |
+| B-PREM-001 | In repository-separated real Python code, independently predicted AST primitives expose the frozen three-way structural relation materially better than the strongest default CodeBERT geometry. | Independently verified real-domain | Option B | Raw CodeBERT cosine, raw CodeBERT Euclidean, token-length diagnostic, true-primitive oracle | A separate substantive recomputation fails to reproduce the exact `4,000 × 5` query-score matrix or the registered `0.199537109375` gap, or a new preregistered external replication materially contradicts the bounded claim. |
+| C-REFUSE-001 | Propagated compound support can improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper. | Proposed, authorised | Option C | Independent primitive conformal abstention and direct compound conformal model | Propagated support does not beat the baselines by the future preregistered material margin. No result may be claimed until the Option C contract, calibration design and kill rule are frozen prospectively. |
 
 ## Interpretation notes
 
@@ -66,23 +69,60 @@ See:
 - [`docs/blog/closing-the-e01-composition-line.md`](docs/blog/closing-the-e01-composition-line.md)
 - [`docs/audits/e01-external-review-audit-2026-08-01.md`](docs/audits/e01-external-review-audit-2026-08-01.md)
 
-### Option B boundary
+### Option B result and boundary
 
-Option B is a real-premise kill test, not a novelty experiment. It freezes one CodeSearchNet language, one CodeBERT representation, three objective AST primitives, one Chebyshev conjunction and one primary `0.10` continuation threshold.
+Option B was a real-premise kill test, not a novelty experiment. It froze one CodeSearchNet language, one CodeBERT representation, three objective AST primitives, one Chebyshev conjunction and one primary `0.10` continuation threshold.
 
-A `REAL_PREMISE_FAILED` decision closes RELATE. A `REAL_PREMISE_SUPPORTED` decision authorises only a separately contracted Option C refusal experiment.
+The registered primary result was:
+
+```text
+raw cosine accuracy:       0.532458984375
+raw Euclidean accuracy:    0.533314453125
+predicted executor:        0.732851562500
+raw best:                  0.533314453125
+gap:                       0.199537109375
+threshold:                 0.100000000000
+outcome:                   REAL_PREMISE_SUPPORTED
+```
+
+All 4,000 test queries contributed 128 frozen hard-negative pairs. A standalone implementation that did not import the evaluator reverified every input, independently recomputed the complete `4,000 × 5` primary query-score matrix, required exact equality and reproduced the final decision.
+
+Secondary evidence was directionally consistent but did not determine the decision. The predicted executor's Spearman correlation with oracle distance was approximately `0.723`, versus approximately `0.112` for raw cosine and `0.110` for raw Euclidean. Its recall@10 improved to approximately `0.0091`, but remained low in absolute terms. The claim is therefore about material underexposure by default geometry, not solved nearest-neighbour retrieval.
+
+Option B does not establish novelty, a general composition algorithm, semantic binding, uncertainty propagation or calibrated refusal. It authorises only a separately contracted Option C refusal experiment.
 
 See:
 
 - [`docs/experiments/08-option-b-real-code-premise-test.md`](docs/experiments/08-option-b-real-code-premise-test.md)
-- [`docs/research/option-b-domain-selection-2026-08-01.md`](docs/research/option-b-domain-selection-2026-08-01.md)
+- [`docs/results/option-b-real-code-premise-checkpoint-v1.md`](docs/results/option-b-real-code-premise-checkpoint-v1.md)
+- [`docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md`](docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md)
+- [`artifacts/canonical/option-b/method-evaluation-v1/`](artifacts/canonical/option-b/method-evaluation-v1/)
+
+### Option C boundary
+
+Option C is now authorised by B-PREM-001, but it is not yet contracted or implemented.
+
+Before implementation, a documentation-only contract must freeze:
+
+- the compound query or query set;
+- train, calibration, validation and test roles;
+- primitive-support and direct-compound baselines;
+- split-conformal procedure;
+- coverage and selective-risk definitions;
+- matched-coverage comparison procedure;
+- the material continuation margin;
+- refusal, tie and empty-support handling;
+- independent recomputation requirements;
+- the novelty-line kill decision.
+
+No Option B threshold, outcome, model, language, query set, canonical row or manifest may be changed to assist Option C.
 
 ### Verification classification
 
 E00.4, E01.1 and E01.2a have deterministic replay verification. The E01 closure additionally has an independent recomputation implementation that does not call the experiment runners or their metric and decision helpers.
 
-Option B requires both deterministic replay and independent metric recomputation over frozen embeddings, primitive values, predictions and manifests.
+Option B has independent real-domain primary recomputation over frozen embeddings, primitive values, predicted vectors and hard-negative manifests. The independent implementation did not import the experiment evaluator and exactly matched every primary query score and the final decision.
 
 ## Publication rule
 
-A publication sentence beginning with “we found” must map to a **Replicated synthetic**, **Refined**, **Independently audited**, or explicitly qualified negative row. Replay-only point estimates must be described as point estimates or positive controls. Closed rows must not be revived without a new experiment identifier, a new frozen contract and an explicit statement that no prior success is inherited.
+A publication sentence beginning with “we found” must map to a **Replicated synthetic**, **Refined**, **Independently audited**, **Independently verified real-domain**, or explicitly qualified negative row. Replay-only point estimates must be described as point estimates or positive controls. Closed rows must not be revived without a new experiment identifier, a new frozen contract and an explicit statement that no prior success is inherited.

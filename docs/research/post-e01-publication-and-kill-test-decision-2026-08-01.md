@@ -1,7 +1,8 @@
 # Post-E01 Publication and Kill-Test Decision
 
 Original decision date: 2026-08-01  
-Option B outcome update: 2026-08-02
+Option B outcome update: 2026-08-02  
+Option C0 discovery-protocol update: 2026-08-02
 
 ## Current decision status
 
@@ -10,9 +11,10 @@ E01 closure: COMPLETE
 E01 publication narrative: COMPLETE
 Option B real-premise test: COMPLETE
 Option B decision: REAL_PREMISE_SUPPORTED
-Option C propagated refusal: AUTHORISED, CONTRACT NOT YET FROZEN
+Option C0 discovery protocol: FROZEN, IMPLEMENTATION NOT STARTED
+Option C1 confirmatory refusal: BLOCKED UNTIL C0 CHECKPOINT
 Former broad synthetic E02–E07 plan: CANCELLED
-Remaining authorised RELATE research budget: MAXIMUM 15 WORKING DAYS
+Remaining authorised Option C budget: MAXIMUM 15 WORKING DAYS TOTAL
 ```
 
 ## Original decision
@@ -105,76 +107,202 @@ Exact recall remained low in absolute terms even though hard-negative ordering, 
 - [Frozen Option B contract](../experiments/08-option-b-real-code-premise-test.md)
 - [Canonical Option B evidence](../../artifacts/canonical/option-b/method-evaluation-v1/)
 
-## Option C — authorised propagated-refusal test
+## Why Option C is split
 
-Option B passed, so the post-E01 decision now authorises one Option C experiment with a maximum remaining budget of fifteen working days.
+Option B passed, so one bounded propagated-refusal investigation remains authorised.
 
-Option C is **not yet preregistered or implemented**.
-
-### Question
+The original Option C question is retained:
 
 > Does compound-level propagation of calibrated primitive support improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper?
 
-### Minimum required baselines
+However, this question currently combines two different activities:
 
-The future contract must faithfully represent at least:
+1. discovering a coherent support representation and propagation rule;
+2. confirming that a selected rule beats strong calibrated alternatives.
+
+Freezing a favourite propagation rule before development evidence exists would create a false form of rigour. It would prevent legitimate mechanism discovery while offering no guarantee that the frozen mechanism is the right abstraction.
+
+The project therefore freezes the process in two phases:
+
+```text
+C0  bounded mechanism discovery and discriminating-power review
+C1  separately frozen confirmatory refusal test
+```
+
+C0 may learn. C1 may support or reject C-REFUSE-001. C0 cannot.
+
+## Option C0 — bounded discovery
+
+### Budget
+
+```text
+maximum C0 budget: 5 working days
+maximum Option C total: 15 working days
+```
+
+Unused C0 time may remain available to C1. The total may not exceed fifteen working days without a new explicit decision.
+
+### Purpose
+
+C0 determines:
+
+- which support objects are coherent;
+- which propagation families merit consideration;
+- how supported, weak, absent and shifted primitives behave;
+- where risk–coverage curves are non-degenerate;
+- which baseline is strongest;
+- whether attainable headroom exists;
+- whether one mechanism can be specified precisely enough for C1.
+
+### Data firewall
+
+C0 and C1 use five repository-separated roles:
+
+```text
+C0 fit
+C0 iteration
+C0 selection
+C1 calibration reserve
+C1 test reserve
+```
+
+C1 reserve repositories must also be disjoint from every repository represented in the canonical Option B selected manifests.
+
+Final C1 calibration and test rows are not selected during C0. C0 commits only a reserve pool, aggregate identities and a deterministic future selection algorithm.
+
+The final C1 identities are derived after the C1 contract merges, using that merge commit as part of the frozen selection seed.
+
+### Required discovery record
+
+C0 must maintain:
+
+- an append-only candidate registry;
+- an append-only discovery ledger;
+- complete identities for every evaluated candidate version;
+- complete retention of failed and superseded candidates;
+- development-only risk–coverage and calibration diagnostics;
+- a baseline fidelity review;
+- attainable-headroom analysis;
+- one explicit C0 outcome.
+
+### Required baselines
+
+C0 must implement or faithfully represent at least:
 
 1. independent split-conformal primitive abstention;
-2. a directly trained compound selective model with its own conformal wrapper;
-3. propagated compound support;
-4. an uncalibrated confidence baseline where technically appropriate.
+2. a directly trained compound model with its own conformal wrapper;
+3. propagated-support candidates;
+4. an uncalibrated confidence baseline where meaningful;
+5. an oracle-support headroom diagnostic.
 
-Relevant post-hoc concept bottleneck and unseen-query composition methods must be reviewed before novelty language is allowed.
+Relevant concept bottleneck, selective prediction, conformal and unseen-query composition prior art must be reviewed before novelty language is allowed in C1.
 
-### Required prospective contract
+### C0 outcomes
 
-Before any implementation begins, a documentation-only contract must freeze:
+Exactly one outcome is permitted:
 
-- the exact compound query or bounded query set;
-- train, calibration, validation and test roles;
-- supported, absent and shifted primitive regimes;
-- the split-conformal calibration method;
-- the propagated support rule;
-- the independent primitive abstention rule;
-- the direct compound baseline;
+```text
+C1_CONTRACT_JUSTIFIED
+C1_NOT_JUSTIFIED
+C0_DATA_FIREWALL_FAILED
+C0_BUDGET_EXHAUSTED
+```
+
+Only `C1_CONTRACT_JUSTIFIED` permits a later documentation-only C1 contract.
+
+C0 measurements remain exploratory regardless of replay or artifact verification.
+
+### Discovery-preservation rule
+
+Unexpected observations must be preserved rather than discarded because they differ from the original expectation.
+
+They may influence the C1 contract only when discovered before C1 freezes and when recorded explicitly in the discovery ledger.
+
+They may not:
+
+- be described as confirmed findings;
+- inspect or select C1 evidence;
+- rescue a failed C1 decision;
+- inherit support from B-PREM-001.
+
+An unexpected observation first found on C1 test evidence requires a new experiment identifier and fresh data before promotion.
+
+### C0 protocol
+
+The complete prospective protocol is:
+
+- [Option C0 discovery and confirmation protocol](../experiments/09-option-c0-discovery-and-confirmation-protocol.md)
+- [Option C0 discovery-preservation decision](option-c0-discovery-preservation-decision-2026-08-02.md)
+
+## Option C1 — future confirmation
+
+C1 is not yet contracted or implemented.
+
+A C1 contract may be written only after C0 records `C1_CONTRACT_JUSTIFIED`.
+
+The future contract must freeze:
+
+- the selected propagation mechanism;
+- the exact query or bounded query set;
+- supported, weak, absent and shifted regimes;
+- train and fitting roles;
+- the final split-conformal or calibration method;
+- independent primitive and direct compound baselines;
 - selective-risk and coverage definitions;
-- the matched-coverage comparison procedure;
+- matched-coverage comparison procedure;
 - tie, empty-support and refusal handling;
 - the primary material margin;
-- the independent recomputation boundary;
-- the novelty-line kill decision.
+- post-contract reserve selection;
+- independent recomputation boundaries;
+- the claim-scoped novelty-line decision.
 
-No Option B model, language, query, threshold, canonical row or hard-negative manifest may be changed to make Option C easier.
-
-### Kill condition
-
-If propagated support does not beat the strongest preregistered baseline by the frozen material margin on selective risk at matched coverage, the RELATE novelty line closes.
-
-The Option B real-premise finding remains valid regardless of the Option C outcome.
+No C1 implementation may begin in the C0 checkpoint PR.
 
 ## Updated stop rule
 
 ```text
 OPTION B: PASSED
 → preserve and publish B-PREM-001;
-→ authorise one separately contracted Option C experiment.
+→ authorise the bounded C0/C1 Option C sequence.
 
-OPTION C FAILS
-→ close RELATE novelty research;
+C0: C1_CONTRACT_JUSTIFIED
+→ permit a documentation-only C1 contract;
+→ keep C1 implementation blocked until that contract merges.
+
+C0: C1_NOT_JUSTIFIED
+or C0_DATA_FIREWALL_FAILED
+or C0_BUDGET_EXHAUSTED
+→ close the current RELATE propagated-refusal novelty route;
+→ preserve Option B and all clearly labelled exploratory records.
+
+C1 FAILS
+→ close the current RELATE propagated-refusal novelty route;
 → preserve the Option B premise result;
 → publish the refusal null result and methodological record.
 
-OPTION C PASSES
+C1 PASSES
 → permit one bounded real-domain refusal pilot under a new decision record.
 ```
 
-No additional synthetic roadmap is authorised by this decision.
+No additional synthetic roadmap or automatic rescue stage is authorised.
+
+## Claim-scoped interpretation
+
+A C0 or C1 failure means only that the current bounded RELATE propagated-support route did not justify or satisfy its confirmatory test.
+
+It does not invalidate:
+
+- B-PREM-001;
+- the Option B canonical evidence;
+- the E01 methodological findings;
+- clearly labelled exploratory observations;
+- unrelated future work under a new decision, identifier and fresh evidence.
 
 ## Methodological deliverable
 
 The evidence-first process remains a separate output from RELATE's scientific claims.
 
-The E01 and Option B sequence now supports at least these reusable rules:
+The E01, Option B and C0 sequence now supports at least these reusable rules:
 
 1. attainable-ceiling gate;
 2. discriminating-power review;
@@ -182,10 +310,13 @@ The E01 and Option B sequence now supports at least these reusable rules:
 4. control-validity rule;
 5. independent-verification taxonomy;
 6. metric-continuity rule;
-7. prospective artifact gate—freeze data and hard-negative evidence before method performance;
-8. independent-decision gate—publish a primary result only after separate substantive recomputation.
+7. prospective artifact gate;
+8. independent-decision gate;
+9. discovery-preservation rule;
+10. phase-label rule;
+11. deferred-holdout rule.
 
-These process rules remain publishable regardless of the Option C outcome.
+These process rules remain publishable regardless of the C0 or C1 outcome.
 
 ## Canonical Option B identities
 
@@ -202,3 +333,9 @@ Raw query-metrics SHA-256:
 Independent verification SHA-256:
 da1b9cf1244b47c71ac7adce91b7db502b4fd2d3b663e126d8cde7c87e239d6c
 ```
+
+## Next permitted action
+
+Implement only C0 data allocation, candidate-registry and discovery-ledger infrastructure.
+
+Mechanism discovery remains blocked until the data firewall is reviewed. C1 remains blocked until C0 publishes one explicit outcome.

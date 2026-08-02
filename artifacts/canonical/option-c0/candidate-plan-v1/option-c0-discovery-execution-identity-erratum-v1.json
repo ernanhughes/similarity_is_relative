@@ -1,0 +1,45 @@
+{
+  "canonical_result_artifact_created": false,
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "checkpoint_id": "option-c0-discovery-execution-identity-erratum-v1",
+  "corrected_execution": {
+    "cpu_embedding_identity": "artifacts/canonical/option-b/option-b-embedding-identity-v2.json",
+    "cuda_embedding_identity": "artifacts/canonical/option-b/embedding-reproduction-v2/option-b-embedding-identity-v2-gpu-batch10.json",
+    "cuda_final_batch_policy": "repeat the final real code until batch shape 10, embed once, and discard padded outputs",
+    "entrypoint": "src/relate/experiments/option_c0_discovery_entrypoint.py",
+    "source_identity": "artifacts/canonical/option-b/option-b-external-identity-v1.json"
+  },
+  "dataset_reconstruction_completed": true,
+  "embedding_rows_generated": 0,
+  "failure": {
+    "exception": "ValueError: embedding implementation does not match identity v2",
+    "reason": "The initial C0 runner passed the Option B v1 external identity into the Option B v2 embedding fixture preflight. The v1 and v2 identity schemas serve different evidence roles and cannot satisfy the same validator.",
+    "stage": "embedding fixture preflight before any C0 row embedding"
+  },
+  "local_result_branch_created": true,
+  "mechanism_result_observed": false,
+  "next_allowed_action": "MERGE_DUAL_IDENTITY_EXECUTION_CORRECTION_AND_RERUN",
+  "observed_before_mechanism_result": true,
+  "prohibited_actions": [
+    "bypassing the Option B embedding fixture preflight",
+    "candidate evaluation before this correction merges",
+    "C0 selection access",
+    "C1 reserve access",
+    "C1 row selection",
+    "Option C scientific decision"
+  ],
+  "remote_result_branch_created": false,
+  "scientific_result_observed": false,
+  "status": "C0_DISCOVERY_EXECUTION_IDENTITY_ERRATUM_PENDING_MERGE",
+  "unchanged": [
+    "candidate definitions and versions",
+    "registered implementation commit",
+    "primitive definitions",
+    "query forms and thresholds",
+    "propagation rules",
+    "C0 repository allocation",
+    "C0 fit and iteration roles",
+    "C0 selection and C1 evidence"
+  ]
+}

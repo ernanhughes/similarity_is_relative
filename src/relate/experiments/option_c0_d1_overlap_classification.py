@@ -31,6 +31,18 @@ EXPECTED_D1_NEXT_ACTION: Final = "REVIEW_AND_CLASSIFY_EXACT_CROSS_ROLE_OVERLAP"
 EXPECTED_AUDIT_CONTEXT_SHA256: Final = (
     "49fe499ecf5d16293a52e716ceaf88f75e256e8583b6497b934a3d884c8fd265"
 )
+EXPECTED_D1_RESULT_SHA256: Final = (
+    "a19c042f725fb20a0a87fa902d2071f30c66d5ee8f96bfde1cd056cba5123420"
+)
+EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT: Final = (
+    "ddb5c8de28d4e6502f5511152018eb1aafd0cd44"
+)
+GENERATOR_SOURCE_PATHS: Final = (
+    "src/relate/experiments/option_c0_d1_overlap_classification.py",
+    "src/relate/experiments/option_c0_d1_integrity_audit.py",
+    "artifacts/canonical/option-c0/review-v1/option-c0-d1-audit-contract-v1.json",
+    "pyproject.toml",
+)
 EXACT_AST_SHA256: Final = (
     "3d8afe0e5cb68aa8f1d8c1a16c3395c61e3b85bbe4deb3c69e0923944442850d"
 )
@@ -94,6 +106,59 @@ def executing_git_commit(repo_root: Path) -> str:
     ).strip()
 
 
+def current_git_branch(repo_root: Path) -> str:
+    return subprocess.check_output(
+        ["git", "branch", "--show-current"],
+        cwd=repo_root,
+        text=True,
+    ).strip()
+
+
+def git_status_porcelain(repo_root: Path) -> list[str]:
+    output = subprocess.check_output(
+        ["git", "status", "--porcelain"],
+        cwd=repo_root,
+        text=True,
+    )
+    return [line for line in output.splitlines() if line]
+
+
+def require_clean_worktree(
+    repo_root: Path,
+    *,
+    allow_dirty_test_fixture_override: bool = False,
+) -> None:
+    if allow_dirty_test_fixture_override:
+        return
+    dirty = git_status_porcelain(repo_root)
+    if dirty:
+        preview = "; ".join(dirty[:5])
+        raise RuntimeError(
+            "refusing canonical D1.1 generation because git status --porcelain "
+            f"is not empty: {preview}"
+        )
+
+
+def generator_source_manifest(repo_root: Path) -> dict[str, Any]:
+    files: dict[str, Any] = {}
+    for relative in GENERATOR_SOURCE_PATHS:
+        path = repo_root / relative
+        if not path.is_file():
+            raise FileNotFoundError(f"required D1.1 generator source is missing: {relative}")
+        files[relative] = {
+            "sha256": sha256_file(path),
+            "size_bytes": path.stat().st_size,
+        }
+    manifest = {
+        "schema_id": "option-c0-d1-1-generator-source-manifest-v1",
+        "files": files,
+    }
+    manifest["manifest_sha256"] = hashlib.sha256(
+        canonical_json({"schema_id": manifest["schema_id"], "files": files}).encode()
+    ).hexdigest()
+    return manifest
+
+
 def load_json(path: Path) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -108,15 +173,34 @@ def validate_d1_result(result: Mapping[str, Any]) -> None:
         raise ValueError("D1 result does not allow D1.1 review")
     if result.get("audit_context_sha256") != EXPECTED_AUDIT_CONTEXT_SHA256:
         raise ValueError("unexpected D1 audit context")
+    execution = result.get("execution_environment", {})
+    if not isinstance(execution, Mapping):
+        raise ValueError("D1 result execution environment is missing")
+    if execution.get("git_head") != EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT:
+        raise ValueError("unexpected D1 audit execution git commit")
     for key in (
         "scientific_result_observed",
         "mechanism_result_observed",
         "c0_selection_rows_accessed",
         "c1_rows_accessed",
         "hidden_row_content_accessed",
+        "c0_selection_row_content_accessed",
+        "c1_row_content_accessed",
     ):
         if bool(result.get(key)):
             raise ValueError(f"D1 result firewall field must be false: {key}")
+
+
+def validate_d1_result_file(
+    source_path: Path,
+    *,
+    expected_d1_result_sha256: str = EXPECTED_D1_RESULT_SHA256,
+) -> dict[str, Any]:
+    if sha256_file(source_path) != expected_d1_result_sha256:
+        raise ValueError("unexpected canonical D1 result SHA-256")
+    result = load_json(source_path)
+    validate_d1_result(result)
+    return result
 
 
 def publish_d1_result(
@@ -124,10 +208,16 @@ def publish_d1_result(
     output_dir: Path,
     *,
     repo_root: Path,
+    generator_commit: str | None = None,
+    generator_branch: str | None = None,
+    generator_manifest: Mapping[str, Any] | None = None,
+    expected_d1_result_sha256: str = EXPECTED_D1_RESULT_SHA256,
     overwrite: bool = False,
 ) -> dict[str, Any]:
-    result = load_json(source_path)
-    validate_d1_result(result)
+    result = validate_d1_result_file(
+        source_path,
+        expected_d1_result_sha256=expected_d1_result_sha256,
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     result_output = output_dir / source_path.name
     publication_output = output_dir / "option-c0-d1-integrity-audit-publication-v1.json"
@@ -135,6 +225,8 @@ def publish_d1_result(
         raise FileExistsError("canonical D1 publication refuses overwrite")
     shutil.copyfile(source_path, result_output)
     result_sha = sha256_file(result_output)
+    if result_sha != expected_d1_result_sha256:
+        raise ValueError("copied canonical D1 result SHA-256 mismatch")
     near = result.get("near_duplicate_candidates", {})
     exact_ast = result.get("exact_ast_overlap", {})
     exact_code = result.get("exact_code_overlap", {})
@@ -143,7 +235,12 @@ def publish_d1_result(
         "status": "PUBLISHED_PENDING_D1_1_CLASSIFICATION",
         "audit_result_sha256": result_sha,
         "audit_context_sha256": result["audit_context_sha256"],
-        "executing_git_commit": executing_git_commit(repo_root),
+        "d1_audit_execution_git_commit": result["execution_environment"]["git_head"],
+        "d1_result_publication_generator_git_commit": generator_commit
+        or executing_git_commit(repo_root),
+        "generator_worktree_clean": True,
+        "generator_branch": generator_branch or current_git_branch(repo_root),
+        "generator_source_manifest": generator_manifest or generator_source_manifest(repo_root),
         "visible_row_counts": result.get("visible_rows", {}),
         "exact_overlap_counts": {
             "exact_code_cross_role_hashes": exact_code.get("cross_role_hashes"),
@@ -169,6 +266,9 @@ def publish_d1_result(
         "review_status": "D1_1_CLASSIFICATION_PENDING",
         "next_allowed_action": "RUN_D1_1_OVERLAP_CLASSIFICATION",
     }
+    publication["generator_source_manifest_sha256"] = publication[
+        "generator_source_manifest"
+    ]["manifest_sha256"]
     publication_output.write_text(canonical_json(publication) + "\n", encoding="utf-8")
     return publication
 
@@ -637,14 +737,30 @@ def build_classification(
     docs_path: Path,
     repo_root: Path,
     overwrite: bool = False,
+    allow_dirty_test_fixture_override: bool = False,
+    expected_d1_result_sha256: str = EXPECTED_D1_RESULT_SHA256,
 ) -> dict[str, Any]:
+    require_clean_worktree(
+        repo_root,
+        allow_dirty_test_fixture_override=allow_dirty_test_fixture_override,
+    )
+    generator_commit = executing_git_commit(repo_root)
+    generator_branch = current_git_branch(repo_root)
+    source_manifest = generator_source_manifest(repo_root)
     publish_d1_result(
         d1_result_path,
         output_dir,
         repo_root=repo_root,
+        generator_commit=generator_commit,
+        generator_branch=generator_branch,
+        generator_manifest=source_manifest,
+        expected_d1_result_sha256=expected_d1_result_sha256,
         overwrite=overwrite,
     )
-    result = load_json(d1_result_path)
+    result = validate_d1_result_file(
+        d1_result_path,
+        expected_d1_result_sha256=expected_d1_result_sha256,
+    )
     with connect_cache(cache_path) as connection:
         rows = load_visible_rows(connection, str(result["audit_context_sha256"]))
         exact_rows = resolve_exact_pair(rows, sorted(EXACT_STABLE_KEYS))
@@ -660,6 +776,12 @@ def build_classification(
         "status": "D1_1_CLASSIFICATION_COMPLETE",
         "audit_context_sha256": result["audit_context_sha256"],
         "source_d1_result_sha256": sha256_file(output_dir / d1_result_path.name),
+        "d1_audit_execution_git_commit": result["execution_environment"]["git_head"],
+        "d1_1_classification_generator_git_commit": generator_commit,
+        "generator_worktree_clean": True,
+        "generator_branch": generator_branch,
+        "generator_source_manifest": source_manifest,
+        "generator_source_manifest_sha256": source_manifest["manifest_sha256"],
         "publication_sha256": sha256_file(
             output_dir / "option-c0-d1-integrity-audit-publication-v1.json"
         ),
@@ -752,6 +874,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--docs-path", type=Path, required=True)
     parser.add_argument("--repo-root", type=Path, default=Path.cwd())
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--allow-dirty-test-fixture-override", action="store_true")
     args = parser.parse_args(argv)
     build_classification(
         d1_result_path=args.d1_result,
@@ -761,6 +884,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         docs_path=args.docs_path,
         repo_root=args.repo_root,
         overwrite=args.overwrite,
+        allow_dirty_test_fixture_override=args.allow_dirty_test_fixture_override,
     )
     return 0
 

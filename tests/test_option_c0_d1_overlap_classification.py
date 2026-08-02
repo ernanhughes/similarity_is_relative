@@ -24,6 +24,11 @@ def d1_result() -> dict[str, object]:
         "c0_selection_rows_accessed": False,
         "c1_rows_accessed": False,
         "hidden_row_content_accessed": False,
+        "c0_selection_row_content_accessed": False,
+        "c1_row_content_accessed": False,
+        "execution_environment": {
+            "git_head": d11.EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT,
+        },
         "visible_rows": {
             "rows": 2,
             "roles": {"c0_fit": 1, "c0_iteration": 1},
@@ -77,6 +82,45 @@ def init_cache(path: Path) -> sqlite3.Connection:
     return connection
 
 
+def write_minimal_inputs(tmp_path: Path) -> tuple[Path, Path, Path]:
+    source = tmp_path / "option-c0-d1-integrity-audit-v1.json"
+    write_json(source, d1_result())
+    cache_path = tmp_path / "cache.sqlite3"
+    connection = init_cache(cache_path)
+    keys = sorted(d11.EXACT_STABLE_KEYS)
+    insert_row(connection, keys[0], role="c0_iteration", repository="sarugaku/vistir")
+    insert_row(connection, keys[1], role="c0_fit", repository="sarugaku/shellingham")
+    connection.execute(
+        "INSERT INTO near_pairs VALUES (?, ?, ?, 0)",
+        (d11.EXPECTED_AUDIT_CONTEXT_SHA256, keys[0], keys[1]),
+    )
+    connection.commit()
+    allocation = tmp_path / "allocation.jsonl"
+    allocation.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "repository": "sarugaku/vistir",
+                        "role": "c0_iteration",
+                        "row_count": 1,
+                    }
+                ),
+                json.dumps(
+                    {
+                        "repository": "sarugaku/shellingham",
+                        "role": "c0_fit",
+                        "row_count": 1,
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return source, cache_path, allocation
+
+
 def insert_row(
     connection: sqlite3.Connection,
     stable_key: str,
@@ -112,13 +156,155 @@ def test_immutable_d1_publication_and_overwrite_refusal(tmp_path: Path) -> None:
     write_json(source, d1_result())
     output_dir = tmp_path / "published"
 
-    publication = d11.publish_d1_result(source, output_dir, repo_root=Path.cwd())
+    publication = d11.publish_d1_result(
+        source,
+        output_dir,
+        repo_root=Path.cwd(),
+        expected_d1_result_sha256=d11.sha256_file(source),
+    )
 
     copied = output_dir / source.name
     assert copied.read_text(encoding="utf-8") == source.read_text(encoding="utf-8")
     assert publication["audit_result_sha256"] == d11.sha256_file(copied)
+    assert (
+        publication["d1_audit_execution_git_commit"]
+        == d11.EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT
+    )
     with pytest.raises(FileExistsError, match="refuses overwrite"):
-        d11.publish_d1_result(source, output_dir, repo_root=Path.cwd())
+        d11.publish_d1_result(
+            source,
+            output_dir,
+            repo_root=Path.cwd(),
+            expected_d1_result_sha256=d11.sha256_file(source),
+        )
+
+
+def test_dirty_worktree_refuses_canonical_generation_before_publication(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cache_path, allocation = write_minimal_inputs(tmp_path)
+    monkeypatch.setattr(d11, "git_status_porcelain", lambda _repo_root: [" M dirty.py"])
+
+    with pytest.raises(RuntimeError, match="git status --porcelain"):
+        d11.build_classification(
+            d1_result_path=source,
+            cache_path=cache_path,
+            allocation_path=allocation,
+            output_dir=tmp_path / "out",
+            docs_path=tmp_path / "report.md",
+            repo_root=Path.cwd(),
+            expected_d1_result_sha256=d11.sha256_file(source),
+        )
+
+    assert not (tmp_path / "out").exists()
+
+
+def test_dirty_worktree_refuses_before_public_metadata_requests(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cache_path, allocation = write_minimal_inputs(tmp_path)
+    monkeypatch.setattr(d11, "git_status_porcelain", lambda _repo_root: ["?? new.py"])
+
+    def fail_metadata(*_args: object, **_kwargs: object) -> dict[str, object]:
+        raise AssertionError("metadata should not be requested from a dirty worktree")
+
+    monkeypatch.setattr(d11, "public_metadata_check", fail_metadata)
+    with pytest.raises(RuntimeError, match="git status --porcelain"):
+        d11.build_classification(
+            d1_result_path=source,
+            cache_path=cache_path,
+            allocation_path=allocation,
+            output_dir=tmp_path / "out",
+            docs_path=tmp_path / "report.md",
+            repo_root=Path.cwd(),
+            expected_d1_result_sha256=d11.sha256_file(source),
+        )
+
+
+def test_clean_worktree_is_accepted_and_records_runtime_head(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cache_path, allocation = write_minimal_inputs(tmp_path)
+    monkeypatch.setattr(d11, "git_status_porcelain", lambda _repo_root: [])
+    monkeypatch.setattr(d11, "executing_git_commit", lambda _repo_root: "f" * 40)
+    monkeypatch.setattr(d11, "current_git_branch", lambda _repo_root: "branch")
+    monkeypatch.setattr(
+        d11,
+        "public_metadata_check",
+        lambda *_args, **_kwargs: {"repositories": [], "public_metadata_only": True},
+    )
+
+    classification = d11.build_classification(
+        d1_result_path=source,
+        cache_path=cache_path,
+        allocation_path=allocation,
+        output_dir=tmp_path / "out",
+        docs_path=tmp_path / "report.md",
+        repo_root=Path.cwd(),
+        expected_d1_result_sha256=d11.sha256_file(source),
+    )
+    publication = json.loads(
+        (tmp_path / "out" / "option-c0-d1-integrity-audit-publication-v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert classification["generator_worktree_clean"] is True
+    assert publication["generator_worktree_clean"] is True
+    assert classification["d1_1_classification_generator_git_commit"] == "f" * 40
+    assert publication["d1_result_publication_generator_git_commit"] == "f" * 40
+    assert classification["generator_branch"] == "branch"
+
+
+def test_test_fixture_override_can_bypass_dirty_worktree(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source, cache_path, allocation = write_minimal_inputs(tmp_path)
+    monkeypatch.setattr(d11, "git_status_porcelain", lambda _repo_root: [" M dirty.py"])
+    monkeypatch.setattr(
+        d11,
+        "public_metadata_check",
+        lambda *_args, **_kwargs: {"repositories": [], "public_metadata_only": True},
+    )
+
+    classification = d11.build_classification(
+        d1_result_path=source,
+        cache_path=cache_path,
+        allocation_path=allocation,
+        output_dir=tmp_path / "out",
+        docs_path=tmp_path / "report.md",
+        repo_root=Path.cwd(),
+        allow_dirty_test_fixture_override=True,
+        expected_d1_result_sha256=d11.sha256_file(source),
+    )
+    assert classification["status"] == "D1_1_CLASSIFICATION_COMPLETE"
+
+
+def test_d1_audit_execution_commit_is_read_from_immutable_result(tmp_path: Path) -> None:
+    source = tmp_path / "option-c0-d1-integrity-audit-v1.json"
+    write_json(source, d1_result())
+    publication = d11.publish_d1_result(
+        source,
+        tmp_path / "published",
+        repo_root=Path.cwd(),
+        generator_commit="a" * 40,
+        expected_d1_result_sha256=d11.sha256_file(source),
+    )
+    assert (
+        publication["d1_audit_execution_git_commit"]
+        == d11.EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT
+    )
+
+
+def test_generator_source_manifest_contains_required_paths_and_hash_is_deterministic() -> None:
+    first = d11.generator_source_manifest(Path.cwd())
+    second = d11.generator_source_manifest(Path.cwd())
+    assert set(d11.GENERATOR_SOURCE_PATHS) <= set(first["files"])
+    assert first["manifest_sha256"] == second["manifest_sha256"]
 
 
 def test_exact_stable_key_resolution_from_visible_rows(tmp_path: Path) -> None:
@@ -343,41 +529,7 @@ def test_all_hidden_row_firewall_booleans_remain_false(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    source = tmp_path / "option-c0-d1-integrity-audit-v1.json"
-    write_json(source, d1_result())
-    cache_path = tmp_path / "cache.sqlite3"
-    connection = init_cache(cache_path)
-    keys = sorted(d11.EXACT_STABLE_KEYS)
-    insert_row(connection, keys[0], role="c0_iteration", repository="sarugaku/vistir")
-    insert_row(connection, keys[1], role="c0_fit", repository="sarugaku/shellingham")
-    connection.execute(
-        "INSERT INTO near_pairs VALUES (?, ?, ?, 0)",
-        (d11.EXPECTED_AUDIT_CONTEXT_SHA256, keys[0], keys[1]),
-    )
-    connection.commit()
-    allocation = tmp_path / "allocation.jsonl"
-    allocation.write_text(
-        "\n".join(
-            [
-                json.dumps(
-                    {
-                        "repository": "sarugaku/vistir",
-                        "role": "c0_iteration",
-                        "row_count": 1,
-                    }
-                ),
-                json.dumps(
-                    {
-                        "repository": "sarugaku/shellingham",
-                        "role": "c0_fit",
-                        "row_count": 1,
-                    }
-                ),
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
-    )
+    source, cache_path, allocation = write_minimal_inputs(tmp_path)
     monkeypatch.setattr(
         d11,
         "public_metadata_check",
@@ -391,6 +543,8 @@ def test_all_hidden_row_firewall_booleans_remain_false(
         output_dir=tmp_path / "out",
         docs_path=tmp_path / "report.md",
         repo_root=Path.cwd(),
+        allow_dirty_test_fixture_override=True,
+        expected_d1_result_sha256=d11.sha256_file(source),
     )
 
     assert all(value is False for value in classification["firewall_booleans"].values())
@@ -400,7 +554,12 @@ def test_canonical_result_and_publication_hashes_verify(tmp_path: Path) -> None:
     source = tmp_path / "option-c0-d1-integrity-audit-v1.json"
     write_json(source, d1_result())
     output_dir = tmp_path / "published"
-    d11.publish_d1_result(source, output_dir, repo_root=Path.cwd())
+    d11.publish_d1_result(
+        source,
+        output_dir,
+        repo_root=Path.cwd(),
+        expected_d1_result_sha256=d11.sha256_file(source),
+    )
     assert d11.verify_publication_hashes(
         output_dir / source.name,
         output_dir / "option-c0-d1-integrity-audit-publication-v1.json",

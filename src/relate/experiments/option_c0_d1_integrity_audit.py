@@ -21,8 +21,8 @@ import time
 import tokenize
 import uuid
 from collections import Counter, defaultdict
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, TextIO
 
@@ -365,14 +365,29 @@ class IntegrityAuditCache:
         return tuple(VisibleAuditRow(*value) for value in values)
 
     def phase_complete(self, context_sha256: str, phase_name: str) -> bool:
+        return self.phase_metadata(context_sha256, phase_name) is not None
+
+    def phase_metadata(
+        self,
+        context_sha256: str,
+        phase_name: str,
+    ) -> dict[str, Any] | None:
         row = self.connection.execute(
             """
-            SELECT status FROM phases
+            SELECT status, metadata_json FROM phases
             WHERE context_sha256 = ? AND phase_name = ?
             """,
             (context_sha256, phase_name),
         ).fetchone()
-        return row == ("COMPLETE",)
+        if row is None:
+            return None
+        status, metadata_json = row
+        if status != "COMPLETE":
+            return None
+        value = json.loads(str(metadata_json))
+        if not isinstance(value, dict):
+            raise ValueError("integrity cache phase metadata is corrupt")
+        return value
 
     def mark_phase_complete(
         self,
@@ -533,9 +548,34 @@ def _audit_context(
         "allocation_manifest_sha256": _sha256_file(allocation_path),
         "visible_reconstruction_source_sha256": _sha256_file(runner_path),
         "visible_roles": list(VISIBLE_ROLES),
+        "normalisation_algorithm": "python-token-normalisation-v1",
+        "normalisation_algorithm_identity": _sha256_bytes(
+            "\n".join(
+                (
+                    "python-token-normalisation-v1",
+                    "keywords preserved",
+                    "identifiers->NAME",
+                    "numbers->NUMBER",
+                    "strings->STRING",
+                    "operators preserved",
+                )
+            ).encode()
+        ),
+        "near_duplicate_algorithm": "normalised-token-shingle-simhash-banding-v1",
+        "near_duplicate_algorithm_identity": _sha256_bytes(
+            "\n".join(
+                (
+                    "normalised-token-shingle-simhash-banding-v1",
+                    f"simhash_bits={SIMHASH_BITS}",
+                    f"simhash_shingle_size={SIMHASH_SHINGLE_SIZE}",
+                    f"simhash_bands={SIMHASH_BANDS}",
+                )
+            ).encode()
+        ),
         "simhash_bits": SIMHASH_BITS,
         "simhash_shingle_size": SIMHASH_SHINGLE_SIZE,
         "simhash_bands": SIMHASH_BANDS,
+        "cache_schema_version": CACHE_SCHEMA,
         "near_hamming": near_hamming,
         "near_max_bucket": near_max_bucket,
         "near_max_pairs": near_max_pairs,
@@ -549,7 +589,7 @@ def _row_from_visible(item: Any) -> VisibleAuditRow:
         role=str(item.role),
         repository=str(record.repository),
         stable_key=str(record.stable_key),
-        source_split=str(record.split),
+        source_split=str(getattr(record, "split", getattr(record, "source_split", ""))),
         path=str(record.path),
         function_id=str(record.function_id),
         code_sha256=str(record.code_sha256),
@@ -578,13 +618,23 @@ def load_or_reconstruct_visible_rows(
         started = time.perf_counter()
         reporter.message(f"visible-row cache: {cached:,} hit/0 miss")
         rows = cache.load_visible_rows(context.sha256)
-        reporter.completed("visible-row cache load", started)
-        return rows, {
-            "cache_hits": cached,
-            "cache_misses": 0,
-            "reconstructed": False,
-            "rows": len(rows),
+        observed = {role: sum(row.role == role for row in rows) for role in VISIBLE_ROLES}
+        expected_by_role = {
+            role: sum(int(item["row_count"]) for item in assignments if item["role"] == role)
+            for role in VISIBLE_ROLES
         }
+        if observed != expected_by_role:
+            reporter.message("discarding visible-row cache with mismatched role counts")
+            cache.clear_visible_rows(context.sha256)
+        else:
+            reporter.completed("visible-row cache load", started)
+            return rows, {
+                "cache_hits": cached,
+                "cache_misses": 0,
+                "reconstructed": False,
+                "rows": len(rows),
+                "role_counts": observed,
+            }
     if cached:
         reporter.message(
             f"discarding incomplete visible-row cache: {cached:,}/{expected:,} rows"
@@ -603,6 +653,13 @@ def load_or_reconstruct_visible_rows(
         raise ValueError(
             f"visible audit row count differs from allocation: {len(rows)} != {expected}"
         )
+    expected_by_role = {
+        role: sum(int(item["row_count"]) for item in assignments if item["role"] == role)
+        for role in VISIBLE_ROLES
+    }
+    observed_by_role = {role: sum(row.role == role for row in rows) for role in VISIBLE_ROLES}
+    if observed_by_role != expected_by_role:
+        raise ValueError("visible audit role counts differ from allocation")
 
     write_started = time.perf_counter()
     batch_size = 500
@@ -622,6 +679,7 @@ def load_or_reconstruct_visible_rows(
         "cache_misses": len(rows),
         "reconstructed": True,
         "rows": len(rows),
+        "role_counts": observed_by_role,
         "source_reconstruction": reconstruction,
     }
 
@@ -759,7 +817,7 @@ def _compute_near_pairs(
             )
 
     results: list[tuple[str, str, int]] = []
-    truncated = False
+    pair_truncated = False
     compare_started = time.perf_counter()
     ordered_candidates = sorted(candidate_pairs)
     for position, (left_index, right_index) in enumerate(ordered_candidates, start=1):
@@ -770,7 +828,7 @@ def _compute_near_pairs(
             left_key, right_key = sorted((left.stable_key, right.stable_key))
             results.append((left_key, right_key, distance))
             if len(results) >= max_pairs:
-                truncated = position < len(ordered_candidates)
+                pair_truncated = position < len(ordered_candidates)
                 break
         if position % 10000 == 0 or position == len(ordered_candidates):
             reporter.rows(
@@ -784,7 +842,9 @@ def _compute_near_pairs(
         "candidate_pairs": len(candidate_pairs),
         "near_pairs": len(results),
         "oversized_buckets_skipped": oversized_buckets,
-        "truncated": truncated,
+        "pair_truncated": pair_truncated,
+        "output_truncated": pair_truncated,
+        "scan_complete": oversized_buckets == 0 and not pair_truncated,
         "max_hamming": max_hamming,
         "max_bucket": max_bucket,
         "max_pairs": max_pairs,
@@ -802,18 +862,25 @@ def near_duplicate_report(
     reporter: ProgressReporter,
     sample_limit: int = 30,
 ) -> dict[str, Any]:
-    if cache.phase_complete(context.sha256, "near_duplicate_scan"):
+    cached_metadata = cache.phase_metadata(context.sha256, "near_duplicate_scan")
+    expected_cache_fields = {
+        "max_hamming": max_hamming,
+        "max_bucket": max_bucket,
+        "max_pairs": max_pairs,
+    }
+    if cached_metadata is not None and all(
+        cached_metadata.get(key) == value for key, value in expected_cache_fields.items()
+    ):
         reporter.message("near-duplicate cache: completed scan hit")
         pairs = cache.load_near_pairs(context.sha256)
         metadata = {
+            **cached_metadata,
             "near_pairs": len(pairs),
             "cache_reused": True,
-            "truncated": False,
-            "max_hamming": max_hamming,
-            "max_bucket": max_bucket,
-            "max_pairs": max_pairs,
         }
     else:
+        if cached_metadata is not None:
+            reporter.message("discarding near-duplicate cache with mismatched parameters")
         cache.clear_near_pairs(context.sha256)
         pairs, metadata = _compute_near_pairs(
             rows,
@@ -856,9 +923,26 @@ def near_duplicate_report(
             )
     return {
         **metadata,
+        "near_duplicate_scan_complete": bool(metadata.get("scan_complete")),
         "cross_role_repository_pairs": len(repository_pairs),
         "samples": samples,
         "interpretation": "candidate near duplicates requiring review, not proven contamination",
+        "algorithm_documentation": {
+            "method": "normalised Python token shingles, 64-bit SimHash, deterministic banding",
+            "can_detect": (
+                "token-level near matches that collide in at least one SimHash band "
+                "and pass exact Hamming verification"
+            ),
+            "can_miss": (
+                "semantic clones, renamed structures outside the Hamming radius, "
+                "and pairs hidden by skipped oversized buckets"
+            ),
+            "bounds": (
+                "oversized buckets and maximum output pairs are explicit; any skip "
+                "or truncation marks the scan incomplete"
+            ),
+            "exhaustive_for_radius": bool(metadata.get("scan_complete")),
+        },
     }
 
 
@@ -893,11 +977,14 @@ def _hash_paths_at_ref(
             result[path] = {
                 "available": True,
                 "bytes": len(command.stdout),
+                "byte_count": len(command.stdout),
                 "sha256": _sha256_bytes(command.stdout),
+                "git_ref": ref,
             }
         else:
             result[path] = {
                 "available": False,
+                "git_ref": ref,
                 "error": command.stderr.decode(errors="replace").strip(),
             }
         reporter.rows(f"hash source at {ref[:12]}", index, len(paths), started=started)
@@ -921,6 +1008,11 @@ def execution_source_manifest(
     d1_paths = _hash_paths_at_ref(repo_root, head, D1_EXECUTION_PATHS, reporter)
     return {
         "v1_execution_ref": v1_execution_ref,
+        "published_c0_v1_result_commit": DEFAULT_EXECUTION_REF,
+        "registered_candidate_implementation_commit": (
+            "d36436209d95eca555215a83856f042d241a90f4"
+        ),
+        "result_publication_commit": v1_execution_ref,
         "v1_execution_paths": v1_paths,
         "v1_all_paths_available": all(item["available"] for item in v1_paths.values()),
         "d1_execution_ref": head,
@@ -1004,7 +1096,7 @@ def run_d1_integrity_audit(
     exact_overlap_found = bool(
         exact_code["cross_role_hashes"] or exact_ast["cross_role_hashes"]
     )
-    near_complete = not bool(near["truncated"])
+    near_complete = bool(near["near_duplicate_scan_complete"])
     source_manifest_complete = bool(
         execution["v1_all_paths_available"] and execution["d1_all_paths_available"]
     )

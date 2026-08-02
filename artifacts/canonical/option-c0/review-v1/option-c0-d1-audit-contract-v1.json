@@ -1,0 +1,39 @@
+{
+  "blocked_row_content_roles": [
+    "c0_selection",
+    "c1_reserve"
+  ],
+  "cache": {
+    "context_bound": true,
+    "local_recovery_only": true,
+    "path": ".writer/option-c0/cache/option-c0-d1-integrity-v1.sqlite3",
+    "required_pragmas": [
+      "journal_mode=WAL",
+      "synchronous=FULL",
+      "foreign_keys=ON"
+    ],
+    "schema_id": "option-c0-d1-integrity-cache-v1"
+  },
+  "contract_id": "option-c0-d1-audit-contract-v1",
+  "final_contamination_judgment_automatic": false,
+  "hidden_row_content_accessed": false,
+  "mechanism_result_observed": false,
+  "near_duplicate_output": "heuristic_candidates_not_proof",
+  "next_allowed_action_after_implementation_merge": "RUN_AND_REVIEW_OPTION_C0_D1_INTEGRITY_AUDIT",
+  "prohibited_actions": [
+    "C0 selection row reconstruction",
+    "C1 reserve row reconstruction",
+    "GitHub network fork graph inspection",
+    "repository cloning",
+    "Option C scientific decision",
+    "canonical D1 result publication from implementation PR"
+  ],
+  "repository_family_input": "published_repository_names_only",
+  "result_status": "C0_D1_AUDIT_COMPLETE_PENDING_HUMAN_REVIEW",
+  "schema_id": "option-c0-d1-audit-contract-v1",
+  "scientific_result_observed": false,
+  "visible_row_roles": [
+    "c0_fit",
+    "c0_iteration"
+  ]
+}

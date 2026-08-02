@@ -1,0 +1,51 @@
+{
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "checkpoint_id": "option-c0-d-remediation-status-v1",
+  "confirmed_defects": [
+    "interval risk-coverage score is folded and non-monotone",
+    "direct-conformal ranked curves use predictions undefined outside singleton sets",
+    "primitive model selection fits StandardScaler before repository-grouped folds",
+    "evaluation publication lacks a complete executing-source manifest",
+    "diagnostic regime taxonomy contains an unreachable absent stratum",
+    "accepted-class composition is missing from selective diagnostics",
+    "oracle support is a query-independent true-margin boundary diagnostic rather than a selective-coverage ceiling"
+  ],
+  "current_v1_result": {
+    "artifact_path": "artifacts/canonical/option-c0/discovery-v1/option-c0-discovery-iteration-v1.json",
+    "artifact_sha256": "ca81076fd21ecf97fc33dcd2a1690a2cd29443cb9cf5c26eba49c00095a1df99",
+    "disposition": "PRESERVED_DESCRIPTIVE_ONLY",
+    "invalidated_components": [
+      "interval-method ranked risk-coverage curves",
+      "direct-conformal ranked risk-coverage curves",
+      "matched-coverage conclusions relying on those curves",
+      "oracle-support-as-ceiling interpretation",
+      "current regime taxonomy",
+      "headline conjunction interpretation without accepted-class composition"
+    ],
+    "preserved_components": [
+      "data allocation and firewall commitments pending duplicate-family audit",
+      "source and embedding identities",
+      "registered candidate definitions",
+      "candidate acceptance masks and accepted-row selective counts",
+      "empirical residual-mass risk-coverage curves",
+      "uncalibrated direct-confidence risk-coverage curves",
+      "aggregate primitive interval coverage",
+      "query prevalence and raw row counts"
+    ]
+  },
+  "mechanism_result_observed": true,
+  "next_allowed_action": "IMPLEMENT_PR_D1_FIREWALL_AND_EXECUTION_AUDIT",
+  "prohibited_actions": [
+    "C0 selection access",
+    "C1 reserve access",
+    "C1 row selection",
+    "C1 contract freeze",
+    "Option C scientific decision from the v1 diagnostic comparison",
+    "overwrite or deletion of v1 artifacts",
+    "promotion of C-REFUSE-001"
+  ],
+  "remediation_plan": "docs/audits/option-c0-d-remediation-plan-2026-08-02.md",
+  "scientific_result_observed": false,
+  "status": "C0_DIAGNOSTIC_COMPARISON_INVALIDATED_PENDING_REMEDIATION"
+}

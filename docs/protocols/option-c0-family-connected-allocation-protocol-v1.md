@@ -3,7 +3,7 @@
 Status: frozen for implementation review.
 
 Protocol identity:
-`4e86b557e232d3d6ba8db408959da09eabee07e3ee72564f953630f20a9be618`
+`cf3ea4eafcd4b1bf55cc5a829bc6cf4125318ce0fb700d5ea176d455aeb18896`
 
 ## Scope
 
@@ -35,6 +35,9 @@ Hard connecting edge types:
 
 Each hard edge has its own explicit typed evidence schema. A generic
 `required_evidence_complete = true` field is not accepted as family evidence.
+Rules with manual review produce unresolved evidence candidates first. A
+separate `ManualReviewDisposition` can approve or reject a candidate only when
+its protocol SHA-256 and evidence commitment match exactly.
 
 Conditional connecting edge types:
 
@@ -53,6 +56,10 @@ Nonconnecting review evidence:
 
 Nonconnecting edges are retained for review and never participate in union-find
 component formation.
+
+Every edge rule has conjunctive evidence-source requirements. If a rule requires
+both `d1_visible_cache` and `public_metadata_snapshot`, both immutable source
+identities must be present in the canonical source bundle.
 
 ## Component Rule
 
@@ -89,6 +96,11 @@ The protocol distinguishes:
 These are not synonyms. Cross-role components do not automatically establish
 material contamination, and material contamination does not automatically emit a
 reallocation requirement without explicit human review under this protocol.
+
+The materiality-input contract includes affected repositories and rows by role
+pair, largest component, affected C0 fit and iteration fractions, hard and
+conditional crossing counts, and feasibility of a family-disjoint allocation.
+No automatic materiality threshold is frozen in v1.
 
 ## Firewall
 

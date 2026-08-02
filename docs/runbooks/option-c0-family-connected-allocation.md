@@ -29,6 +29,8 @@ PRAGMA foreign_keys=ON;
 
 The cache identity must include the frozen protocol SHA-256 and all input
 identities. A cache bound to another protocol identity must be refused.
+Existing caches fail closed when identity rows are missing, extra, partial, or
+mismatched, or when data rows exist before a complete identity is adopted.
 
 ## Progress Reporting
 
@@ -42,10 +44,12 @@ The future runner must stream:
 - elapsed time
 - ETA
 
+The frozen protocol contract also specifies checkpoint cadence, phase status
+values, resume cursor requirements, and phase commitment requirements.
+
 ## Publication
 
 The future canonical graph publication must include component and edge
 commitments, metadata snapshot hashes, incomplete metadata statuses, manual
 review dispositions, and the bounded decision outcome. It must not collapse
 family crossing, contamination, and reallocation into one decision.
-

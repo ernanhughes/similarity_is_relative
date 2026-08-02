@@ -21,7 +21,6 @@ def payload(edge_type: str) -> dict[str, object]:
             "child_full_name": "owner/a",
             "parent_or_source_full_name": "owner/b",
             "fork": True,
-            "parent_or_source_endpoint_equals_other_endpoint": True,
             "metadata_snapshot_identity": "b" * 64,
             "snapshot_status": "COMPLETE",
         },
@@ -31,9 +30,6 @@ def payload(edge_type: str) -> dict[str, object]:
             "direction": "predecessor_to_successor",
             "public_succession_record": "public rename notice",
             "record_snapshot_hash": "c" * 64,
-            "review_disposition": "APPROVED",
-            "review_disposition_protocol_sha256": protocol.protocol_contract()["protocol_sha256"],
-            "review_disposition_evidence_hash": "d" * 64,
         },
         "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY": {
             "identity_scope": "approved_non_generated_module",
@@ -48,9 +44,6 @@ def payload(edge_type: str) -> dict[str, object]:
             "lineage_record_type": "continuation",
             "approved_lineage_record": "public package continuation",
             "evidence_snapshot_hash": "2" * 64,
-            "review_disposition": "APPROVED",
-            "review_disposition_protocol_sha256": protocol.protocol_contract()["protocol_sha256"],
-            "review_disposition_evidence_hash": "3" * 64,
         },
         "EXACT_AST_WITH_CORROBORATING_PROVENANCE": {
             "same_normalized_ast": True,
@@ -58,24 +51,15 @@ def payload(edge_type: str) -> dict[str, object]:
             "same_path_suffix": True,
             "compatible_repository_dates": True,
             "public_shared_package_history": True,
-            "review_disposition": "APPROVED",
-            "review_disposition_protocol_sha256": protocol.protocol_contract()["protocol_sha256"],
-            "review_disposition_evidence_hash": "4" * 64,
         },
         "SAME_MODULE_LINEAGE_WITH_CORROBORATION": {
             "same_module_lineage": True,
             "public_shared_package_history": True,
             "compatible_repository_dates": True,
-            "review_disposition": "APPROVED",
-            "review_disposition_protocol_sha256": protocol.protocol_contract()["protocol_sha256"],
-            "review_disposition_evidence_hash": "5" * 64,
         },
         "EXPLICIT_COPY_OR_EXTRACTION_HISTORY": {
             "public_copy_or_extraction_record": "public copy notice",
             "compatible_repository_dates": True,
-            "review_disposition": "APPROVED",
-            "review_disposition_protocol_sha256": protocol.protocol_contract()["protocol_sha256"],
-            "review_disposition_evidence_hash": "6" * 64,
         },
         "EXACT_FUNCTION_SOURCE_MATCH": {
             "left_stable_key": "left",
@@ -98,20 +82,42 @@ def payload(edge_type: str) -> dict[str, object]:
     return dict(values[edge_type])
 
 
-def source(edge_type: str) -> str:
+def sources(edge_type: str) -> dict[str, str]:
     rule = protocol.EDGE_RULES[edge_type]
-    return rule.evidence_source_requirements[0]
+    return {source: SOURCE_ID for source in rule.evidence_source_requirements}
 
 
-def edge(edge_type: str, evidence_payload: dict[str, object] | None = None):
-    return protocol.make_evidence_edge(
+def candidate(edge_type: str, evidence_payload: dict[str, object] | None = None):
+    return protocol.make_evidence_candidate(
         "owner/a",
         "owner/b",
         edge_type,
-        evidence_source=source(edge_type),
-        evidence_source_identity=SOURCE_ID,
-        retrieval_timestamp=TIMESTAMP,
+        evidence_sources=sources(edge_type),
         evidence_payload=evidence_payload or payload(edge_type),
+    )
+
+
+def disposition(cand, value: str = "APPROVED"):
+    return protocol.make_manual_review_disposition(
+        edge_candidate_id=cand.candidate_id,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        evidence_commitment=cand.evidence_commitment,
+        disposition=value,
+        reviewer_identity="sha256:" + "0" * 64,
+        review_timestamp=TIMESTAMP,
+        bounded_reason="reviewed fixture",
+    )
+
+
+def edge(edge_type: str, evidence_payload: dict[str, object] | None = None):
+    cand = candidate(edge_type, evidence_payload)
+    disp = None
+    if protocol.EDGE_RULES[edge_type].review_requirement == "APPROVED_REQUIRED":
+        disp = disposition(cand)
+    return protocol.resolve_evidence_candidate(
+        cand,
+        disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
     )
 
 
@@ -191,13 +197,11 @@ def test_tampered_payload_hash_is_rejected() -> None:
 
 def test_wrong_rule_version_is_rejected() -> None:
     with pytest.raises(ValueError, match="wrong family edge rule version"):
-        protocol.make_evidence_edge(
+        protocol.make_evidence_candidate(
             "owner/a",
             "owner/b",
             "DECLARED_GITHUB_FORK",
-            evidence_source="github_rest",
-            evidence_source_identity=SOURCE_ID,
-            retrieval_timestamp=TIMESTAMP,
+            evidence_sources=sources("DECLARED_GITHUB_FORK"),
             evidence_payload=payload("DECLARED_GITHUB_FORK"),
             rule_version="other",
         )
@@ -236,14 +240,16 @@ def test_component_commitment_is_order_independent() -> None:
         ["owner/c", "owner/a", "owner/b"],
         [
             edge("DECLARED_GITHUB_FORK"),
-            protocol.make_evidence_edge(
+            protocol.resolve_evidence_candidate(
+                protocol.make_evidence_candidate(
                 "owner/b",
                 "owner/c",
                 "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY",
-                evidence_source="d1_visible_cache",
-                evidence_source_identity=SOURCE_ID,
-                retrieval_timestamp=TIMESTAMP,
+                evidence_sources=sources("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY"),
                 evidence_payload=payload("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY"),
+                ),
+                None,
+                protocol_sha256=contract["protocol_sha256"],
             ),
         ],
         protocol_sha256=contract["protocol_sha256"],
@@ -284,11 +290,7 @@ def test_nonconnecting_review_evidence_does_not_make_graph_incomplete() -> None:
 
 
 def test_unresolved_connecting_candidate_makes_graph_incomplete() -> None:
-    item = replace(
-        edge("EXACT_AST_WITH_CORROBORATING_PROVENANCE"),
-        review_status="UNRESOLVED",
-        connecting=False,
-    )
+    item = candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
     completeness = protocol.graph_completeness([item])
     decision = protocol.family_graph_outcome(completeness)
     assert decision["family_graph_outcome"] == "FAMILY_GRAPH_INCOMPLETE_REVIEW_REQUIRED"
@@ -333,6 +335,41 @@ def test_cache_identity_changes_are_rejected(tmp_path: Path) -> None:
         changed = replace(identity, **{field: "0" * 64})
         with pytest.raises(ValueError, match=field):
             protocol.FamilyGraphCache(path, identity=changed)
+
+
+def test_incomplete_cache_identity_is_rejected(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    path = tmp_path / "family.sqlite3"
+    with protocol.FamilyGraphCache(path, identity=identity):
+        pass
+    with sqlite3.connect(path) as connection:
+        connection.execute("DELETE FROM cache_identity WHERE key = 'd1_audit_result_sha256'")
+        connection.commit()
+    with pytest.raises(ValueError, match="identity key set"):
+        protocol.FamilyGraphCache(path, identity=identity)
+
+
+def test_data_bearing_cache_with_empty_identity_is_rejected(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    path = tmp_path / "family.sqlite3"
+    with protocol.FamilyGraphCache(path, identity=identity) as cache:
+        cache.put_allocation_repositories(
+            [protocol.AllocationEntry("owner/a", "c0_fit", 1)]
+        )
+        cache.connection.execute("DELETE FROM cache_identity")
+        cache.connection.commit()
+    with pytest.raises(ValueError, match="data without identity"):
+        protocol.FamilyGraphCache(path, identity=identity)
+
+
+def test_allocation_rows_are_immutable_under_same_identity(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_allocation_repositories([protocol.AllocationEntry("owner/a", "c0_fit", 1)])
+        with pytest.raises(ValueError, match="allocation repositories differ"):
+            cache.put_allocation_repositories(
+                [protocol.AllocationEntry("owner/a", "c0_iteration", 1)]
+            )
 
 
 def test_sqlite_foreign_key_violation_fails(tmp_path: Path) -> None:

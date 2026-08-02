@@ -38,10 +38,11 @@ ALLOWED_EVIDENCE_SOURCES: Final = (
     "d1_visible_cache",
     "public_metadata_snapshot",
     "manual_review_record",
+    "allocation_manifest",
     "fixture",
 )
 CONFIDENCE_CATEGORIES: Final = ("high", "medium", "low", "review_only")
-REVIEW_DISPOSITIONS: Final = ("APPROVED", "REJECTED", "UNRESOLVED")
+REVIEW_DISPOSITIONS: Final = ("APPROVED", "REJECTED")
 METADATA_STATUSES: Final = (
     "COMPLETE",
     "NOT_FOUND",
@@ -51,6 +52,22 @@ METADATA_STATUSES: Final = (
     "RATE_LIMITED",
     "REQUEST_FAILED",
 )
+PUBLIC_METADATA_FIELDS: Final = {
+    "repository_id",
+    "full_name",
+    "owner_login",
+    "fork",
+    "parent_full_name",
+    "source_full_name",
+    "archived",
+    "created_at",
+    "updated_at",
+    "homepage",
+    "description",
+    "rename_or_move_indicator",
+    "request_status",
+}
+MAX_EVIDENCE_STRING_LENGTH: Final = 500
 FORBIDDEN_PAYLOAD_PATTERNS: Final = (
     "source_body",
     "raw_source",
@@ -102,7 +119,6 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "child_full_name": "repository",
             "parent_or_source_full_name": "repository",
             "fork": "true",
-            "parent_or_source_endpoint_equals_other_endpoint": "true",
             "metadata_snapshot_identity": "sha256",
             "snapshot_status": "str",
         },
@@ -124,16 +140,12 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "direction": "str",
             "public_succession_record": "str",
             "record_snapshot_hash": "sha256",
-            "review_disposition": "str",
-            "review_disposition_protocol_sha256": "sha256",
-            "review_disposition_evidence_hash": "sha256",
         },
         allowed_values={
             "direction": ("predecessor_to_successor",),
-            "review_disposition": ("APPROVED",),
         },
         forbidden_fields=(),
-        evidence_source_requirements=("manual_review_record", "public_metadata_snapshot"),
+        evidence_source_requirements=("public_metadata_snapshot",),
         review_requirement="APPROVED_REQUIRED",
         confidence_category="high",
         reason_template="approved repository succession connects repositories",
@@ -177,16 +189,12 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "lineage_record_type": "str",
             "approved_lineage_record": "str",
             "evidence_snapshot_hash": "sha256",
-            "review_disposition": "str",
-            "review_disposition_protocol_sha256": "sha256",
-            "review_disposition_evidence_hash": "sha256",
         },
         allowed_values={
             "lineage_record_type": ("movement", "split", "rename", "continuation"),
-            "review_disposition": ("APPROVED",),
         },
         forbidden_fields=("common_dependency_only", "same_owner_only"),
-        evidence_source_requirements=("manual_review_record", "public_metadata_snapshot"),
+        evidence_source_requirements=("public_metadata_snapshot",),
         review_requirement="APPROVED_REQUIRED",
         confidence_category="high",
         reason_template="approved shared package lineage connects repositories",
@@ -210,13 +218,10 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "same_path_suffix": "true",
             "compatible_repository_dates": "true",
             "public_shared_package_history": "true",
-            "review_disposition": "str",
-            "review_disposition_protocol_sha256": "sha256",
-            "review_disposition_evidence_hash": "sha256",
         },
-        allowed_values={"review_disposition": ("APPROVED",)},
+        allowed_values={},
         forbidden_fields=(),
-        evidence_source_requirements=("manual_review_record", "d1_visible_cache"),
+        evidence_source_requirements=("d1_visible_cache", "public_metadata_snapshot"),
         review_requirement="APPROVED_REQUIRED",
         confidence_category="medium",
         reason_template="approved exact AST plus corroborating provenance connects repositories",
@@ -230,13 +235,10 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "same_module_lineage": "true",
             "public_shared_package_history": "true",
             "compatible_repository_dates": "true",
-            "review_disposition": "str",
-            "review_disposition_protocol_sha256": "sha256",
-            "review_disposition_evidence_hash": "sha256",
         },
-        allowed_values={"review_disposition": ("APPROVED",)},
+        allowed_values={},
         forbidden_fields=(),
-        evidence_source_requirements=("manual_review_record", "public_metadata_snapshot"),
+        evidence_source_requirements=("public_metadata_snapshot",),
         review_requirement="APPROVED_REQUIRED",
         confidence_category="medium",
         reason_template="approved same-module lineage connects repositories",
@@ -249,13 +251,10 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
         required_fields={
             "public_copy_or_extraction_record": "str",
             "compatible_repository_dates": "true",
-            "review_disposition": "str",
-            "review_disposition_protocol_sha256": "sha256",
-            "review_disposition_evidence_hash": "sha256",
         },
-        allowed_values={"review_disposition": ("APPROVED",)},
+        allowed_values={},
         forbidden_fields=(),
-        evidence_source_requirements=("manual_review_record", "public_metadata_snapshot"),
+        evidence_source_requirements=("public_metadata_snapshot",),
         review_requirement="APPROVED_REQUIRED",
         confidence_category="medium",
         reason_template="approved copy or extraction history connects repositories",
@@ -452,6 +451,8 @@ def validate_payload_firewall(value: Any, path: str = "") -> None:
     elif isinstance(value, list | tuple):
         for index, item in enumerate(value):
             validate_payload_firewall(item, f"{path}{index}.")
+    elif isinstance(value, str) and len(value) > MAX_EVIDENCE_STRING_LENGTH:
+        raise ValueError("evidence string exceeds frozen bound")
 
 
 def parse_timestamp(value: str) -> str:
@@ -466,6 +467,8 @@ def parse_timestamp(value: str) -> str:
 def validate_source_identity(value: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError("evidence source identity must be nonempty")
+    if len(value) > MAX_EVIDENCE_STRING_LENGTH:
+        raise ValueError("evidence source identity exceeds frozen bound")
     if HASH_PATTERN.fullmatch(value) or LOCATOR_PATTERN.fullmatch(value):
         return value
     raise ValueError("evidence source identity must be a SHA-256 or frozen locator")
@@ -502,8 +505,31 @@ def _validate_field_type(field: str, value: Any, expected: str) -> None:
         raise ValueError(f"unsupported field type: {expected}")
 
 
+def derive_edge_id(record: Mapping[str, Any]) -> str:
+    return sha256_text(canonical_json(dict(record)))
+
+
+def validate_rule_payload(rule: EdgeRule, payload: Mapping[str, Any]) -> None:
+    validate_payload_firewall(payload)
+    allowed_fields = set(rule.required_fields) | set(rule.allowed_values)
+    unexpected = set(payload) - allowed_fields
+    if unexpected:
+        raise ValueError(f"unexpected evidence payload fields: {sorted(unexpected)}")
+    for field in rule.forbidden_fields:
+        if field in payload:
+            raise ValueError(f"forbidden evidence payload field: {field}")
+    for field, expected_type in rule.required_fields.items():
+        if field not in payload:
+            raise ValueError(f"missing evidence payload field: {field}")
+        _validate_field_type(field, payload[field], expected_type)
+    for field, allowed in rule.allowed_values.items():
+        if payload.get(field) not in allowed:
+            raise ValueError(f"{field} has value outside frozen allowed set")
+
+
 @dataclass(frozen=True)
 class ManualReviewDisposition:
+    disposition_id: str
     edge_candidate_id: str
     protocol_sha256: str
     evidence_commitment: str
@@ -514,6 +540,7 @@ class ManualReviewDisposition:
 
     def as_record(self) -> dict[str, Any]:
         return {
+            "disposition_id": self.disposition_id,
             "edge_candidate_id": self.edge_candidate_id,
             "protocol_sha256": self.protocol_sha256,
             "evidence_commitment": self.evidence_commitment,
@@ -541,15 +568,163 @@ def make_manual_review_disposition(
     if not HASH_PATTERN.fullmatch(evidence_commitment):
         raise ValueError("manual disposition evidence commitment is invalid")
     parse_timestamp(review_timestamp)
-    return ManualReviewDisposition(
-        edge_candidate_id=edge_candidate_id,
-        protocol_sha256=protocol_sha256,
-        evidence_commitment=evidence_commitment,
-        disposition=disposition,
-        reviewer_identity=validate_source_identity(reviewer_identity),
-        review_timestamp=review_timestamp,
-        bounded_reason=validate_reason(bounded_reason),
+    record = {
+        "edge_candidate_id": edge_candidate_id,
+        "protocol_sha256": protocol_sha256,
+        "evidence_commitment": evidence_commitment,
+        "disposition": disposition,
+        "reviewer_identity": validate_source_identity(reviewer_identity),
+        "review_timestamp": review_timestamp,
+        "bounded_reason": validate_reason(bounded_reason),
+    }
+    return ManualReviewDisposition(disposition_id=derive_edge_id(record), **record)
+
+
+@dataclass(frozen=True)
+class EvidenceCandidate:
+    candidate_id: str
+    left_repository: str
+    right_repository: str
+    edge_type: str
+    rule_version: str
+    evidence_sources: Mapping[str, str]
+    evidence_source_bundle_sha256: str
+    evidence_payload: Mapping[str, Any]
+    evidence_payload_hash: str
+    evidence_commitment: str
+    candidate_status: str = "UNRESOLVED"
+
+    def as_record(self) -> dict[str, Any]:
+        return {
+            "candidate_id": self.candidate_id,
+            "left_repository": self.left_repository,
+            "right_repository": self.right_repository,
+            "edge_type": self.edge_type,
+            "rule_version": self.rule_version,
+            "evidence_sources": dict(sorted(self.evidence_sources.items())),
+            "evidence_source_bundle_sha256": self.evidence_source_bundle_sha256,
+            "evidence_payload_hash": self.evidence_payload_hash,
+            "evidence_commitment": self.evidence_commitment,
+            "candidate_status": self.candidate_status,
+            "evidence_payload": dict(self.evidence_payload),
+        }
+
+
+def validate_evidence_source_bundle(
+    rule: EdgeRule,
+    evidence_sources: Mapping[str, str],
+) -> dict[str, str]:
+    required = set(rule.evidence_source_requirements)
+    observed = set(evidence_sources)
+    if observed != required:
+        raise ValueError("evidence-source bundle must contain exactly the required source types")
+    return {key: validate_source_identity(evidence_sources[key]) for key in sorted(observed)}
+
+
+def source_bundle_commitment(evidence_sources: Mapping[str, str]) -> str:
+    return sha256_text(canonical_json(dict(sorted(evidence_sources.items()))))
+
+
+def validate_rule_semantics(
+    rule: EdgeRule,
+    left: str,
+    right: str,
+    payload: Mapping[str, Any],
+) -> None:
+    if rule.edge_type == "DECLARED_GITHUB_FORK":
+        child = normalize_repository(str(payload["child_full_name"]))
+        parent = normalize_repository(str(payload["parent_or_source_full_name"]))
+        if {child, parent} != {left, right} or child == parent:
+            raise ValueError("fork endpoint names must match edge endpoints")
+        if payload["left_repository_id"] == payload["right_repository_id"]:
+            raise ValueError("fork repository IDs must be distinct")
+    elif rule.edge_type == "VERIFIED_REPOSITORY_SUCCESSION":
+        predecessor = normalize_repository(str(payload["predecessor_repository"]))
+        successor = normalize_repository(str(payload["successor_repository"]))
+        if {predecessor, successor} != {left, right}:
+            raise ValueError("succession endpoints must match edge endpoints")
+        if payload["direction"] != "predecessor_to_successor":
+            raise ValueError("succession direction must be frozen")
+    elif rule.edge_type == "SAME_OWNER_PROXY":
+        owner = repository_owner(left)
+        if repository_owner(right) != owner:
+            raise ValueError("same-owner evidence must be derived from endpoints")
+        if payload["owner"] != owner:
+            raise ValueError("same-owner payload owner does not match endpoints")
+
+
+def make_evidence_candidate(
+    left_repository: str,
+    right_repository: str,
+    edge_type: str,
+    *,
+    evidence_sources: Mapping[str, str],
+    evidence_payload: Mapping[str, Any],
+    rule_version: str = PROTOCOL_VERSION,
+) -> EvidenceCandidate:
+    left = normalize_repository(left_repository)
+    right = normalize_repository(right_repository)
+    if left == right:
+        raise ValueError("family evidence candidate must connect two distinct repositories")
+    if left > right:
+        left, right = right, left
+    if edge_type not in EDGE_RULES:
+        raise ValueError(f"unknown family evidence edge type: {edge_type}")
+    rule = EDGE_RULES[edge_type]
+    if rule_version != PROTOCOL_VERSION:
+        raise ValueError("wrong family edge rule version")
+    bundle = validate_evidence_source_bundle(rule, evidence_sources)
+    validate_rule_payload(rule, evidence_payload)
+    validate_rule_semantics(rule, left, right, evidence_payload)
+    evidence_payload_sha = payload_hash(evidence_payload)
+    bundle_sha = source_bundle_commitment(bundle)
+    base = {
+        "left_repository": left,
+        "right_repository": right,
+        "edge_type": edge_type,
+        "rule_version": rule_version,
+        "evidence_source_bundle_sha256": bundle_sha,
+        "evidence_payload_hash": evidence_payload_sha,
+    }
+    evidence_commitment = sha256_text(canonical_json(base))
+    candidate_id = sha256_text(
+        canonical_json(
+            {**base, "evidence_commitment": evidence_commitment, "evidence_sources": bundle}
+        )
     )
+    return EvidenceCandidate(
+        candidate_id=candidate_id,
+        left_repository=left,
+        right_repository=right,
+        edge_type=edge_type,
+        rule_version=rule_version,
+        evidence_sources=bundle,
+        evidence_source_bundle_sha256=bundle_sha,
+        evidence_payload=evidence_payload,
+        evidence_payload_hash=evidence_payload_sha,
+        evidence_commitment=evidence_commitment,
+    )
+
+
+def validate_evidence_candidate(candidate: EvidenceCandidate) -> None:
+    regenerated = make_evidence_candidate(
+        candidate.left_repository,
+        candidate.right_repository,
+        candidate.edge_type,
+        evidence_sources=candidate.evidence_sources,
+        evidence_payload=candidate.evidence_payload,
+        rule_version=candidate.rule_version,
+    )
+    for field in (
+        "candidate_id",
+        "evidence_source_bundle_sha256",
+        "evidence_payload_hash",
+        "evidence_commitment",
+    ):
+        if getattr(candidate, field) != getattr(regenerated, field):
+            raise ValueError(f"tampered evidence candidate field: {field}")
+    if candidate.candidate_status != "UNRESOLVED":
+        raise ValueError("evidence candidate status must be UNRESOLVED")
 
 
 @dataclass(frozen=True)
@@ -559,10 +734,10 @@ class EvidenceEdge:
     right_repository: str
     edge_type: str
     connecting: bool
-    evidence_source: str
-    evidence_source_identity: str
-    retrieval_timestamp: str
+    evidence_sources: Mapping[str, str]
+    evidence_source_bundle_sha256: str
     evidence_payload_hash: str
+    evidence_commitment: str
     rule_version: str
     confidence_category: str
     human_review_required: bool
@@ -578,10 +753,10 @@ class EvidenceEdge:
             "right_repository": self.right_repository,
             "edge_type": self.edge_type,
             "connecting": self.connecting,
-            "evidence_source": self.evidence_source,
-            "evidence_source_identity": self.evidence_source_identity,
-            "retrieval_timestamp": self.retrieval_timestamp,
+            "evidence_sources": dict(sorted(self.evidence_sources.items())),
+            "evidence_source_bundle_sha256": self.evidence_source_bundle_sha256,
             "evidence_payload_hash": self.evidence_payload_hash,
+            "evidence_commitment": self.evidence_commitment,
             "rule_version": self.rule_version,
             "confidence_category": self.confidence_category,
             "human_review_required": self.human_review_required,
@@ -595,48 +770,94 @@ class EvidenceEdge:
         return record
 
 
-def edge_candidate_id(
-    left: str,
-    right: str,
-    edge_type: str,
-    rule_version: str,
-    evidence_source_identity: str,
-    evidence_payload_hash: str,
-) -> str:
-    return sha256_text(
-        canonical_json(
-            {
-                "left_repository": left,
-                "right_repository": right,
-                "edge_type": edge_type,
-                "rule_version": rule_version,
-                "evidence_source_identity": evidence_source_identity,
-                "evidence_payload_hash": evidence_payload_hash,
-            }
-        )
+def resolve_evidence_candidate(
+    candidate: EvidenceCandidate,
+    disposition: ManualReviewDisposition | None,
+    *,
+    protocol_sha256: str,
+) -> EvidenceEdge:
+    validate_evidence_candidate(candidate)
+    rule = EDGE_RULES[candidate.edge_type]
+    if rule.review_requirement == "AUTO":
+        if disposition is not None:
+            raise ValueError("automatic evidence rule does not accept manual disposition")
+        review_status = "APPROVED"
+        connecting = rule.is_connecting_candidate
+        disposition_id = None
+    elif rule.review_requirement == "REVIEW_ONLY":
+        if disposition is not None:
+            raise ValueError("review-only evidence does not accept final disposition")
+        review_status = "REVIEW_ONLY"
+        connecting = False
+        disposition_id = None
+    else:
+        if disposition is None:
+            review_status = "UNRESOLVED"
+            connecting = False
+            disposition_id = None
+        else:
+            validate_manual_review_disposition(
+                disposition,
+                candidate,
+                protocol_sha256=protocol_sha256,
+            )
+            review_status = disposition.disposition
+            connecting = disposition.disposition == "APPROVED"
+            disposition_id = disposition.disposition_id
+    base_record = {
+        "schema_id": EDGE_SCHEMA_ID,
+        "left_repository": candidate.left_repository,
+        "right_repository": candidate.right_repository,
+        "edge_type": candidate.edge_type,
+        "rule_version": candidate.rule_version,
+        "evidence_commitment": candidate.evidence_commitment,
+        "evidence_source_bundle_sha256": candidate.evidence_source_bundle_sha256,
+        "evidence_payload_hash": candidate.evidence_payload_hash,
+        "review_disposition_identity": disposition_id,
+    }
+    return EvidenceEdge(
+        edge_id=derive_edge_id(base_record),
+        left_repository=candidate.left_repository,
+        right_repository=candidate.right_repository,
+        edge_type=candidate.edge_type,
+        connecting=connecting,
+        evidence_sources=candidate.evidence_sources,
+        evidence_source_bundle_sha256=candidate.evidence_source_bundle_sha256,
+        evidence_payload_hash=candidate.evidence_payload_hash,
+        evidence_commitment=candidate.evidence_commitment,
+        rule_version=candidate.rule_version,
+        confidence_category=rule.confidence_category,
+        human_review_required=rule.human_review_required,
+        review_status=review_status,
+        review_disposition_identity=disposition_id,
+        reason=rule.reason_template,
+        evidence_payload=candidate.evidence_payload,
     )
 
 
-def derive_edge_id(record: Mapping[str, Any]) -> str:
-    return sha256_text(canonical_json(dict(record)))
-
-
-def validate_rule_payload(rule: EdgeRule, payload: Mapping[str, Any]) -> None:
-    validate_payload_firewall(payload)
-    allowed_fields = set(rule.required_fields) | set(rule.allowed_values)
-    unexpected = set(payload) - allowed_fields
-    if unexpected:
-        raise ValueError(f"unexpected evidence payload fields: {sorted(unexpected)}")
-    for field in rule.forbidden_fields:
-        if field in payload:
-            raise ValueError(f"forbidden evidence payload field: {field}")
-    for field, expected_type in rule.required_fields.items():
-        if field not in payload:
-            raise ValueError(f"missing evidence payload field: {field}")
-        _validate_field_type(field, payload[field], expected_type)
-    for field, allowed in rule.allowed_values.items():
-        if payload.get(field) not in allowed:
-            raise ValueError(f"{field} has value outside frozen allowed set")
+def validate_manual_review_disposition(
+    disposition: ManualReviewDisposition,
+    candidate: EvidenceCandidate,
+    *,
+    protocol_sha256: str,
+) -> None:
+    if disposition.edge_candidate_id != candidate.candidate_id:
+        raise ValueError("manual disposition belongs to another candidate")
+    if disposition.protocol_sha256 != protocol_sha256:
+        raise ValueError("manual disposition protocol identity is stale")
+    if disposition.evidence_commitment != candidate.evidence_commitment:
+        raise ValueError("manual disposition evidence commitment is stale")
+    expected = make_manual_review_disposition(
+        edge_candidate_id=disposition.edge_candidate_id,
+        protocol_sha256=disposition.protocol_sha256,
+        evidence_commitment=disposition.evidence_commitment,
+        disposition=disposition.disposition,
+        reviewer_identity=disposition.reviewer_identity,
+        review_timestamp=disposition.review_timestamp,
+        bounded_reason=disposition.bounded_reason,
+    )
+    if disposition.disposition_id != expected.disposition_id:
+        raise ValueError("manual disposition ID is stale")
 
 
 def make_evidence_edge(
@@ -644,75 +865,35 @@ def make_evidence_edge(
     right_repository: str,
     edge_type: str,
     *,
-    evidence_source: str,
-    evidence_source_identity: str,
-    retrieval_timestamp: str,
+    evidence_sources: Mapping[str, str] | None = None,
+    evidence_source: str | None = None,
+    evidence_source_identity: str | None = None,
+    retrieval_timestamp: str | None = None,
     evidence_payload: Mapping[str, Any],
     reason: str | None = None,
     rule_version: str = PROTOCOL_VERSION,
 ) -> EvidenceEdge:
-    left = normalize_repository(left_repository)
-    right = normalize_repository(right_repository)
-    if left == right:
-        raise ValueError("family evidence edge must connect two distinct repositories")
-    if left > right:
-        left, right = right, left
-    if edge_type not in EDGE_RULES:
-        raise ValueError(f"unknown family evidence edge type: {edge_type}")
-    rule = EDGE_RULES[edge_type]
-    if rule_version != PROTOCOL_VERSION:
-        raise ValueError("wrong family edge rule version")
-    if evidence_source not in rule.evidence_source_requirements:
-        raise ValueError("evidence source is not allowed for this edge type")
-    validate_source_identity(evidence_source_identity)
-    timestamp = parse_timestamp(retrieval_timestamp)
-    validate_rule_payload(rule, evidence_payload)
-    evidence_hash = payload_hash(evidence_payload)
-    candidate = edge_candidate_id(
-        left,
-        right,
+    del retrieval_timestamp, reason
+    if evidence_sources is None:
+        if evidence_source is None or evidence_source_identity is None:
+            raise ValueError("evidence-source bundle is required")
+        evidence_sources = {evidence_source: evidence_source_identity}
+    candidate = make_evidence_candidate(
+        left_repository,
+        right_repository,
         edge_type,
-        rule_version,
-        evidence_source_identity,
-        evidence_hash,
-    )
-    review_status = (
-        "APPROVED"
-        if rule.review_requirement in {"AUTO", "APPROVED_REQUIRED"}
-        else "REVIEW_ONLY"
-    )
-    connecting = rule.is_connecting_candidate and review_status == "APPROVED"
-    base_record = {
-        "schema_id": EDGE_SCHEMA_ID,
-        "left_repository": left,
-        "right_repository": right,
-        "edge_type": edge_type,
-        "rule_version": rule_version,
-        "evidence_source_identity": evidence_source_identity,
-        "evidence_payload_hash": evidence_hash,
-        "review_disposition_identity": (
-            candidate if rule.review_requirement == "APPROVED_REQUIRED" else None
-        ),
-    }
-    edge_id = derive_edge_id(base_record)
-    return EvidenceEdge(
-        edge_id=edge_id,
-        left_repository=left,
-        right_repository=right,
-        edge_type=edge_type,
-        connecting=connecting,
-        evidence_source=evidence_source,
-        evidence_source_identity=evidence_source_identity,
-        retrieval_timestamp=timestamp,
-        evidence_payload_hash=evidence_hash,
-        rule_version=rule_version,
-        confidence_category=rule.confidence_category,
-        human_review_required=rule.human_review_required,
-        review_status=review_status,
-        review_disposition_identity=base_record["review_disposition_identity"],
-        reason=validate_reason(reason or rule.reason_template),
+        evidence_sources=evidence_sources,
         evidence_payload=evidence_payload,
+        rule_version=rule_version,
     )
+    edge = resolve_evidence_candidate(
+        candidate,
+        None,
+        protocol_sha256=protocol_contract()["protocol_sha256"],
+    )
+    if EDGE_RULES[edge_type].review_requirement == "APPROVED_REQUIRED":
+        raise ValueError("review-required evidence must be resolved with a disposition")
+    return edge
 
 
 def validate_evidence_edge(
@@ -723,54 +904,50 @@ def validate_evidence_edge(
 ) -> None:
     if edge.edge_type not in EDGE_RULES:
         raise ValueError("invalid edge type")
-    if edge.left_repository != normalize_repository(edge.left_repository):
-        raise ValueError("left endpoint is not normalized")
-    if edge.right_repository != normalize_repository(edge.right_repository):
-        raise ValueError("right endpoint is not normalized")
-    if edge.left_repository >= edge.right_repository:
-        raise ValueError("edge endpoints are not in canonical order")
     if allocation_repositories is not None and (
         edge.left_repository not in allocation_repositories
         or edge.right_repository not in allocation_repositories
     ):
         raise ValueError("edge endpoint is outside the allocation repository set")
-    regenerated = make_evidence_edge(
+    candidate = make_evidence_candidate(
         edge.left_repository,
         edge.right_repository,
         edge.edge_type,
-        evidence_source=edge.evidence_source,
-        evidence_source_identity=edge.evidence_source_identity,
-        retrieval_timestamp=edge.retrieval_timestamp,
+        evidence_sources=edge.evidence_sources,
         evidence_payload=edge.evidence_payload,
-        reason=edge.reason,
         rule_version=edge.rule_version,
     )
-    for field in (
-        "edge_id",
-        "evidence_payload_hash",
-        "connecting",
-        "human_review_required",
-        "review_status",
-        "confidence_category",
-        "review_disposition_identity",
-    ):
-        if getattr(edge, field) != getattr(regenerated, field):
-            raise ValueError(f"tampered evidence edge field: {field}")
-    if edge.review_disposition_identity and edge.review_disposition_identity != edge_candidate_id(
-        edge.left_repository,
-        edge.right_repository,
-        edge.edge_type,
-        edge.rule_version,
-        edge.evidence_source_identity,
-        edge.evidence_payload_hash,
-    ):
-        raise ValueError("stale manual disposition identity")
+    rule = EDGE_RULES[edge.edge_type]
+    if edge.evidence_source_bundle_sha256 != candidate.evidence_source_bundle_sha256:
+        raise ValueError("tampered evidence edge field: evidence_source_bundle_sha256")
+    if edge.evidence_payload_hash != candidate.evidence_payload_hash:
+        raise ValueError("tampered evidence edge field: evidence_payload_hash")
+    if edge.evidence_commitment != candidate.evidence_commitment:
+        raise ValueError("tampered evidence edge field: evidence_commitment")
+    if edge.confidence_category != rule.confidence_category:
+        raise ValueError("tampered evidence edge field: confidence_category")
+    if edge.human_review_required != rule.human_review_required:
+        raise ValueError("tampered evidence edge field: human_review_required")
+    expected_connecting = False
+    if rule.review_requirement == "AUTO":
+        expected_connecting = rule.is_connecting_candidate and edge.review_status == "APPROVED"
+    elif rule.review_requirement == "APPROVED_REQUIRED":
+        if edge.review_status == "APPROVED":
+            expected_connecting = True
+        elif edge.review_status not in {"UNRESOLVED", "REJECTED"}:
+            raise ValueError("invalid resolved edge review status")
+    elif edge.review_status != "REVIEW_ONLY":
+        raise ValueError("invalid resolved edge review status")
+    if edge.connecting != expected_connecting:
+        raise ValueError("tampered evidence edge field: connecting")
     if (
-        edge.review_disposition_identity
-        and protocol_sha256 != protocol_contract()["protocol_sha256"]
+        rule.review_requirement == "APPROVED_REQUIRED"
+        and edge.review_status in {"APPROVED", "REJECTED"}
     ):
-        raise ValueError("manual disposition protocol identity is stale")
-
+        if not edge.review_disposition_identity:
+            raise ValueError("resolved review edge is missing disposition identity")
+        if protocol_sha256 != protocol_contract()["protocol_sha256"]:
+            raise ValueError("manual disposition protocol identity is stale")
 
 class UnionFind:
     def __init__(self, nodes: Sequence[str]) -> None:
@@ -838,7 +1015,23 @@ def build_components(
 
 
 def component_commitment(components: Sequence[Mapping[str, Any]]) -> str:
-    normalized = sorted((dict(component) for component in components), key=canonical_json)
+    protocol_sha256 = protocol_contract()["protocol_sha256"]
+    normalized = []
+    for component in components:
+        repositories = sorted(normalize_repository(item) for item in component["repositories"])
+        if int(component["repository_count"]) != len(repositories):
+            raise ValueError("component repository_count is malformed")
+        expected_id = component_id(repositories, protocol_sha256)
+        if component["component_id"] != expected_id:
+            raise ValueError("component_id does not match members")
+        normalized.append(
+            {
+                "component_id": expected_id,
+                "repositories": repositories,
+                "repository_count": len(repositories),
+            }
+        )
+    normalized = sorted(normalized, key=canonical_json)
     return sha256_text(canonical_json({"components": normalized}))
 
 
@@ -859,6 +1052,9 @@ def public_metadata_snapshot(
         raise ValueError("metadata snapshot status is not frozen")
     timestamp = parse_timestamp(retrieval_timestamp)
     source_identity = validate_source_identity(evidence_source_identity)
+    unexpected = set(payload) - PUBLIC_METADATA_FIELDS
+    if unexpected:
+        raise ValueError(f"unexpected public metadata fields: {sorted(unexpected)}")
     payload_sha = payload_hash(payload)
     base = {
         "repository": normalize_repository(repository),
@@ -964,12 +1160,40 @@ def protocol_contract() -> dict[str, Any]:
                 "cache_identity",
                 "allocation_repositories",
                 "repository_metadata_snapshots",
+                "evidence_candidates",
                 "typed_evidence_edges",
                 "manual_review_dispositions",
                 "component_memberships",
                 "phase_commitments",
             ],
             "sqlite_pragmas": {"journal_mode": "WAL", "synchronous": "FULL", "foreign_keys": "ON"},
+        },
+        "progress_contract": {
+            "fields": [
+                "phase",
+                "completed",
+                "total",
+                "percentage",
+                "cache_hits",
+                "cache_misses",
+                "request_rate",
+                "elapsed_time",
+                "ETA",
+            ],
+            "checkpoint_cadence": "after every durable phase transition and bounded request batch",
+            "phase_status_enum": ["PENDING", "IN_PROGRESS", "COMPLETE", "INCOMPLETE", "FAILED"],
+            "resume_cursor_requirements": [
+                "cursor value",
+                "cursor input identity",
+                "phase commitment before cursor",
+            ],
+            "phase_commitment_requirements": [
+                "phase name",
+                "status",
+                "input identities",
+                "ordered output commitment",
+                "cache identity",
+            ],
         },
         "decision_rules": {
             "allowed_outcomes": [
@@ -985,6 +1209,19 @@ def protocol_contract() -> dict[str, Any]:
             "material_contamination_established": "false in automatic run pending human review",
             "reallocation_required": "null in automatic run pending human review",
             "automatic_reallocation_from_crossing": False,
+            "materiality_inputs": [
+                "number of connecting family components crossing roles",
+                "repositories affected by role pair",
+                "rows affected by role pair",
+                "largest component",
+                "fraction of c0_fit rows affected",
+                "fraction of c0_iteration rows affected",
+                "hard-edge crossing count",
+                "conditional-edge crossing count",
+                "whether a valid family-disjoint allocation remains feasible",
+            ],
+            "materiality_threshold": "no automatic materiality threshold in v1",
+            "explicit_human_review_required": True,
         },
         "permitted_inputs": [
             "published repository names",
@@ -1130,11 +1367,26 @@ class FamilyGraphCache:
                 FOREIGN KEY(left_repository) REFERENCES allocation_repositories(repository),
                 FOREIGN KEY(right_repository) REFERENCES allocation_repositories(repository)
             );
+            CREATE TABLE IF NOT EXISTS evidence_candidates (
+                candidate_id TEXT PRIMARY KEY,
+                left_repository TEXT NOT NULL,
+                right_repository TEXT NOT NULL,
+                edge_type TEXT NOT NULL,
+                candidate_json TEXT NOT NULL,
+                evidence_commitment TEXT NOT NULL,
+                FOREIGN KEY(left_repository) REFERENCES allocation_repositories(repository),
+                FOREIGN KEY(right_repository) REFERENCES allocation_repositories(repository)
+            );
             CREATE TABLE IF NOT EXISTS manual_review_dispositions (
-                edge_id TEXT PRIMARY KEY,
+                disposition_id TEXT PRIMARY KEY,
+                edge_candidate_id TEXT NOT NULL,
+                protocol_sha256 TEXT NOT NULL,
+                evidence_commitment TEXT NOT NULL,
                 disposition TEXT NOT NULL,
-                reviewer_note TEXT NOT NULL,
-                FOREIGN KEY(edge_id) REFERENCES typed_evidence_edges(edge_id)
+                reviewer_identity TEXT NOT NULL,
+                review_timestamp TEXT NOT NULL,
+                bounded_reason TEXT NOT NULL,
+                FOREIGN KEY(edge_candidate_id) REFERENCES evidence_candidates(candidate_id)
             );
             CREATE TABLE IF NOT EXISTS component_memberships (
                 component_id TEXT NOT NULL,
@@ -1153,13 +1405,19 @@ class FamilyGraphCache:
         self.connection.commit()
 
     def _bind_identity(self) -> None:
-        for key, expected in self.identity.as_mapping().items():
-            row = self.connection.execute(
-                "SELECT value FROM cache_identity WHERE key = ?",
-                (key,),
-            ).fetchone()
-            if row is not None and row[0] != expected:
-                raise ValueError(f"family graph cache identity mismatch: {key}")
+        expected = self.identity.as_mapping()
+        rows = {
+            str(key): str(value)
+            for key, value in self.connection.execute("SELECT key, value FROM cache_identity")
+        }
+        if rows:
+            if set(rows) != set(expected):
+                raise ValueError("family graph cache identity key set mismatch")
+            for key, value in expected.items():
+                if rows[key] != value:
+                    raise ValueError(f"family graph cache identity mismatch: {key}")
+        elif self._has_data_rows():
+            raise ValueError("family graph cache contains data without identity")
         self.connection.executemany(
             """
             INSERT INTO cache_identity(key, value)
@@ -1170,16 +1428,79 @@ class FamilyGraphCache:
         )
         self.connection.commit()
 
+    def _has_data_rows(self) -> bool:
+        for table in (
+            "allocation_repositories",
+            "repository_metadata_snapshots",
+            "evidence_candidates",
+            "typed_evidence_edges",
+            "manual_review_dispositions",
+            "component_memberships",
+            "phase_commitments",
+        ):
+            row = self.connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
+            if int(row[0]):
+                return True
+        return False
+
     def put_allocation_repositories(self, entries: Sequence[AllocationEntry]) -> None:
+        existing = {
+            str(repository): (str(role), int(row_count))
+            for repository, role, row_count in self.connection.execute(
+                "SELECT repository, role, row_count FROM allocation_repositories"
+            )
+        }
+        incoming = {entry.repository: (entry.role, entry.row_count) for entry in entries}
+        if existing and existing != incoming:
+            raise ValueError("allocation repositories differ under the same cache identity")
         self.connection.executemany(
             """
             INSERT INTO allocation_repositories(repository, role, row_count)
             VALUES (?, ?, ?)
-            ON CONFLICT(repository) DO UPDATE SET
-                role = excluded.role,
-                row_count = excluded.row_count
+            ON CONFLICT(repository) DO NOTHING
             """,
             [(entry.repository, entry.role, entry.row_count) for entry in entries],
+        )
+        self.connection.commit()
+
+    def put_evidence_candidate(self, candidate: EvidenceCandidate) -> None:
+        validate_evidence_candidate(candidate)
+        self.connection.execute(
+            """
+            INSERT INTO evidence_candidates(
+                candidate_id, left_repository, right_repository, edge_type,
+                candidate_json, evidence_commitment
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                candidate.candidate_id,
+                candidate.left_repository,
+                candidate.right_repository,
+                candidate.edge_type,
+                canonical_json(candidate.as_record()),
+                candidate.evidence_commitment,
+            ),
+        )
+        self.connection.commit()
+
+    def put_manual_review_disposition(self, disposition: ManualReviewDisposition) -> None:
+        self.connection.execute(
+            """
+            INSERT INTO manual_review_dispositions(
+                disposition_id, edge_candidate_id, protocol_sha256, evidence_commitment,
+                disposition, reviewer_identity, review_timestamp, bounded_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                disposition.disposition_id,
+                disposition.edge_candidate_id,
+                disposition.protocol_sha256,
+                disposition.evidence_commitment,
+                disposition.disposition,
+                disposition.reviewer_identity,
+                disposition.review_timestamp,
+                disposition.bounded_reason,
+            ),
         )
         self.connection.commit()
 
@@ -1208,7 +1529,11 @@ def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
     if sha256_file(d11) != D1_1_CLASSIFICATION_SHA256:
         raise ValueError("canonical D1.1 classification hash mismatch")
     firewall_data = json.loads(firewall.read_text(encoding="utf-8"))
+    d1_data = json.loads(d1.read_text(encoding="utf-8"))
     d11_data = json.loads(d11.read_text(encoding="utf-8"))
+    for artifact in (firewall_data, d1_data, d11_data):
+        if not isinstance(artifact, dict):
+            raise ValueError("canonical protocol input must be a JSON object")
     if firewall_data.get("allocation_context_sha256") != ALLOCATION_CONTEXT_SHA256:
         raise ValueError("allocation context SHA-256 mismatch")
     classification = d11_data.get("classification", {})
@@ -1216,16 +1541,20 @@ def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
         raise ValueError("D1.1 outcome is not inconclusive")
     if classification.get("family_identity_rule_status") != "NOT_FROZEN":
         raise ValueError("D1.1 family identity rule status is not frozen as NOT_FROZEN")
-    firewall_booleans = d11_data.get("firewall_booleans", {})
-    for key in (
+    firewall_keys = (
         "c0_selection_rows_accessed",
         "c0_selection_row_content_accessed",
         "c1_rows_accessed",
         "c1_row_content_accessed",
         "hidden_row_content_accessed",
-    ):
-        if bool(firewall_booleans.get(key)):
+    )
+    d11_firewall_booleans = d11_data.get("firewall_booleans", {})
+    for key in firewall_keys:
+        if key not in d11_firewall_booleans or d11_firewall_booleans[key] is not False:
             raise ValueError(f"hidden-row firewall field is true: {key}")
+    for key in ("c0_selection_rows_accessed", "c1_rows_accessed", "hidden_row_content_accessed"):
+        if key not in d1_data or d1_data[key] is not False:
+            raise ValueError(f"D1 hidden-row firewall field is not exactly false: {key}")
     return {
         "allocation_manifest_sha256": ALLOCATION_MANIFEST_SHA256,
         "allocation_context_sha256": ALLOCATION_CONTEXT_SHA256,
@@ -1235,7 +1564,7 @@ def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
 
 
 def graph_completeness(
-    edges: Sequence[EvidenceEdge],
+    items: Sequence[EvidenceEdge | EvidenceCandidate],
     *,
     incomplete_metadata_records: int = 0,
 ) -> dict[str, int]:
@@ -1243,7 +1572,19 @@ def graph_completeness(
     approved = 0
     review_only = 0
     rejected = 0
-    for item in edges:
+    for item in items:
+        if isinstance(item, EvidenceCandidate):
+            validate_evidence_candidate(item)
+            rule = EDGE_RULES[item.edge_type]
+            if rule.is_connecting_candidate and rule.review_requirement == "APPROVED_REQUIRED":
+                unresolved += 1
+            elif not rule.is_connecting_candidate:
+                review_only += 1
+            continue
+        validate_evidence_edge(
+            item,
+            protocol_sha256=protocol_contract()["protocol_sha256"],
+        )
         rule = EDGE_RULES[item.edge_type]
         if rule.is_connecting_candidate and item.review_status == "UNRESOLVED":
             unresolved += 1

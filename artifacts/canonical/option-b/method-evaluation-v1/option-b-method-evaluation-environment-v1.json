@@ -1,0 +1,15 @@
+{
+  "numpy": "2.4.6",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "python": "3.11.4",
+  "scikit_learn": "1.9.0",
+  "scipy": "1.17.1",
+  "thread_environment": {
+    "BLIS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  }
+}

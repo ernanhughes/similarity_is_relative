@@ -1,0 +1,76 @@
+{
+  "evaluation_id": "option-b-method-evaluation-v1",
+  "next_allowed_action": "INDEPENDENT_METRIC_RECOMPUTATION",
+  "primary_metric": {
+    "aggregation": "equal-weighted mean of per-query accuracies over queries with at least one informative pair",
+    "method_distance_ties": "score 0.5",
+    "method_ties": {
+      "predicted_executor": {
+        "pairs": 512000,
+        "rate": 0.0,
+        "ties": 0
+      },
+      "raw_cosine": {
+        "pairs": 512000,
+        "rate": 0.0,
+        "ties": 0
+      },
+      "raw_euclidean": {
+        "pairs": 512000,
+        "rate": 0.0,
+        "ties": 0
+      },
+      "token_length": {
+        "pairs": 512000,
+        "rate": 0.075015625,
+        "ties": 38408
+      },
+      "true_oracle": {
+        "pairs": 512000,
+        "rate": 0.0,
+        "ties": 0
+      }
+    },
+    "name": "hard-negative triplet accuracy against true-primitive oracle",
+    "oracle_ties": "excluded by frozen manifest",
+    "ordinary_manifest_pair_weighted_accuracy": {
+      "predicted_executor": 0.7328515625,
+      "raw_cosine": 0.532458984375,
+      "raw_euclidean": 0.533314453125,
+      "token_length": 0.49868359375,
+      "true_oracle": 1.0
+    },
+    "pair_count_per_query": 128,
+    "query_equal_weighted_accuracy": {
+      "predicted_executor": 0.7328515625,
+      "raw_cosine": 0.532458984375,
+      "raw_euclidean": 0.533314453125,
+      "token_length": 0.49868359375,
+      "true_oracle": 1.0
+    },
+    "uniform_pair_count_verified": true
+  },
+  "result_file_sha256": "31223e02b807bbecb6603a76921677a6f79bac88609243bb20cf11ec30a68158",
+  "scientific_decision": {
+    "gap": 0.19953710937500002,
+    "inconclusive_band": false,
+    "outcome": "REAL_PREMISE_SUPPORTED",
+    "queries_with_pairs": 4000,
+    "queries_without_pairs": 0,
+    "query_equal_weighted_accuracy": {
+      "predicted_executor": 0.7328515625,
+      "raw_cosine": 0.532458984375,
+      "raw_euclidean": 0.533314453125,
+      "token_length": 0.49868359375,
+      "true_oracle": 1.0
+    },
+    "raw_best": 0.533314453125,
+    "raw_best_methods": [
+      "raw_euclidean"
+    ],
+    "secondary_metric_override": false,
+    "threshold": 0.1
+  },
+  "scientific_result_observed": true,
+  "status": "OPTION_B_METHOD_EVALUATION_COMPLETE_PENDING_INDEPENDENT_RECOMPUTATION"
+}

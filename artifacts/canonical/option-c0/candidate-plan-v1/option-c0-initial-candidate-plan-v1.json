@@ -1,0 +1,199 @@
+{
+  "alpha_grid": [
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.2
+  ],
+  "blocked_roles": [
+    "C0_SELECTION",
+    "C1_CALIBRATION",
+    "C1_TEST"
+  ],
+  "candidate_registration_required_before_iteration": true,
+  "candidates": [
+    {
+      "candidate_id": "joint_max_residual_box__all_primitives_above_fit_median",
+      "expected_failure_mode": "Axis alignment may over-refuse when primitive residuals are strongly correlated or may hide directional residual structure.",
+      "family": "joint_max_residual_box",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "Maximum absolute primitive-margin residual divided by the coordinate median absolute residual scale.",
+      "propagation_rule": "Evaluate the exact compound query over interval truth states. Accept true only when every primitive realization in the joint box makes the query true; accept false only when every realization makes it false; otherwise refuse.",
+      "query_id": "all_primitives_above_fit_median",
+      "support_object_definition": "An axis-aligned box in robust-scaled predicted primitive-margin space. One split-conformal quantile is fitted to the maximum coordinate-wise residual after per-coordinate median-residual scaling on the repository-separated C0_FIT calibration partition.",
+      "version": "v1"
+    },
+    {
+      "candidate_id": "joint_max_residual_box__any_primitive_above_fit_median",
+      "expected_failure_mode": "Axis alignment may over-refuse when primitive residuals are strongly correlated or may hide directional residual structure.",
+      "family": "joint_max_residual_box",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "Maximum absolute primitive-margin residual divided by the coordinate median absolute residual scale.",
+      "propagation_rule": "Evaluate the exact compound query over interval truth states. Accept true only when every primitive realization in the joint box makes the query true; accept false only when every realization makes it false; otherwise refuse.",
+      "query_id": "any_primitive_above_fit_median",
+      "support_object_definition": "An axis-aligned box in robust-scaled predicted primitive-margin space. One split-conformal quantile is fitted to the maximum coordinate-wise residual after per-coordinate median-residual scaling on the repository-separated C0_FIT calibration partition.",
+      "version": "v1"
+    },
+    {
+      "candidate_id": "joint_max_residual_box__two_of_three_primitives_above_fit_median",
+      "expected_failure_mode": "Axis alignment may over-refuse when primitive residuals are strongly correlated or may hide directional residual structure.",
+      "family": "joint_max_residual_box",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "Maximum absolute primitive-margin residual divided by the coordinate median absolute residual scale.",
+      "propagation_rule": "Evaluate the exact compound query over interval truth states. Accept true only when every primitive realization in the joint box makes the query true; accept false only when every realization makes it false; otherwise refuse.",
+      "query_id": "two_of_three_primitives_above_fit_median",
+      "support_object_definition": "An axis-aligned box in robust-scaled predicted primitive-margin space. One split-conformal quantile is fitted to the maximum coordinate-wise residual after per-coordinate median-residual scaling on the repository-separated C0_FIT calibration partition.",
+      "version": "v1"
+    },
+    {
+      "candidate_id": "empirical_residual_mass__all_primitives_above_fit_median",
+      "expected_failure_mode": "Finite calibration residuals may be unrepresentative under repository shift, and support-mass thresholds are exploratory rather than distribution-free.",
+      "family": "empirical_residual_mass",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "One minus the larger of empirical query-true and query-false support mass.",
+      "propagation_rule": "Evaluate the exact query on every residual-perturbed primitive vector. Predict by majority support mass and accept only when query-true mass is at most beta or at least one minus beta; otherwise refuse.",
+      "query_id": "all_primitives_above_fit_median",
+      "support_object_definition": "The empirical joint distribution of complete three-coordinate primitive-margin residual vectors observed on the repository-separated C0_FIT calibration partition, added without coordinate shuffling to each predicted margin vector.",
+      "version": "v1"
+    },
+    {
+      "candidate_id": "empirical_residual_mass__any_primitive_above_fit_median",
+      "expected_failure_mode": "Finite calibration residuals may be unrepresentative under repository shift, and support-mass thresholds are exploratory rather than distribution-free.",
+      "family": "empirical_residual_mass",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "One minus the larger of empirical query-true and query-false support mass.",
+      "propagation_rule": "Evaluate the exact query on every residual-perturbed primitive vector. Predict by majority support mass and accept only when query-true mass is at most beta or at least one minus beta; otherwise refuse.",
+      "query_id": "any_primitive_above_fit_median",
+      "support_object_definition": "The empirical joint distribution of complete three-coordinate primitive-margin residual vectors observed on the repository-separated C0_FIT calibration partition, added without coordinate shuffling to each predicted margin vector.",
+      "version": "v1"
+    },
+    {
+      "candidate_id": "empirical_residual_mass__two_of_three_primitives_above_fit_median",
+      "expected_failure_mode": "Finite calibration residuals may be unrepresentative under repository shift, and support-mass thresholds are exploratory rather than distribution-free.",
+      "family": "empirical_residual_mass",
+      "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+      "nonconformity_score": "One minus the larger of empirical query-true and query-false support mass.",
+      "propagation_rule": "Evaluate the exact query on every residual-perturbed primitive vector. Predict by majority support mass and accept only when query-true mass is at most beta or at least one minus beta; otherwise refuse.",
+      "query_id": "two_of_three_primitives_above_fit_median",
+      "support_object_definition": "The empirical joint distribution of complete three-coordinate primitive-margin residual vectors observed on the repository-separated C0_FIT calibration partition, added without coordinate shuffling to each predicted margin vector.",
+      "version": "v1"
+    }
+  ],
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "coverage_anchors": [
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    1.0
+  ],
+  "embedding_batch_size": 10,
+  "feature_generation": {
+    "direct_compound_features": "the same CodeBERT embeddings standardized with mean and variance fitted on C0_FIT model-fit rows",
+    "embedding_dtype": "float32",
+    "model_identity": "canonical Option B microsoft/codebert-base identity and revision",
+    "primitive_readouts": "three independent Ridge regressions over standardized embeddings",
+    "ridge_alpha_selection": "five repository-grouped folds on C0_FIT model-fit only; minimize mean absolute error; ties choose smaller alpha",
+    "ridge_alphas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "tokenization_and_pooling": "canonical Option B max-length 256 attention-mask mean pooling"
+  },
+  "fit_calibration_fraction": 0.2,
+  "fit_partition": {
+    "calibration_assignment": "first ceil(repository_count * 0.2) repositories",
+    "development_calibration_fraction": 0.2,
+    "domain": "option-c0-fit-calibration-partition-v1",
+    "model_fit_assignment": "all remaining repositories",
+    "model_fit_fraction": 0.8,
+    "ordering": "ascending SHA-256 of domain, canonical allocation context, and repository identity",
+    "role": "c0_fit",
+    "unit": "repository"
+  },
+  "implementation_commit_sha": "d36436209d95eca555215a83856f042d241a90f4",
+  "implementation_module": "src/relate/experiments/option_c0_discovery_runner.py",
+  "iteration_role": "C0_ITERATION",
+  "mechanism_result_observed": false,
+  "next_allowed_action": "REVIEW_AND_EXECUTE_C0_ITERATION_ONCE",
+  "primitive_condition": "robust-scaled primitive margin is true iff margin > 0",
+  "primitives": [
+    "cyclomatic_complexity",
+    "max_control_depth",
+    "distinct_call_sites"
+  ],
+  "prohibited_actions": [
+    "candidate evaluation before this plan and registry merge",
+    "C0 selection access",
+    "C1 reserve access",
+    "C1 row selection",
+    "Option C scientific decision"
+  ],
+  "query_forms": [
+    {
+      "k": null,
+      "operator": "all",
+      "primitive_names": [
+        "cyclomatic_complexity",
+        "max_control_depth",
+        "distinct_call_sites"
+      ],
+      "query_id": "all_primitives_above_fit_median"
+    },
+    {
+      "k": null,
+      "operator": "any",
+      "primitive_names": [
+        "cyclomatic_complexity",
+        "max_control_depth",
+        "distinct_call_sites"
+      ],
+      "query_id": "any_primitive_above_fit_median"
+    },
+    {
+      "k": 2,
+      "operator": "k_of_n",
+      "primitive_names": [
+        "cyclomatic_complexity",
+        "max_control_depth",
+        "distinct_call_sites"
+      ],
+      "query_id": "two_of_three_primitives_above_fit_median"
+    }
+  ],
+  "query_threshold_procedure": {
+    "application": "the same thresholds and scales transform true and predicted primitive values",
+    "scale": "per-primitive interquartile range using numpy quantile method=linear, floored at 1.0",
+    "source_role": "C0_FIT model-fit repository partition only",
+    "threshold": "per-primitive median using numpy quantile method=linear"
+  },
+  "required_baselines": [
+    "independent primitive split-conformal abstention",
+    "direct compound logistic model with split-conformal prediction sets",
+    "uncalibrated direct-model confidence ranking",
+    "oracle support diagnostic"
+  ],
+  "residual_mass_beta_grid": [
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.2
+  ],
+  "ridge_alphas": [
+    0.01,
+    0.1,
+    1.0,
+    10.0,
+    100.0
+  ],
+  "ridge_folds": 5,
+  "schema_id": "option-c0-initial-candidate-plan-v1",
+  "scientific_result_observed": false,
+  "status": "C0_INITIAL_CANDIDATE_PLAN_FROZEN"
+}

@@ -52,6 +52,8 @@ relate-option-b-embed-preflight = "relate.experiments.option_b_embedding_preflig
 relate-option-b-verify-embeddings = "relate.experiments.option_b_embedding_reproduction:main"
 relate-option-b-fit-probes = "relate.experiments.option_b_probe_cli:main"
 relate-option-b-build-hard-negatives = "relate.experiments.option_b_hard_negative_manifest:main"
+relate-option-b-evaluate = "relate.experiments.option_b_method_evaluation:main"
+relate-option-b-verify-evaluation = "relate.experiments.option_b_method_evaluation_independent:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

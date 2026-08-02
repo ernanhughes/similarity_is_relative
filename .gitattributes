@@ -1,0 +1,4 @@
+artifacts/canonical/option-b/**/*.json text eol=lf
+artifacts/canonical/option-b/**/*.jsonl text eol=lf
+*.npy binary
+*.gz binary

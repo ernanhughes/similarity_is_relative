@@ -55,6 +55,7 @@ relate-option-b-build-hard-negatives = "relate.experiments.option_b_hard_negativ
 relate-option-b-evaluate = "relate.experiments.option_b_method_evaluation:main"
 relate-option-b-verify-evaluation = "relate.experiments.option_b_method_evaluation_independent:main"
 relate-option-c0-prepare-firewall = "relate.experiments.option_c0_data_firewall:main"
+relate-option-c0-verify-firewall = "relate.experiments.option_c0_data_firewall_independent:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

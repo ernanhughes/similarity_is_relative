@@ -1,0 +1,73 @@
+{
+  "blocked_roles": [
+    "c0_selection",
+    "c1_reserve"
+  ],
+  "c0_selection_access": false,
+  "candidate_registration_required_before_iteration": true,
+  "coverage_anchors": [
+    0.25,
+    0.5,
+    0.75,
+    0.9,
+    1.0
+  ],
+  "c1_access": false,
+  "c1_rows_selected": false,
+  "development_alpha_grid": [
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.2
+  ],
+  "discovery_ledger_entries": 0,
+  "max_query_forms": 3,
+  "mechanism_result_observed": false,
+  "next_allowed_action": "C0_CANDIDATE_PLAN_REVIEW",
+  "prohibited_actions": [
+    "real candidate evaluation before registration review",
+    "C0 selection access before registry closure",
+    "C1 reserve access",
+    "C1 calibration or test row selection",
+    "Option C scientific decision"
+  ],
+  "query_operators": [
+    "all",
+    "any",
+    "k_of_n"
+  ],
+  "regime_labels": [
+    "supported",
+    "weak",
+    "absent",
+    "shifted"
+  ],
+  "required_baselines": [
+    "independent_primitive_split_conformal",
+    "direct_compound_split_conformal",
+    "uncalibrated_confidence",
+    "oracle_support_diagnostic"
+  ],
+  "required_diagnostics": [
+    "risk_coverage_curves",
+    "selective_risk_at_visible_coverage_anchors",
+    "empirical_coverage",
+    "accepted_and_error_counts",
+    "refusal_reasons",
+    "regime_stratification",
+    "repository_dispersion",
+    "oracle_headroom",
+    "direct_compound_headroom",
+    "candidate_sensitivity",
+    "failure_examples",
+    "runtime_and_memory"
+  ],
+  "schema_id": "option-c0-development-harness-contract-v1",
+  "scientific_result_observed": false,
+  "status": "C0_MECHANISM_HARNESS_CONTRACT_FROZEN",
+  "visible_roles": [
+    "c0_fit",
+    "c0_iteration"
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "all_test_queries_represented": true,
+  "artifacts": {
+    "by_token_decile": {
+      "0": {
+        "pairs": 50816,
+        "queries": 397
+      },
+      "1": {
+        "pairs": 52736,
+        "queries": 412
+      },
+      "2": {
+        "pairs": 51200,
+        "queries": 400
+      },
+      "3": {
+        "pairs": 46464,
+        "queries": 363
+      },
+      "4": {
+        "pairs": 47104,
+        "queries": 368
+      },
+      "5": {
+        "pairs": 51584,
+        "queries": 403
+      },
+      "6": {
+        "pairs": 53632,
+        "queries": 419
+      },
+      "7": {
+        "pairs": 50688,
+        "queries": 396
+      },
+      "8": {
+        "pairs": 55040,
+        "queries": 430
+      },
+      "9": {
+        "pairs": 52736,
+        "queries": 412
+      }
+    },
+    "pairs": {
+      "file_sha256": "1dd752624f30a6efd3fea311a4cabd60d9a801ea8b0e35a1166c4dafdb6b7cec",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-pairs-v1.jsonl",
+      "rows": 512000
+    },
+    "queries": {
+      "file_sha256": "45aafe797c1e11a764b056d97713e11607281fb320c8eaf5a1610b903205fe31",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-queries-v1.jsonl",
+      "rows": 4000
+    },
+    "sparse_queries": 0,
+    "zero_pair_queries": 0
+  },
+  "config": {
+    "manifest_seed": 8112026,
+    "max_pairs_per_query": 128,
+    "max_rank_separation": 25,
+    "min_rank_separation": 5,
+    "oracle_distance": "Chebyshev over robust-scaled true primitives",
+    "oracle_order_tie_break": "ascending candidate stable key",
+    "oracle_ties": "excluded",
+    "pair_selection_order": "ascending SHA-256 of seed and query/closer/farther stable keys",
+    "query_omission": "forbidden",
+    "sparse_pair_threshold": 32,
+    "token_decile_boundary_tie_side": "right",
+    "token_decile_quantile_method": "numpy linear",
+    "token_deciles": 10
+  },
+  "construction_scope": {
+    "candidate_pool": "all selected training functions",
+    "embeddings_loaded": false,
+    "probe_predictions_loaded": false,
+    "queries": "all selected test functions",
+    "raw_method_results_loaded": false,
+    "true_primitive_usage": "train-only robust scaling and true-oracle manifest construction"
+  },
+  "inputs": {
+    "embeddings_loaded": false,
+    "probe_checkpoint": {
+      "checkpoint_id": "option-b-primitive-probe-publication-v1",
+      "file_sha256": "20b659688c7724858db799d997d49985743ac7219e62a8532c0ad7454ed3db29",
+      "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/probes-v1/option-b-primitive-probe-publication-v1.json",
+      "status": "PRIMITIVE_PROBE_ARTIFACTS_PUBLISHED_PENDING_REVIEW"
+    },
+    "probe_predictions_loaded": false,
+    "raw_method_results_loaded": false,
+    "selection_report": {
+      "file_sha256": "a12d5d9ce0a6b96ff9a4209a447447a5259196d83a0d9720cbd97dba8d2bf922",
+      "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-canonical-row-selection-v2.json",
+      "selection_id": "option-b-canonical-row-selection-v2",
+      "status": "CANONICAL_ROW_SELECTION_V2_VERIFIED"
+    },
+    "splits": {
+      "test": {
+        "primitive_table": {
+          "file_sha256": "20eff2f32e3a4572f23c8d6e3f481188a194d6d8ce0513553831b418d6b32a57",
+          "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-primitives-test-v2.jsonl",
+          "rows": 4000,
+          "stable_key_sequence_sha256": "00114579fee44cedb3fc583490bb2d0d9333a8a62b288668691068ce5804f1d6"
+        },
+        "selected_manifest": {
+          "file_sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+          "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-selected-test-v2.jsonl",
+          "rows": 4000,
+          "stable_key_sequence_sha256": "00114579fee44cedb3fc583490bb2d0d9333a8a62b288668691068ce5804f1d6"
+        }
+      },
+      "train": {
+        "primitive_table": {
+          "file_sha256": "f87629dcf8441aff5f9dace95535ee0e98316e57c1c0825d0baa7a8bdba7ad8a",
+          "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-primitives-train-v2.jsonl",
+          "rows": 20000,
+          "stable_key_sequence_sha256": "79570ccf2c6617566c71a6c5b732839f803439e658f63b2215df7a3c2ef25548"
+        },
+        "selected_manifest": {
+          "file_sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+          "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/selection/option-b-selected-train-v2.jsonl",
+          "rows": 20000,
+          "stable_key_sequence_sha256": "79570ccf2c6617566c71a6c5b732839f803439e658f63b2215df7a3c2ef25548"
+        }
+      }
+    }
+  },
+  "manifest_id": "option-b-hard-negative-manifest-v1",
+  "next_allowed_action": "CANONICAL_HARD_NEGATIVE_MANIFEST_PUBLICATION",
+  "prohibited_actions": [
+    "method-distance evaluation before manifest publication review",
+    "scientific metric evaluation before manifest publication review",
+    "query omission based on pair count",
+    "manifest regeneration after method results are inspected",
+    "threshold, query, model, language, or canonical-row changes"
+  ],
+  "scaling": {
+    "fit_split": "train",
+    "median": [
+      2.0,
+      1.0,
+      2.0
+    ],
+    "median_array_sha256": "61ca5fc8dc6ab7e153f4a00e62cbc402bfd35a3a23f6f5753e792a53627de380",
+    "scale": [
+      2.0,
+      1.0,
+      2.0
+    ],
+    "scale_array_sha256": "61ca5fc8dc6ab7e153f4a00e62cbc402bfd35a3a23f6f5753e792a53627de380"
+  },
+  "scientific_result_observed": false,
+  "status": "HARD_NEGATIVE_MANIFEST_GENERATED_PENDING_PUBLICATION_REVIEW",
+  "token_decile_boundaries": [
+    42.0,
+    89.0,
+    109.0,
+    127.0,
+    144.0,
+    160.0,
+    177.0,
+    195.0,
+    214.0,
+    235.0,
+    256.0
+  ],
+  "token_decile_boundaries_array_sha256": "a4f5a2795424349928cf096800298642fa65c3851f9bcbfc7cd997d3f3a2f660"
+}

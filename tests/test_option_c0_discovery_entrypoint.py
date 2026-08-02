@@ -10,6 +10,7 @@ import pytest
 from relate.experiments.option_c0_discovery_entrypoint import (
     CPU_EMBEDDING_IDENTITY,
     CUDA_EMBEDDING_IDENTITY,
+    SOURCE_IDENTITY,
     DiscoveryIdentityError,
     fixed_batch_embed,
     select_embedding_identity_path,
@@ -69,6 +70,19 @@ def test_select_embedding_identity_uses_device_specific_checkpoint():
     assert select_embedding_identity_path("cuda") == CUDA_EMBEDDING_IDENTITY
     assert select_embedding_identity_path("cuda:0") == CUDA_EMBEDDING_IDENTITY
     assert select_embedding_identity_path("cpu") == CPU_EMBEDDING_IDENTITY
+
+
+def test_canonical_source_and_gpu_embedding_identity_lineage_is_valid():
+    source, embedding, lineage = verify_identity_pair(
+        SOURCE_IDENTITY,
+        CUDA_EMBEDDING_IDENTITY,
+        device="cuda",
+        batch_size=10,
+    )
+
+    assert source["identity_id"] == "option-b-external-identity-v1"
+    assert embedding["identity_variant"] == "gpu-fixed-batch10-amendment-v1"
+    assert lineage["source_identity_path"].endswith("option-b-external-identity-v1.json")
 
 
 def test_verify_identity_pair_separates_source_and_cuda_embedding_roles(tmp_path: Path):

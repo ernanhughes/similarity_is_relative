@@ -50,6 +50,7 @@ relate-option-b-select = "relate.experiments.option_b_selection_resilient:main"
 relate-option-b-embed = "relate.experiments.option_b_embeddings_hardened:main"
 relate-option-b-embed-preflight = "relate.experiments.option_b_embedding_preflight:main"
 relate-option-b-verify-embeddings = "relate.experiments.option_b_embedding_reproduction:main"
+relate-option-b-fit-probes = "relate.experiments.option_b_probe_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

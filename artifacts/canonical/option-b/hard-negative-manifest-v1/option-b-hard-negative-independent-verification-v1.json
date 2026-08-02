@@ -1,0 +1,101 @@
+{
+  "artifacts": {
+    "pairs_publication_archive": {
+      "bytes": 57430482,
+      "compression": "gzip level 9, mtime 0, empty filename",
+      "file_sha256": "06d6929064f4bb8512d0d498eb64dfc71cedda188a65403ff54e9e966fe5665a",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-pairs-v1.jsonl.gz",
+      "uncompressed_bytes": 295451072,
+      "uncompressed_file_sha256": "1dd752624f30a6efd3fea311a4cabd60d9a801ea8b0e35a1166c4dafdb6b7cec"
+    },
+    "pairs_raw": {
+      "bytes": 295451072,
+      "file_sha256": "1dd752624f30a6efd3fea311a4cabd60d9a801ea8b0e35a1166c4dafdb6b7cec",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-pairs-v1.jsonl",
+      "rows": 512000
+    },
+    "queries": {
+      "file_sha256": "45aafe797c1e11a764b056d97713e11607281fb320c8eaf5a1610b903205fe31",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-queries-v1.jsonl",
+      "rows": 4000
+    }
+  },
+  "checks": {
+    "all_test_queries_represented": true,
+    "candidate_pool_deciles_recomputed": true,
+    "eligible_pair_counts_recomputed": true,
+    "embeddings_loaded": false,
+    "every_published_pair_recomputed": true,
+    "method_results_loaded": false,
+    "oracle_distances_and_ranks_recomputed": true,
+    "oracle_tie_exclusions_recomputed": true,
+    "probe_predictions_loaded": false,
+    "query_order_matches_selected_test_manifest": true,
+    "selected_pair_order_verified": true,
+    "selection_hashes_recomputed": true,
+    "train_only_scaling_recomputed": true
+  },
+  "counts": {
+    "by_token_decile": {
+      "0": {
+        "pairs": 50816,
+        "queries": 397
+      },
+      "1": {
+        "pairs": 52736,
+        "queries": 412
+      },
+      "2": {
+        "pairs": 51200,
+        "queries": 400
+      },
+      "3": {
+        "pairs": 46464,
+        "queries": 363
+      },
+      "4": {
+        "pairs": 47104,
+        "queries": 368
+      },
+      "5": {
+        "pairs": 51584,
+        "queries": 403
+      },
+      "6": {
+        "pairs": 53632,
+        "queries": 419
+      },
+      "7": {
+        "pairs": 50688,
+        "queries": 396
+      },
+      "8": {
+        "pairs": 55040,
+        "queries": 430
+      },
+      "9": {
+        "pairs": 52736,
+        "queries": 412
+      }
+    },
+    "pairs": 512000,
+    "queries": 4000,
+    "sparse_queries": 0,
+    "zero_pair_queries": 0
+  },
+  "next_allowed_action": "CANONICAL_HARD_NEGATIVE_MANIFEST_PUBLICATION",
+  "prohibited_actions": [
+    "method-distance evaluation before publication review",
+    "scientific metric evaluation before publication review",
+    "manifest regeneration after method results are inspected"
+  ],
+  "scientific_result_observed": false,
+  "source_generation": {
+    "file_sha256": "f93a809e2378795baf8f3ff7dfefacd94d6929b0f856eda6e979cec644735a7c",
+    "manifest_id": "option-b-hard-negative-manifest-v1",
+    "path": "C:/Projects/similarity_is_relative/runs/option-b/hard-negative-manifest-v1/option-b-hard-negative-manifest-v1.json",
+    "status": "HARD_NEGATIVE_MANIFEST_GENERATED_PENDING_PUBLICATION_REVIEW"
+  },
+  "status": "HARD_NEGATIVE_MANIFEST_INDEPENDENTLY_VERIFIED",
+  "verification_id": "option-b-hard-negative-independent-verification-v1"
+}

@@ -1,0 +1,111 @@
+{
+  "allocation_context_sha256": "a3ae0b5dcbef0ae8e5056900ba44eeb53b4fd53a20f7cea8d842f67197ab02ed",
+  "artifacts": {
+    "allocation_config": {
+      "bytes": 337,
+      "file_sha256": "09190fedbe9623af8307382f781da77598da38bf7546bd6e9b9f0ca703acef20",
+      "path": "artifacts/canonical/option-c0/option-c0-allocation-config-v1.json"
+    },
+    "option-c0-candidate-registry-v1.jsonl": {
+      "bytes": 0,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-candidate-registry-v1.jsonl"
+    },
+    "option-c0-data-firewall-independent-v1.json": {
+      "bytes": 3677,
+      "file_sha256": "9828f01dfcb380620e78fbb962e86f720db900cd1bdbc07babf1e71c321a74dd",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-data-firewall-independent-v1.json"
+    },
+    "option-c0-data-firewall-v1.json": {
+      "bytes": 4694,
+      "file_sha256": "feed6c5457861aa1b9f575b30ef2a919f9d0dc26abd8c21374a2932a0187a095",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-data-firewall-v1.json"
+    },
+    "option-c0-discovery-ledger-v1.jsonl": {
+      "bytes": 0,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-discovery-ledger-v1.jsonl"
+    },
+    "option-c0-option-b-excluded-repositories-v1.jsonl": {
+      "bytes": 251337,
+      "file_sha256": "86a0aceb461db89c8e186c7b96aca3911ebfe2889d3e6c3a360c8cbc34902166",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-option-b-excluded-repositories-v1.jsonl"
+    },
+    "option-c0-repository-allocation-v1.jsonl": {
+      "bytes": 1491384,
+      "file_sha256": "41e48447171ac2f0553b795f2b3e50dfc5ac389b68fb30607b7d1c496bdb5bfc",
+      "path": "artifacts/canonical/option-c0/data-firewall-v1/option-c0-repository-allocation-v1.jsonl"
+    }
+  },
+  "c1_rows_selected": false,
+  "candidate_registry_entries": 0,
+  "checkpoint_id": "option-c0-data-firewall-publication-v1",
+  "commitments": {
+    "allocation_context_sha256": "a3ae0b5dcbef0ae8e5056900ba44eeb53b4fd53a20f7cea8d842f67197ab02ed",
+    "config_sha256": "18226086a00f450331e5a4e4b1cee27b33ffc2691ac1db46d9ceca68f798ef26",
+    "eligible_pool_sha256": "e1594d44ea79e00c982e8295b60e8b5f1657a9feb03c1c16839012077278d58f",
+    "identity_file_sha256": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d",
+    "option_b_repository_set_sha256": "6eaf4b1bb90ce1caf0c05959fbf123d66371eff8d8547ce7bc0b01ab96c520fa"
+  },
+  "config_sha256": "18226086a00f450331e5a4e4b1cee27b33ffc2691ac1db46d9ceca68f798ef26",
+  "counts": {
+    "allocated_repositories": 5324,
+    "candidate_registry_entries": 0,
+    "discovery_ledger_entries": 0,
+    "eligible_repositories": 11903,
+    "eligible_rows": 199146,
+    "option_b_excluded_repositories": 6579
+  },
+  "discovery_ledger_entries": 0,
+  "implementation_merge_commit": "d401dd01f66ca328d3b4d7ee92f53986eb1f636a",
+  "independent_verification": {
+    "checks": {
+      "allocation_exactly_equal": true,
+      "c1_reserve_undivided": true,
+      "candidate_registry_empty": true,
+      "discovery_ledger_empty": true,
+      "eligible_pool_recomputed": true,
+      "option_b_exclusion_recomputed": true,
+      "option_b_repositories_excluded": true,
+      "pairwise_role_disjointness": true,
+      "role_counts_exactly_equal": true
+    },
+    "runner_imported": false,
+    "status": "C0_CANONICAL_REPOSITORY_ALLOCATION_INDEPENDENTLY_RECOMPUTED",
+    "verification_id": "option-c0-data-firewall-independent-v1"
+  },
+  "mechanism_result_observed": false,
+  "next_allowed_action": "C0_MECHANISM_IMPLEMENTATION_REVIEW",
+  "prohibited_actions": [
+    "C0 mechanism execution before this checkpoint merges",
+    "C0 selection access before candidate-registry closure",
+    "C1 calibration row selection",
+    "C1 test row selection",
+    "Option C scientific decision"
+  ],
+  "reviewed_setup_commit": "b5f523271de3bafb5ce9922ae772d06dbd8524d4",
+  "role_counts": {
+    "c0_fit": {
+      "repositories": 2117,
+      "repository_commitment": "6709ac1a41b7e0c9362d5c78254858189be78e640a225bc95c8ae155fa9aa32c",
+      "rows": 8007
+    },
+    "c0_iteration": {
+      "repositories": 1058,
+      "repository_commitment": "7d2eea33ee59198dcbec99cabeee9b1a780ae692c720e3ecc00e9388aad5008b",
+      "rows": 4110
+    },
+    "c0_selection": {
+      "repositories": 545,
+      "repository_commitment": "e94b968fce2e7c392b9d7d937d550da37ea3263098169ee8bb680d19dcfe0bf3",
+      "rows": 2070
+    },
+    "c1_reserve": {
+      "repositories": 1604,
+      "repository_commitment": "0dbfe477d13bc0b4e551885aa224b69c2a04b829fbd214d82c84d28c329a89cd",
+      "rows": 6357
+    }
+  },
+  "scientific_result_observed": false,
+  "status": "C0_CANONICAL_REPOSITORY_ALLOCATION_VERIFIED_PENDING_REVIEW"
+}

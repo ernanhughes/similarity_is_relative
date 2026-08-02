@@ -1,0 +1,148 @@
+{
+  "allocation_context_sha256": "a3ae0b5dcbef0ae8e5056900ba44eeb53b4fd53a20f7cea8d842f67197ab02ed",
+  "allocation_id": "option-c0-repository-allocation-v1",
+  "artifacts": {
+    "option_b_excluded_repositories": {
+      "file_sha256": "86a0aceb461db89c8e186c7b96aca3911ebfe2889d3e6c3a360c8cbc34902166",
+      "path": "option-c0-option-b-excluded-repositories-v1.jsonl",
+      "rows": 6579
+    },
+    "repository_allocation": {
+      "file_sha256": "41e48447171ac2f0553b795f2b3e50dfc5ac389b68fb30607b7d1c496bdb5bfc",
+      "path": "option-c0-repository-allocation-v1.jsonl",
+      "rows": 5324
+    }
+  },
+  "c1_rows_selected": false,
+  "checks": {
+    "c1_reserve_undivided": true,
+    "option_b_repositories_excluded": true,
+    "pairwise_role_disjointness": true,
+    "whole_repository_allocation": true
+  },
+  "config": {
+    "domain": "option-c0-canonical-repository-allocation-v1:2026-08-02",
+    "minimum_repositories": [
+      64,
+      32,
+      32,
+      64
+    ],
+    "role_names": [
+      "c0_fit",
+      "c0_iteration",
+      "c0_selection",
+      "c1_reserve"
+    ],
+    "role_weights": [
+      4,
+      2,
+      1,
+      3
+    ],
+    "schema_id": "option-c0-repository-allocation-v1"
+  },
+  "config_sha256": "18226086a00f450331e5a4e4b1cee27b33ffc2691ac1db46d9ceca68f798ef26",
+  "mechanism_result_observed": false,
+  "next_allowed_action": "CANONICAL_C0_ALLOCATION_PUBLICATION_AND_INDEPENDENT_VERIFICATION",
+  "option_b_exclusion": {
+    "excluded_eligible_rows": 178602,
+    "repository_commitment": "6eaf4b1bb90ce1caf0c05959fbf123d66371eff8d8547ce7bc0b01ab96c520fa",
+    "repository_count": 6579
+  },
+  "option_b_selection": {
+    "artifacts": {
+      "test": {
+        "file_sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+        "rows": 4000
+      },
+      "train": {
+        "file_sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+        "rows": 20000
+      },
+      "validation": {
+        "file_sha256": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d",
+        "rows": 4000
+      }
+    },
+    "repository_commitment": "6eaf4b1bb90ce1caf0c05959fbf123d66371eff8d8547ce7bc0b01ab96c520fa",
+    "repository_count": 6579,
+    "selection_id": "option-b-canonical-row-selection-v2"
+  },
+  "prohibited_actions": [
+    "propagation mechanism evaluation",
+    "conformal calibration",
+    "risk-coverage evaluation",
+    "C1 calibration row selection",
+    "C1 test row selection",
+    "Option C scientific decision"
+  ],
+  "reconstruction": {
+    "c1_rows_selected": false,
+    "cross_split_deduplication": {
+      "cross_split_ast_count": 0,
+      "removed_by_split": {
+        "test": 0,
+        "train": 0,
+        "validation": 0
+      }
+    },
+    "eligible_pool_commitment": "e1594d44ea79e00c982e8295b60e8b5f1657a9feb03c1c16839012077278d58f",
+    "eligible_repositories": 11903,
+    "eligible_rows": 199146,
+    "exclusions": {
+      "test": {
+        "ast_ineligible": 228,
+        "token_length": 12370
+      },
+      "train": {
+        "ast_ineligible": 4011,
+        "ast_recursion_limit": 1,
+        "token_length": 228507
+      },
+      "validation": {
+        "ast_ineligible": 290,
+        "token_length": 12908
+      }
+    },
+    "identity_sha256": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d",
+    "mechanism_result_observed": false,
+    "reconstruction_id": "option-c0-eligible-pool-reconstruction-v1",
+    "scientific_result_observed": false,
+    "source_rows": {
+      "test": 22176,
+      "train": 412178,
+      "validation": 23107
+    }
+  },
+  "role_counts": {
+    "c0_fit": {
+      "repositories": 2117,
+      "repository_commitment": "6709ac1a41b7e0c9362d5c78254858189be78e640a225bc95c8ae155fa9aa32c",
+      "rows": 8007
+    },
+    "c0_iteration": {
+      "repositories": 1058,
+      "repository_commitment": "7d2eea33ee59198dcbec99cabeee9b1a780ae692c720e3ecc00e9388aad5008b",
+      "rows": 4110
+    },
+    "c0_selection": {
+      "repositories": 545,
+      "repository_commitment": "e94b968fce2e7c392b9d7d937d550da37ea3263098169ee8bb680d19dcfe0bf3",
+      "rows": 2070
+    },
+    "c1_reserve": {
+      "repositories": 1604,
+      "repository_commitment": "0dbfe477d13bc0b4e551885aa224b69c2a04b829fbd214d82c84d28c329a89cd",
+      "rows": 6357
+    }
+  },
+  "scientific_result_observed": false,
+  "source": {
+    "eligible_pool_commitment": "e1594d44ea79e00c982e8295b60e8b5f1657a9feb03c1c16839012077278d58f",
+    "eligible_repositories": 11903,
+    "eligible_rows": 199146,
+    "source_identity_commitment": "cefedf4e9a4f1a355a1873f2b6ccc3dd6c2babad1093b4c095f6da36c0222c8d"
+  },
+  "status": "C0_REPOSITORY_ALLOCATION_GENERATED_PENDING_INDEPENDENT_VERIFICATION"
+}

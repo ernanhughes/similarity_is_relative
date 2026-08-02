@@ -116,7 +116,7 @@ class DiscoveryPlan:
     embedding_batch_size: int
 
     @classmethod
-    def from_mapping(cls, value: Mapping[str, Any]) -> "DiscoveryPlan":
+    def from_mapping(cls, value: Mapping[str, Any]) -> DiscoveryPlan:
         if value.get("schema_id") != PLAN_SCHEMA:
             raise ValueError("unexpected initial candidate-plan schema")
         for field in (

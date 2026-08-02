@@ -1,0 +1,246 @@
+{
+  "artifacts": {
+    "test": {
+      "array_sha256": "e24c9797f5068e9c84a170bacdc85e06a1c4fe6bbc2d7b1f64045bc166ef4320",
+      "chunk_rejection_reasons": {
+        "reuse-bypassed": 400
+      },
+      "chunks_recomputed": 400,
+      "dimensions": 768,
+      "dtype": "float32",
+      "extraction_fingerprint": {
+        "batch_size": 10,
+        "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+        "identity_file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+        "identity_id": "option-b-embedding-identity-v2",
+        "max_length": 256,
+        "model": {
+          "repo_id": "microsoft/codebert-base",
+          "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+        },
+        "output_dtype": "float32",
+        "pooling_policy": "attention-mask mean pooling",
+        "rows": 4000,
+        "runtime": {
+          "cuda_runtime": "12.8",
+          "device": "cuda",
+          "gpu_name": "NVIDIA GeForce RTX 2060",
+          "numpy": "2.4.6",
+          "python": "3.11.4",
+          "tokenizers": "0.22.2",
+          "torch": "2.11.0+cu128",
+          "transformers": "5.14.1"
+        },
+        "schema": "option-b-extraction-fingerprint-v1",
+        "source_sequence_sha256": "d87652867dbb5cb76437667187dc03e8b65b96e556348be2bb9c9a4de14bcc1e",
+        "split": "test",
+        "split_manifest_sha256": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+        "stable_key_sequence_sha256": "00114579fee44cedb3fc583490bb2d0d9333a8a62b288668691068ce5804f1d6",
+        "tokenization_config": {
+          "add_special_tokens": true,
+          "max_length": 256,
+          "output_dtype": "float32",
+          "padding": "max_length",
+          "padding_side": "right",
+          "pooling_policy": "attention-mask mean pooling",
+          "return_tensors": "pt",
+          "truncation": true,
+          "truncation_side": "right"
+        },
+        "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff"
+      },
+      "extraction_fingerprint_sha256": "149dc0147a9e7c1ea0f05fe9d2525614a2db86d693f8e1dc376e346f9812666d",
+      "file_sha256": "43c4845734af3231a32025bb8515c5c577255c020b26d3253c94892916e1f47f",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/embeddings-b/option-b-embeddings-test-v2.npy",
+      "rows": 4000,
+      "sqlite_cache_hits": 0,
+      "sqlite_cache_misses": 4000,
+      "verified_chunks_resumed": 0
+    },
+    "train": {
+      "array_sha256": "ac23f6b58076c4f5aaa5eeb44046480ebafe93793a100abd764749d3f5c13767",
+      "chunk_rejection_reasons": {
+        "reuse-bypassed": 2000
+      },
+      "chunks_recomputed": 2000,
+      "dimensions": 768,
+      "dtype": "float32",
+      "extraction_fingerprint": {
+        "batch_size": 10,
+        "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+        "identity_file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+        "identity_id": "option-b-embedding-identity-v2",
+        "max_length": 256,
+        "model": {
+          "repo_id": "microsoft/codebert-base",
+          "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+        },
+        "output_dtype": "float32",
+        "pooling_policy": "attention-mask mean pooling",
+        "rows": 20000,
+        "runtime": {
+          "cuda_runtime": "12.8",
+          "device": "cuda",
+          "gpu_name": "NVIDIA GeForce RTX 2060",
+          "numpy": "2.4.6",
+          "python": "3.11.4",
+          "tokenizers": "0.22.2",
+          "torch": "2.11.0+cu128",
+          "transformers": "5.14.1"
+        },
+        "schema": "option-b-extraction-fingerprint-v1",
+        "source_sequence_sha256": "0c4e90abadaa36902ff0181289a7646e81cf1c07d7ded7290401785daf6c9139",
+        "split": "train",
+        "split_manifest_sha256": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+        "stable_key_sequence_sha256": "79570ccf2c6617566c71a6c5b732839f803439e658f63b2215df7a3c2ef25548",
+        "tokenization_config": {
+          "add_special_tokens": true,
+          "max_length": 256,
+          "output_dtype": "float32",
+          "padding": "max_length",
+          "padding_side": "right",
+          "pooling_policy": "attention-mask mean pooling",
+          "return_tensors": "pt",
+          "truncation": true,
+          "truncation_side": "right"
+        },
+        "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff"
+      },
+      "extraction_fingerprint_sha256": "c49d7f417c95f121cea39bb4d72ae27c0e427d7a66f45b47d8529bd0bfd6eef1",
+      "file_sha256": "8900ad5e9824dae71d6c5ef9b0e4b95e99f2ecedb9d1da99b123d6e35d0bd133",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/embeddings-b/option-b-embeddings-train-v2.npy",
+      "rows": 20000,
+      "sqlite_cache_hits": 0,
+      "sqlite_cache_misses": 20000,
+      "verified_chunks_resumed": 0
+    },
+    "validation": {
+      "array_sha256": "7e74953f4bb69d598b663b88e6e42b6a1105bd75ebdc264ccbbd0300346fe242",
+      "chunk_rejection_reasons": {
+        "reuse-bypassed": 400
+      },
+      "chunks_recomputed": 400,
+      "dimensions": 768,
+      "dtype": "float32",
+      "extraction_fingerprint": {
+        "batch_size": 10,
+        "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+        "identity_file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+        "identity_id": "option-b-embedding-identity-v2",
+        "max_length": 256,
+        "model": {
+          "repo_id": "microsoft/codebert-base",
+          "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39"
+        },
+        "output_dtype": "float32",
+        "pooling_policy": "attention-mask mean pooling",
+        "rows": 4000,
+        "runtime": {
+          "cuda_runtime": "12.8",
+          "device": "cuda",
+          "gpu_name": "NVIDIA GeForce RTX 2060",
+          "numpy": "2.4.6",
+          "python": "3.11.4",
+          "tokenizers": "0.22.2",
+          "torch": "2.11.0+cu128",
+          "transformers": "5.14.1"
+        },
+        "schema": "option-b-extraction-fingerprint-v1",
+        "source_sequence_sha256": "133677c4adfe05019e5de4621de5c8ccfe1def876e09d27ab5445dc14ba123fe",
+        "split": "validation",
+        "split_manifest_sha256": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d",
+        "stable_key_sequence_sha256": "3a7d88f6eff63b95fc39a65bc91bf78787e1e80e92351d72a9be34aacc8f3b5b",
+        "tokenization_config": {
+          "add_special_tokens": true,
+          "max_length": 256,
+          "output_dtype": "float32",
+          "padding": "max_length",
+          "padding_side": "right",
+          "pooling_policy": "attention-mask mean pooling",
+          "return_tensors": "pt",
+          "truncation": true,
+          "truncation_side": "right"
+        },
+        "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff"
+      },
+      "extraction_fingerprint_sha256": "bd181da134ff61f12164c1e804914cffce672db5b5a1c2d339e3a82c18f73780",
+      "file_sha256": "5b258edbda111cd01e13370b22f3033c87ffaf976e7ccff57716efef15b1eebd",
+      "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/embeddings-b/option-b-embeddings-validation-v2.npy",
+      "rows": 4000,
+      "sqlite_cache_hits": 0,
+      "sqlite_cache_misses": 4000,
+      "verified_chunks_resumed": 0
+    }
+  },
+  "cache": {
+    "canonical_artifact": false,
+    "legacy_embedding_table_reused": false,
+    "mode": "refresh",
+    "path": "C:/Projects/similarity_is_relative/.writer/option-b/cache/gpu-batch10-b.sqlite3",
+    "schema": "embeddings_v2"
+  },
+  "embedding_id": "option-b-canonical-embeddings-v2",
+  "fixture_preflight": {
+    "device": "cuda",
+    "matrix_array_sha256": "29a048c9483b1652890ebc1852065f495cbae2183acff83b2e3242b5771ff5d7",
+    "rows": 10,
+    "status": "EMBEDDING_FIXTURE_PREFLIGHT_VERIFIED"
+  },
+  "identity": {
+    "file_sha256": "185f74410bf88e66eea227f981cf6979debdca94c67a28f542a201cb084bd3a9",
+    "identity_id": "option-b-embedding-identity-v2",
+    "path": "C:/Projects/similarity_is_relative/runs/option-b/gpu-fixed-batch-10/identity/option-b-embedding-identity-v2-gpu-batch10.json"
+  },
+  "model": {
+    "embedding_implementation_sha256": "d9a4c8d729f4f3f7640c75894313e7cc5e661145439450a92812684ae98af6a8",
+    "max_length": 256,
+    "output_dtype": "float32",
+    "pooling": "attention-mask mean pooling",
+    "repo_id": "microsoft/codebert-base",
+    "revision": "3b0952feddeffad0063f274080e3c23d75e7eb39",
+    "tokenization_config": {
+      "add_special_tokens": true,
+      "max_length": 256,
+      "output_dtype": "float32",
+      "padding": "max_length",
+      "padding_side": "right",
+      "pooling_policy": "attention-mask mean pooling",
+      "return_tensors": "pt",
+      "truncation": true,
+      "truncation_side": "right"
+    },
+    "tokenization_config_sha256": "728cf0f4598c53e6f3ed9f49656b905ec9be6ea7ca7166f8546ee2cbf28b4bff"
+  },
+  "next_allowed_action": "INDEPENDENT_EMBEDDING_REPRODUCTION",
+  "prohibited_actions": [
+    "canonical embedding publication before independent run agreement",
+    "primitive probe fitting",
+    "hard-negative generation",
+    "scientific metric evaluation",
+    "threshold, query, model, or language changes"
+  ],
+  "recovery": {
+    "atomic_chunk_writes": true,
+    "chunk_directory_is_fingerprint_scoped": true,
+    "chunk_schema": "option-b-embedding-chunk-v2",
+    "fingerprint_schema": "option-b-extraction-fingerprint-v1",
+    "refresh_and_off_bypass_chunk_reuse": true
+  },
+  "runtime": {
+    "cuda_runtime": "12.8",
+    "device": "cuda",
+    "gpu_name": "NVIDIA GeForce RTX 2060",
+    "numpy": "2.4.6",
+    "python": "3.11.4",
+    "tokenizers": "0.22.2",
+    "torch": "2.11.0+cu128",
+    "transformers": "5.14.1"
+  },
+  "scientific_result_observed": false,
+  "selection_manifest_sha256": {
+    "test": "1ad0e468ce9081db49c8ab92c21b0b6ce7a3a0e473930643baaea17e1576cb8b",
+    "train": "132045dc559469f9b2a28e56f25f43f1b06a27308abbf98a5dfbf6e4205247af",
+    "validation": "17fd47115e0cacaad073f3eefacca9e78a0cd5ed46c607e05f159c9e4363179d"
+  },
+  "status": "EMBEDDING_RUN_COMPLETE_PENDING_INDEPENDENT_REPRODUCTION"
+}

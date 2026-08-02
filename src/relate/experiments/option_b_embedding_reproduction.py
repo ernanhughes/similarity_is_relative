@@ -84,12 +84,8 @@ def _verify_canonical_inputs(
             "path": str(path).replace("\\", "/"),
             "file_sha256": expected["sha256"],
             "rows": len(rows),
-            "stable_key_sequence_sha256": _sequence_hash(
-                [row["stable_key"] for row in rows]
-            ),
-            "source_sequence_sha256": _sequence_hash(
-                [row["code_sha256"] for row in rows]
-            ),
+            "stable_key_sequence_sha256": _sequence_hash([row["stable_key"] for row in rows]),
+            "source_sequence_sha256": _sequence_hash([row["code_sha256"] for row in rows]),
         }
     return {
         "identity": identity,
@@ -207,18 +203,14 @@ def _verify_run(
             "embedding_implementation_sha256": canonical["identity"][
                 "embedding_implementation_sha256"
             ],
-            "tokenization_config_sha256": canonical["identity"][
-                "tokenization_config_sha256"
-            ],
+            "tokenization_config_sha256": canonical["identity"]["tokenization_config_sha256"],
             "tokenization_config": identity_config,
             "pooling_policy": identity_config["pooling_policy"],
             "output_dtype": identity_config["output_dtype"],
             "max_length": identity_config["max_length"],
             "split": split,
             "split_manifest_sha256": canonical_manifest["file_sha256"],
-            "stable_key_sequence_sha256": canonical_manifest[
-                "stable_key_sequence_sha256"
-            ],
+            "stable_key_sequence_sha256": canonical_manifest["stable_key_sequence_sha256"],
             "source_sequence_sha256": canonical_manifest["source_sequence_sha256"],
             "rows": canonical_manifest["rows"],
             "runtime": runtime,

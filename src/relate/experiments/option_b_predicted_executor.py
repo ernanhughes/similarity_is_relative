@@ -189,9 +189,7 @@ def fit_predicted_executor_contract(
                 }
             )
 
-        final_model = Ridge(alpha=selected_alpha).fit(
-            train_x, scaled_train_y[:, primitive_index]
-        )
+        final_model = Ridge(alpha=selected_alpha).fit(train_x, scaled_train_y[:, primitive_index])
         validation_predictions[:, primitive_index] = final_model.predict(validation_x)
         test_predictions[:, primitive_index] = final_model.predict(test_x)
         primitive_report[primitive_name] = {
@@ -282,6 +280,4 @@ def predicted_executor_distance(
         raise ValueError("candidate prediction values no longer match their hash")
     if queries.bundle_sha256 != candidates.bundle_sha256:
         raise ValueError("query and candidate predictions must come from the same fitted bundle")
-    return np.max(
-        np.abs(queries.values[:, None, :] - candidates.values[None, :, :]), axis=2
-    )
+    return np.max(np.abs(queries.values[:, None, :] - candidates.values[None, :, :]), axis=2)

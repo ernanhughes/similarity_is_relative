@@ -242,9 +242,7 @@ def _cached_batch(
     vectors: list[np.ndarray | None] = [None] * len(keys)
     missing: list[int] = []
     hits = 0
-    for index, (stable_key, source_hash) in enumerate(
-        zip(keys, source_sha256, strict=True)
-    ):
+    for index, (stable_key, source_hash) in enumerate(zip(keys, source_sha256, strict=True)):
         vector = _get_cached_embedding(
             cache,
             stable_key=stable_key,
@@ -258,9 +256,7 @@ def _cached_batch(
             hits += 1
 
     if missing:
-        generated = np.asarray(
-            embed_batch([codes[index] for index in missing]), dtype=np.float32
-        )
+        generated = np.asarray(embed_batch([codes[index] for index in missing]), dtype=np.float32)
         if generated.ndim != 2 or generated.shape[0] != len(missing):
             raise ValueError("embedding backend returned invalid batch shape")
         if not np.isfinite(generated).all():
@@ -605,9 +601,7 @@ def run_extraction(
         "model": {
             "repo_id": MODEL_ID,
             "revision": revision,
-            "embedding_implementation_sha256": identity[
-                "embedding_implementation_sha256"
-            ],
+            "embedding_implementation_sha256": identity["embedding_implementation_sha256"],
             "tokenization_config_sha256": identity["tokenization_config_sha256"],
             "tokenization_config": identity["tokenization_config"],
             "pooling": POOLING_POLICY,

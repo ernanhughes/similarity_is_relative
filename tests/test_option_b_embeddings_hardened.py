@@ -69,8 +69,7 @@ def _run(
             batch_size=2,
             stable_keys=("one", "two", "three"),
             source_sha256=tuple(
-                hashlib.sha256(code.encode()).hexdigest()
-                for code in ("a", "bb", "ccc")
+                hashlib.sha256(code.encode()).hexdigest() for code in ("a", "bb", "ccc")
             ),
             fingerprint_payload=fingerprint or _fingerprint(),
             cache=cache,

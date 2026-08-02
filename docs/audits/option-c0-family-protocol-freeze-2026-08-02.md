@@ -5,7 +5,7 @@ Date: 2026-08-02
 Status: protocol frozen; canonical family graph not executed.
 
 Protocol identity:
-`cf3ea4eafcd4b1bf55cc5a829bc6cf4125318ce0fb700d5ea176d455aeb18896`
+`49c2b5809e76187db0d0f2f33d025bea8d5b9b44387c14404e1b899ac736cf1e`
 
 ## Inputs
 

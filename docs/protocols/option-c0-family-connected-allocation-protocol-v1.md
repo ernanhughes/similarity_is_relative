@@ -3,7 +3,7 @@
 Status: frozen for implementation review.
 
 Protocol identity:
-`cf3ea4eafcd4b1bf55cc5a829bc6cf4125318ce0fb700d5ea176d455aeb18896`
+`49c2b5809e76187db0d0f2f33d025bea8d5b9b44387c14404e1b899ac736cf1e`
 
 ## Scope
 
@@ -37,7 +37,10 @@ Each hard edge has its own explicit typed evidence schema. A generic
 `required_evidence_complete = true` field is not accepted as family evidence.
 Rules with manual review produce unresolved evidence candidates first. A
 separate `ManualReviewDisposition` can approve or reject a candidate only when
-its protocol SHA-256 and evidence commitment match exactly.
+its candidate ID, protocol SHA-256, evidence commitment, reviewer identity,
+review timestamp, bounded reason, and derived disposition ID match exactly. A
+resolved reviewed edge is valid only when independently checked against its
+candidate and final disposition record.
 
 Conditional connecting edge types:
 
@@ -61,12 +64,23 @@ Every edge rule has conjunctive evidence-source requirements. If a rule requires
 both `d1_visible_cache` and `public_metadata_snapshot`, both immutable source
 identities must be present in the canonical source bundle.
 
+Rule payload evidence identities are cross-bound to source bundle entries. Fork,
+succession, and lineage records must match the public metadata snapshot identity
+in the bundle. D1-visible evidence must carry a stable visible evidence
+commitment tied to the `d1_visible_cache` source identity.
+
 ## Component Rule
 
 Repository identities are normalized to lowercase `owner/repository` strings.
 Malformed or duplicate allocation entries are refused. Connecting edges are
 sorted deterministically, and only those edges are used for union-find
-components. Transitivity applies only to connecting edges.
+components. Duplicate edge IDs are rejected before counting, commitment,
+publication, or component construction. Transitivity applies only to connecting
+edges.
+
+Initial allocation cache population must come from the canonical allocation
+manifest and must match the frozen repository count, role repository counts,
+role row counts, and ordered allocation-table commitment.
 
 Component IDs are SHA-256 hashes over the sorted member repositories and the
 protocol identity.

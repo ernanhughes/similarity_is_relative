@@ -11,6 +11,12 @@ from relate.experiments import option_c0_family_connected_protocol as protocol
 
 TIMESTAMP = "2026-08-02T00:00:00+00:00"
 SOURCE_ID = "a" * 64
+PUBLIC_SOURCE_ID = "b" * 64
+D1_SOURCE_ID = "e" * 64
+CANONICAL_ALLOCATION = Path(
+    "artifacts/canonical/option-c0/data-firewall-v1/"
+    "option-c0-repository-allocation-v1.jsonl"
+)
 
 
 def payload(edge_type: str) -> dict[str, object]:
@@ -21,7 +27,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "child_full_name": "owner/a",
             "parent_or_source_full_name": "owner/b",
             "fork": True,
-            "metadata_snapshot_identity": "b" * 64,
+            "metadata_snapshot_identity": PUBLIC_SOURCE_ID,
             "snapshot_status": "COMPLETE",
         },
         "VERIFIED_REPOSITORY_SUCCESSION": {
@@ -29,11 +35,11 @@ def payload(edge_type: str) -> dict[str, object]:
             "successor_repository": "owner/b",
             "direction": "predecessor_to_successor",
             "public_succession_record": "public rename notice",
-            "record_snapshot_hash": "c" * 64,
+            "record_snapshot_hash": PUBLIC_SOURCE_ID,
         },
         "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY": {
             "identity_scope": "approved_non_generated_module",
-            "matching_content_sha256": "e" * 64,
+            "matching_content_sha256": D1_SOURCE_ID,
             "left_scope_identity": "f" * 64,
             "right_scope_identity": "1" * 64,
             "source_identity_provenance": "bounded visible source identity",
@@ -43,7 +49,7 @@ def payload(edge_type: str) -> dict[str, object]:
         "VERIFIED_SHARED_PACKAGE_LINEAGE": {
             "lineage_record_type": "continuation",
             "approved_lineage_record": "public package continuation",
-            "evidence_snapshot_hash": "2" * 64,
+            "evidence_snapshot_hash": PUBLIC_SOURCE_ID,
         },
         "EXACT_AST_WITH_CORROBORATING_PROVENANCE": {
             "same_normalized_ast": True,
@@ -65,6 +71,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "left_stable_key": "left",
             "right_stable_key": "right",
             "code_sha256": "7" * 64,
+            "d1_visible_evidence_identity": D1_SOURCE_ID,
             "visible_role_left": "c0_fit",
             "visible_role_right": "c0_iteration",
         },
@@ -73,6 +80,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "left_stable_key": "left",
             "right_stable_key": "right",
             "hamming_distance": 0,
+            "d1_visible_evidence_identity": D1_SOURCE_ID,
         },
         "SIMILAR_REPOSITORY_NAME": {"similarity_method": "jaro", "score": 0.9},
         "SUFFIX_STRIPPED_NAME_MATCH": {"normalized_family_token": "pkg"},
@@ -84,7 +92,15 @@ def payload(edge_type: str) -> dict[str, object]:
 
 def sources(edge_type: str) -> dict[str, str]:
     rule = protocol.EDGE_RULES[edge_type]
-    return {source: SOURCE_ID for source in rule.evidence_source_requirements}
+    values = {
+        "github_rest": PUBLIC_SOURCE_ID,
+        "public_metadata_snapshot": PUBLIC_SOURCE_ID,
+        "d1_visible_cache": D1_SOURCE_ID,
+        "allocation_manifest": SOURCE_ID,
+        "manual_review_record": SOURCE_ID,
+        "fixture": SOURCE_ID,
+    }
+    return {source: values[source] for source in rule.evidence_source_requirements}
 
 
 def candidate(edge_type: str, evidence_payload: dict[str, object] | None = None):
@@ -121,6 +137,43 @@ def edge(edge_type: str, evidence_payload: dict[str, object] | None = None):
     )
 
 
+def reviewed_context(edge_type: str = "EXACT_AST_WITH_CORROBORATING_PROVENANCE"):
+    cand = candidate(edge_type)
+    disp = disposition(cand)
+    item = protocol.resolve_evidence_candidate(
+        cand,
+        disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    return cand, disp, item
+
+
+def canonical_pair() -> tuple[str, str]:
+    entries = protocol.load_allocation_manifest(
+        CANONICAL_ALLOCATION,
+        expected_sha256=protocol.ALLOCATION_MANIFEST_SHA256,
+    )
+    return entries[0].repository, entries[1].repository
+
+
+def reviewed_cache_context():
+    left, right = canonical_pair()
+    cand = protocol.make_evidence_candidate(
+        left,
+        right,
+        "EXACT_AST_WITH_CORROBORATING_PROVENANCE",
+        evidence_sources=sources("EXACT_AST_WITH_CORROBORATING_PROVENANCE"),
+        evidence_payload=payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE"),
+    )
+    disp = disposition(cand)
+    item = protocol.resolve_evidence_candidate(
+        cand,
+        disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    return cand, disp, item
+
+
 def test_repository_normalization_is_deterministic() -> None:
     assert protocol.normalize_repository(" Sarugaku/Vistir ") == "sarugaku/vistir"
 
@@ -155,11 +208,13 @@ def test_caller_cannot_force_connecting_true() -> None:
 
 
 def test_caller_cannot_suppress_required_human_review() -> None:
-    item = edge("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    cand, disp, item = reviewed_context()
     tampered = replace(item, human_review_required=False)
     with pytest.raises(ValueError, match="human_review_required"):
-        protocol.validate_evidence_edge(
+        protocol.validate_resolved_edge(
             tampered,
+            cand,
+            disp,
             protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
             allocation_repositories={"owner/a", "owner/b"},
         )
@@ -220,7 +275,7 @@ def test_edge_endpoint_outside_allocation_is_rejected() -> None:
 def test_conflicting_duplicate_edge_ids_are_rejected() -> None:
     item = edge("DECLARED_GITHUB_FORK")
     tampered = replace(item, reason="different")
-    with pytest.raises(ValueError, match="conflicting duplicate"):
+    with pytest.raises(ValueError, match="duplicate edge ID"):
         protocol.edge_commitment([item, tampered])
 
 
@@ -229,7 +284,7 @@ def test_edge_commitment_is_order_independent_and_material_changes_change_it() -
     second = edge("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY")
     assert protocol.edge_commitment([first, second]) == protocol.edge_commitment([second, first])
     changed_payload = payload("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY")
-    changed_payload["matching_content_sha256"] = "9" * 64
+    changed_payload["left_scope_identity"] = "9" * 64
     changed = edge("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY", changed_payload)
     assert protocol.edge_commitment([first, second]) != protocol.edge_commitment([first, changed])
 
@@ -297,13 +352,131 @@ def test_unresolved_connecting_candidate_makes_graph_incomplete() -> None:
 
 
 def test_stale_manual_disposition_is_rejected() -> None:
-    item = edge("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    cand, disp, item = reviewed_context()
     with pytest.raises(ValueError, match="stale"):
-        protocol.validate_evidence_edge(
+        protocol.validate_resolved_edge(
             item,
+            cand,
+            disp,
             protocol_sha256="0" * 64,
             allocation_repositories={"owner/a", "owner/b"},
         )
+
+
+def test_forged_approved_edge_with_arbitrary_disposition_id_is_rejected() -> None:
+    cand, disp, item = reviewed_context()
+    tampered = replace(
+        item,
+        disposition_id="9" * 64,
+        review_disposition_identity="9" * 64,
+    )
+    with pytest.raises(ValueError, match="disposition_id|review_disposition_identity"):
+        protocol.validate_resolved_edge(
+            tampered,
+            cand,
+            disp,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_forged_approved_edge_with_arbitrary_edge_id_is_rejected() -> None:
+    cand, disp, item = reviewed_context()
+    with pytest.raises(ValueError, match="edge_id"):
+        protocol.validate_resolved_edge(
+            replace(item, edge_id="9" * 64),
+            cand,
+            disp,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_approved_edge_cannot_validate_without_disposition_record() -> None:
+    cand, _disp, item = reviewed_context()
+    with pytest.raises(ValueError, match="requires disposition record"):
+        protocol.validate_resolved_edge(
+            item,
+            cand,
+            None,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_approved_edge_cannot_validate_with_another_candidate_disposition() -> None:
+    cand, _disp, item = reviewed_context()
+    other = candidate("VERIFIED_REPOSITORY_SUCCESSION")
+    other_disp = disposition(other)
+    with pytest.raises(ValueError, match="another candidate|disposition_id"):
+        protocol.validate_resolved_edge(
+            item,
+            cand,
+            other_disp,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_approved_edge_cannot_validate_with_stale_evidence_commitment() -> None:
+    cand, disp, item = reviewed_context()
+    stale = replace(disp, evidence_commitment="9" * 64)
+    with pytest.raises(ValueError, match="stale"):
+        protocol.validate_resolved_edge(
+            item,
+            cand,
+            stale,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_approved_edge_cannot_validate_with_another_protocol_disposition() -> None:
+    cand, _disp, item = reviewed_context()
+    stale = protocol.make_manual_review_disposition(
+        edge_candidate_id=cand.candidate_id,
+        protocol_sha256="9" * 64,
+        evidence_commitment=cand.evidence_commitment,
+        disposition="APPROVED",
+        reviewer_identity="sha256:" + "0" * 64,
+        review_timestamp=TIMESTAMP,
+        bounded_reason="reviewed fixture",
+    )
+    with pytest.raises(ValueError, match="stale"):
+        protocol.validate_resolved_edge(
+            item,
+            cand,
+            stale,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_unresolved_edge_carrying_disposition_id_is_rejected() -> None:
+    cand = candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    item = protocol.resolve_evidence_candidate(
+        cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    with pytest.raises(ValueError, match="must not carry disposition"):
+        protocol.validate_resolved_edge(
+            replace(item, disposition_id="9" * 64),
+            cand,
+            None,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        )
+
+
+def test_rejected_edge_remains_nonconnecting() -> None:
+    cand = candidate("VERIFIED_REPOSITORY_SUCCESSION")
+    disp = disposition(cand, "REJECTED")
+    item = protocol.resolve_evidence_candidate(
+        cand,
+        disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    assert item.connecting is False
+    protocol.validate_resolved_edge(
+        item,
+        cand,
+        disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
 
 
 def test_metadata_snapshot_is_reproducible_and_requires_timestamp() -> None:
@@ -353,9 +526,7 @@ def test_data_bearing_cache_with_empty_identity_is_rejected(tmp_path: Path) -> N
     identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
     path = tmp_path / "family.sqlite3"
     with protocol.FamilyGraphCache(path, identity=identity) as cache:
-        cache.put_allocation_repositories(
-            [protocol.AllocationEntry("owner/a", "c0_fit", 1)]
-        )
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
         cache.connection.execute("DELETE FROM cache_identity")
         cache.connection.commit()
     with pytest.raises(ValueError, match="data without identity"):
@@ -365,11 +536,14 @@ def test_data_bearing_cache_with_empty_identity_is_rejected(tmp_path: Path) -> N
 def test_allocation_rows_are_immutable_under_same_identity(tmp_path: Path) -> None:
     identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
     with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
-        cache.put_allocation_repositories([protocol.AllocationEntry("owner/a", "c0_fit", 1)])
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cache.connection.execute(
+            "UPDATE allocation_repositories SET role = 'c0_iteration' WHERE repository = "
+            "(SELECT repository FROM allocation_repositories WHERE role = 'c0_fit' LIMIT 1)"
+        )
+        cache.connection.commit()
         with pytest.raises(ValueError, match="allocation repositories differ"):
-            cache.put_allocation_repositories(
-                [protocol.AllocationEntry("owner/a", "c0_iteration", 1)]
-            )
+            cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
 
 
 def test_sqlite_foreign_key_violation_fails(tmp_path: Path) -> None:
@@ -383,6 +557,122 @@ def test_sqlite_foreign_key_violation_fails(tmp_path: Path) -> None:
                 """,
                 ("a" * 64,),
             )
+
+
+def test_cache_disposition_insertion_validates_referenced_candidate(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cand, disp, _item = reviewed_cache_context()
+        with pytest.raises(ValueError, match="candidate not found"):
+            cache.put_manual_review_disposition(disp)
+        cache.put_evidence_candidate(cand)
+        cache.put_manual_review_disposition(disp)
+
+
+def test_conflicting_final_dispositions_are_rejected(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cand, disp, _item = reviewed_cache_context()
+        cache.put_evidence_candidate(cand)
+        cache.put_manual_review_disposition(disp)
+        conflict = protocol.make_manual_review_disposition(
+            edge_candidate_id=cand.candidate_id,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            evidence_commitment=cand.evidence_commitment,
+            disposition="REJECTED",
+            reviewer_identity="sha256:" + "1" * 64,
+            review_timestamp=TIMESTAMP,
+            bounded_reason="conflicting fixture",
+        )
+        with pytest.raises(ValueError, match="conflicting|UNIQUE"):
+            cache.put_manual_review_disposition(conflict)
+
+
+def test_cached_candidate_and_disposition_retrieval_revalidates_records(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cand, disp, _item = reviewed_cache_context()
+        cache.put_evidence_candidate(cand)
+        cache.put_manual_review_disposition(disp)
+        assert cache.get_evidence_candidate(cand.candidate_id) == cand
+        assert cache.get_manual_review_disposition(disp.disposition_id) == disp
+        row = json.loads(
+            cache.connection.execute(
+                "SELECT candidate_json FROM evidence_candidates WHERE candidate_id = ?",
+                (cand.candidate_id,),
+            ).fetchone()[0]
+        )
+        row["evidence_commitment"] = "9" * 64
+        cache.connection.execute(
+            "UPDATE evidence_candidates SET candidate_json = ? WHERE candidate_id = ?",
+            (json.dumps(row), cand.candidate_id),
+        )
+        cache.connection.commit()
+        with pytest.raises(ValueError, match="tampered"):
+            cache.get_evidence_candidate(cand.candidate_id)
+
+
+def test_resolved_edge_cache_foreign_keys_are_enforced(tmp_path: Path) -> None:
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cand, disp, item = reviewed_cache_context()
+        with pytest.raises(ValueError, match="candidate not found"):
+            cache.put_resolved_edge(item)
+        cache.put_evidence_candidate(cand)
+        with pytest.raises(ValueError, match="manual disposition not found"):
+            cache.put_resolved_edge(item)
+        cache.put_manual_review_disposition(disp)
+        cache.put_resolved_edge(item)
+        assert cache.get_resolved_edge(item.edge_id) == item
+
+
+def test_source_snapshot_identities_must_match_source_bundle() -> None:
+    fork = payload("DECLARED_GITHUB_FORK")
+    fork["metadata_snapshot_identity"] = "9" * 64
+    with pytest.raises(ValueError, match="fork snapshot"):
+        candidate("DECLARED_GITHUB_FORK", fork)
+    succession = payload("VERIFIED_REPOSITORY_SUCCESSION")
+    succession["record_snapshot_hash"] = "9" * 64
+    with pytest.raises(ValueError, match="succession snapshot"):
+        candidate("VERIFIED_REPOSITORY_SUCCESSION", succession)
+    lineage = payload("VERIFIED_SHARED_PACKAGE_LINEAGE")
+    lineage["evidence_snapshot_hash"] = "9" * 64
+    with pytest.raises(ValueError, match="lineage snapshot"):
+        candidate("VERIFIED_SHARED_PACKAGE_LINEAGE", lineage)
+
+
+def test_noncanonical_initial_allocation_subset_is_rejected() -> None:
+    with pytest.raises(ValueError, match="noncanonical allocation"):
+        protocol.validate_canonical_allocation_entries(
+            [protocol.AllocationEntry("owner/a", "c0_fit", 1)]
+        )
+
+
+def test_allocation_repository_commitment_matches_canonical_manifest() -> None:
+    entries = protocol.load_allocation_manifest(
+        CANONICAL_ALLOCATION,
+        expected_sha256=protocol.ALLOCATION_MANIFEST_SHA256,
+    )
+    assert (
+        protocol.allocation_repository_commitment(entries)
+        == protocol.ALLOCATION_REPOSITORY_COMMITMENT_SHA256
+    )
+
+
+def test_identical_duplicate_edge_ids_are_rejected() -> None:
+    item = edge("DECLARED_GITHUB_FORK")
+    with pytest.raises(ValueError, match="duplicate edge ID"):
+        protocol.edge_commitment([item, item])
+
+
+def test_edge_commitment_rejects_tampered_edges() -> None:
+    item = edge("DECLARED_GITHUB_FORK")
+    with pytest.raises(ValueError, match="edge_id"):
+        protocol.edge_commitment([replace(item, edge_id="9" * 64)])
 
 
 def test_allocation_manifest_rejects_bad_row_counts_and_duplicates(tmp_path: Path) -> None:
@@ -410,6 +700,31 @@ def test_actual_canonical_input_hashes_match_frozen_constants() -> None:
     assert result["allocation_manifest_sha256"] == protocol.ALLOCATION_MANIFEST_SHA256
     assert result["d1_audit_result_sha256"] == protocol.D1_RESULT_SHA256
     assert result["d1_1_classification_sha256"] == protocol.D1_1_CLASSIFICATION_SHA256
+
+
+def test_missing_d1_or_d11_firewall_keys_are_rejected() -> None:
+    d1 = {
+        "scientific_result_observed": False,
+        "mechanism_result_observed": False,
+        "c0_selection_rows_accessed": False,
+        "c1_rows_accessed": False,
+        "hidden_row_content_accessed": False,
+    }
+    d11 = {
+        "firewall_booleans": {
+            **d1,
+            "c0_selection_row_content_accessed": False,
+            "c1_row_content_accessed": False,
+        }
+    }
+    missing_d1 = dict(d1)
+    missing_d1.pop("scientific_result_observed")
+    with pytest.raises(ValueError, match="scientific_result_observed"):
+        protocol.validate_firewall_booleans(missing_d1, d11)
+    missing_d11 = {"firewall_booleans": dict(d11["firewall_booleans"])}
+    missing_d11["firewall_booleans"].pop("c1_row_content_accessed")
+    with pytest.raises(ValueError, match="c1_row_content_accessed"):
+        protocol.validate_firewall_booleans(d1, missing_d11)
 
 
 def test_committed_contract_equals_regenerated_contract_and_sha_verifies() -> None:

@@ -9,6 +9,8 @@ Status: protocol frozen; canonical family graph not executed.
 - Verify the protocol SHA-256 before any canonical run.
 - Verify the allocation manifest, D1 result hash, and D1.1 classification hash
   match the contract identities.
+- Populate the initial allocation table only from the canonical allocation
+  manifest loader with the frozen expected SHA-256.
 - Do not access C0 selection or C1 reserve row contents.
 
 ## Future Runner Contract
@@ -31,6 +33,9 @@ The cache identity must include the frozen protocol SHA-256 and all input
 identities. A cache bound to another protocol identity must be refused.
 Existing caches fail closed when identity rows are missing, extra, partial, or
 mismatched, or when data rows exist before a complete identity is adopted.
+The allocation phase must persist the ordered allocation-table commitment, and
+resolved reviewed edges must be stored only after candidate and disposition
+records validate against the active protocol identity.
 
 ## Progress Reporting
 

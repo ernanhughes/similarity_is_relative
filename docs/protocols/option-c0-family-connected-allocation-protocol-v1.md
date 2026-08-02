@@ -3,7 +3,7 @@
 Status: frozen for implementation review.
 
 Protocol identity:
-`82cb26a2ccd82c156e02062b263972f670403f5a1a062833253c49230e649991`
+`4e86b557e232d3d6ba8db408959da09eabee07e3ee72564f953630f20a9be618`
 
 ## Scope
 
@@ -32,6 +32,9 @@ Hard connecting edge types:
 - `VERIFIED_REPOSITORY_SUCCESSION`
 - `EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY`
 - `VERIFIED_SHARED_PACKAGE_LINEAGE`
+
+Each hard edge has its own explicit typed evidence schema. A generic
+`required_evidence_complete = true` field is not accepted as family evidence.
 
 Conditional connecting edge types:
 
@@ -103,4 +106,3 @@ Prohibited inputs and actions:
 - model refits
 - C0 replay
 - D2 execution
-

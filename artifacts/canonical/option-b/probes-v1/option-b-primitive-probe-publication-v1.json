@@ -1,0 +1,63 @@
+{
+  "checkpoint_id": "option-b-primitive-probe-publication-v1",
+  "fit_scope": {
+    "alpha_selection": "validation embeddings and primitive labels only",
+    "ridge_coefficients": "train embeddings and primitive labels only",
+    "scaler": "train primitive labels only",
+    "test_primitive_labels": "not parsed or passed to fitting API"
+  },
+  "next_allowed_action": "HARD_NEGATIVE_MANIFEST_IMPLEMENTATION_REVIEW",
+  "predictions": {
+    "test_queries": {
+      "array_sha256": "c14b773c4952721c26de051c45da9c5b36779af122d5e43095af0dd8e51bc4d9",
+      "columns": 3,
+      "dtype": "float64",
+      "file_sha256": "c5b4edc0a2c18b4fa87ca4b12a0bb4960aabfd4e37befda8fc72b30d7be9e8ee",
+      "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/probes-v1/option-b-predicted-test-queries-v1.npy",
+      "row_order_sha256": "00114579fee44cedb3fc583490bb2d0d9333a8a62b288668691068ce5804f1d6",
+      "rows": 4000
+    },
+    "train_candidates": {
+      "array_sha256": "12a97e6b776080ed997756312cff0a11d08bf6c8adfa8ddafbe49840941f984b",
+      "columns": 3,
+      "dtype": "float64",
+      "file_sha256": "e560fc1de3b7215dcc801302f0f431915f55a0577c3c94dd87116552935e17fc",
+      "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/probes-v1/option-b-predicted-train-candidates-v1.npy",
+      "row_order_sha256": "79570ccf2c6617566c71a6c5b732839f803439e658f63b2215df7a3c2ef25548",
+      "rows": 20000
+    },
+    "validation_rows": {
+      "array_sha256": "4cb0f41c39f6dd65b03a7dac4f13e6ba3b1306989816e66f2b83eb3fc5b6166a",
+      "columns": 3,
+      "dtype": "float64",
+      "file_sha256": "c22bff4239d8566c07851c88006e38e5a9d55aab26c7db8ee56442968403da56",
+      "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/probes-v1/option-b-predicted-validation-rows-v1.npy",
+      "row_order_sha256": "3a7d88f6eff63b95fc39a65bc91bf78787e1e80e92351d72a9be34aacc8f3b5b",
+      "rows": 4000
+    }
+  },
+  "prohibited_actions": [
+    "hard-negative generation before this publication checkpoint merges",
+    "scientific metric evaluation before the hard-negative checkpoint",
+    "test-label use in preprocessing, fitting, or model selection",
+    "prediction rounding",
+    "threshold, query, model, language, or canonical-row changes"
+  ],
+  "scientific_result_observed": false,
+  "source_fit": {
+    "alpha_grid": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "bundle_sha256": "97a25b67c1c5e007349967ad3e785146ae45dd6b47b9b0074bc9002df912f483",
+    "file_sha256": "3001637d5ceaaf64c140213e18b4d16294bbec5a8a0ee73538ccd7b2e8529b8a",
+    "folds": 5,
+    "path": "C:/Projects/similarity_is_relative/artifacts/canonical/option-b/probes-v1/option-b-primitive-probe-bundle-v1.json",
+    "probe_bundle_id": "option-b-primitive-probe-bundle-v1",
+    "test_primitive_labels_loaded": false
+  },
+  "status": "PRIMITIVE_PROBE_ARTIFACTS_PUBLISHED_PENDING_REVIEW"
+}

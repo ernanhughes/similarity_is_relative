@@ -217,7 +217,7 @@ Configuration:
 
 The compact checkpoint is [`e01-independent-recomputation-checkpoint-v1`](../results/e01-independent-recomputation-checkpoint-v1.md).
 
-## Final classification
+## Final classification at E01 closure
 
 ```text
 E01 weighted-product-space composition line: CLOSED
@@ -227,4 +227,50 @@ Evidence-first methodological result: ESTABLISHED FROM THE CASE STUDY
 Next research action: OPTION B
 Option C: CONDITIONAL ON B
 Maximum remaining RELATE research budget: 25 WORKING DAYS
+```
+
+## Epilogue — Option B passed
+
+**Update: 2026-08-02.**
+
+Option B has now been completed, independently recomputed and published.
+
+The frozen real-code result was:
+
+```text
+raw cosine accuracy:       0.532458984375
+raw Euclidean accuracy:    0.533314453125
+predicted executor:        0.732851562500
+raw best:                  0.533314453125
+gap:                       0.199537109375
+threshold:                 0.100000000000
+outcome:                   REAL_PREMISE_SUPPORTED
+```
+
+The predicted primitive executor beat the strongest raw CodeBERT geometry by approximately 19.95 percentage points on 512,000 preregistered hard-negative comparisons.
+
+A standalone verifier reloaded the frozen evidence and exactly recomputed all `4,000 × 5` primary query scores without importing the evaluator.
+
+This result does not reopen the E01 composition line. It answers the narrower real-premise question that E01 could not answer:
+
+> A real frozen representation can contain recoverable structural relations that its default geometry materially underexposes.
+
+The finding supplies a real motivation for continuing, but it does not establish calibrated refusal or novelty. Option C is now authorised and must begin with a new prospective contract.
+
+Read:
+
+- [The Embedding Knew More Than Its Geometry Showed](option-b-the-embedding-knew-more-than-its-geometry-showed.md)
+- [Option B real-code premise checkpoint](../results/option-b-real-code-premise-checkpoint-v1.md)
+- [Canonical Option B evidence](../../artifacts/canonical/option-b/method-evaluation-v1/)
+
+## Current classification
+
+```text
+E01 weighted-product-space composition line: CLOSED
+Option B real-premise test: COMPLETE
+Option B decision: REAL_PREMISE_SUPPORTED
+Promoted real-domain claim: B-PREM-001
+Option C refusal test: AUTHORISED, NOT YET CONTRACTED
+General composition claim: NOT ESTABLISHED
+Calibrated refusal claim: NOT ESTABLISHED
 ```

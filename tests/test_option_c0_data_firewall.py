@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -7,8 +8,8 @@ import pytest
 
 from relate.experiments.option_c0_data_firewall import (
     ALLOCATION_SCHEMA,
-    AppendOnlyViolation,
     AllocationConfig,
+    AppendOnlyViolation,
     C1SelectionForbidden,
     InsufficientRepositoriesError,
     allocate_repositories,
@@ -240,8 +241,6 @@ def test_discovery_classification_and_phase_are_enforced(tmp_path: Path):
 def test_artifact_hash_format_and_file_verification(tmp_path: Path):
     artifact = tmp_path / "artifact.txt"
     artifact.write_text("evidence\n", encoding="utf-8", newline="\n")
-    import hashlib
-
     digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
     verify_artifact_hashes(tmp_path, {"artifact.txt": digest})
     with pytest.raises(ValueError):
@@ -330,8 +329,6 @@ def test_eligible_pool_reconstruction_is_reproducible(tmp_path: Path):
 
 
 def test_option_b_exclusion_loader_verifies_hashes(tmp_path: Path):
-    import hashlib
-
     artifacts = {}
     for split in ("train", "validation", "test"):
         path = tmp_path / f"option-b-selected-{split}-v2.jsonl"

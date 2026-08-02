@@ -272,6 +272,8 @@ def embed_prepared_data_with_identity_roles(
         "identity_id": embedding_identity["identity_id"],
         "identity_variant": embedding_identity.get("identity_variant", "canonical-cpu"),
         "fixture_preflight": preflight,
+        "execution_erratum_checkpoint_id": erratum["checkpoint_id"],
+        "execution_erratum_status": erratum["status"],
         "execution_erratum_path": str(EXECUTION_ERRATUM).replace("\\", "/"),
         "execution_erratum_sha256": _sha256_file(EXECUTION_ERRATUM),
         "final_batch_padding_policy": "repeat last real code to fixed batch; discard padding",

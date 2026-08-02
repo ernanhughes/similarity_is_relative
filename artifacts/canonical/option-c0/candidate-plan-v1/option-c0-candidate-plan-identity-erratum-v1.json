@@ -1,0 +1,31 @@
+{
+  "affected_artifact": "artifacts/canonical/option-c0/candidate-plan-v1/option-c0-initial-candidate-plan-v1.json",
+  "affected_registration_events": 6,
+  "affected_registry": "artifacts/canonical/option-c0/candidate-plan-v1/option-c0-candidate-registry-v1.jsonl",
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "candidate_plan_merge_commit": "59cb6232ec9813742216536397ebe1bdeaf1f05c",
+  "checkpoint_id": "option-c0-candidate-plan-identity-erratum-v1",
+  "correct_identities": {
+    "candidate_registry_file_sha256": "a34bf7696c0586c2683de817515fa5f849be7cab5ccf07a6a844474c94017282",
+    "canonical_json_sha256": "7de70669553f180ea0507c68b28dc790e896019d664055fbaa0a535b550c10c6",
+    "exact_file_sha256": "5af359e4a9d3b7eede8ca8d9e8a36bcac524164375f819c5676541503e5e3e0d"
+  },
+  "correction_rule": "Before any C0 iteration execution, verify the exact file identity, canonical JSON identity, registry file identity, and this erratum. Treat the stale digest only as historical metadata superseded by this pre-execution erratum.",
+  "interpretation": "The stale digest was published as candidate_plan metadata in the six pre-execution REGISTERED events but is not the exact file-byte or canonical parsed-JSON identity of the final committed plan. The candidate definitions, implementation commit, query forms, data roles, and registry hash chain remain unchanged.",
+  "mechanism_result_observed": false,
+  "next_allowed_action": "MERGE_ERRATUM_AND_RERUN_PRE_EXECUTION_VALIDATION",
+  "observed_before_execution": true,
+  "prohibited_actions": [
+    "candidate evaluation before this erratum merges",
+    "C0 selection access",
+    "C1 reserve access",
+    "C1 row selection",
+    "Option C scientific decision"
+  ],
+  "registered_implementation_commit": "d36436209d95eca555215a83856f042d241a90f4",
+  "result_branch_created": false,
+  "scientific_result_observed": false,
+  "stale_published_digest": "f8254d5fed4ab168f48e0c519a03c5e322ac2ae0ad52fc97cdbf43d1dac66e94",
+  "status": "C0_CANDIDATE_PLAN_IDENTITY_ERRATUM_REVIEWED_PENDING_MERGE"
+}

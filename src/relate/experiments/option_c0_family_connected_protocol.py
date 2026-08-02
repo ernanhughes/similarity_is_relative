@@ -176,6 +176,7 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
         ),
         required_fields={
             "identity_scope": "str",
+            "d1_visible_evidence_identity": "sha256",
             "matching_content_sha256": "sha256",
             "left_scope_identity": "sha256",
             "right_scope_identity": "sha256",
@@ -229,6 +230,16 @@ EDGE_RULES: Final[Mapping[str, EdgeRule]] = {
             "true and review is approved"
         ),
         required_fields={
+            "left_stable_key": "str",
+            "right_stable_key": "str",
+            "normalized_ast_sha256": "sha256",
+            "d1_visible_evidence_identity": "sha256",
+            "visible_role_left": "visible_role",
+            "visible_role_right": "visible_role",
+            "left_function_identity": "str",
+            "right_function_identity": "str",
+            "left_path_suffix": "str",
+            "right_path_suffix": "str",
             "same_normalized_ast": "true",
             "same_function_identity": "true",
             "same_path_suffix": "true",
@@ -684,6 +695,153 @@ def source_bundle_commitment(evidence_sources: Mapping[str, str]) -> str:
     return sha256_text(canonical_json(dict(sorted(evidence_sources.items()))))
 
 
+@dataclass(frozen=True)
+class SourceEvidenceRecord:
+    source_type: str
+    source_identity: str
+    payload: Mapping[str, Any]
+    provenance: Mapping[str, Any]
+    status: str
+    record_sha256: str
+
+    def as_record(self) -> dict[str, Any]:
+        return {
+            "source_type": self.source_type,
+            "source_identity": self.source_identity,
+            "payload": dict(self.payload),
+            "provenance": dict(self.provenance),
+            "status": self.status,
+            "record_sha256": self.record_sha256,
+        }
+
+
+def make_source_record(
+    source_type: str,
+    *,
+    payload: Mapping[str, Any],
+    provenance: Mapping[str, Any],
+    status: str = "COMPLETE",
+) -> SourceEvidenceRecord:
+    if source_type not in ALLOWED_EVIDENCE_SOURCES:
+        raise ValueError("invalid source record type")
+    if status not in METADATA_STATUSES and status != "COMPLETE":
+        raise ValueError("invalid source record status")
+    validate_payload_firewall(payload)
+    validate_payload_firewall(provenance)
+    base = {
+        "source_type": source_type,
+        "payload": dict(payload),
+        "provenance": dict(provenance),
+        "status": status,
+    }
+    source_identity = sha256_text(canonical_json(base))
+    record = {**base, "source_identity": source_identity}
+    return SourceEvidenceRecord(
+        source_type=source_type,
+        source_identity=source_identity,
+        payload=dict(payload),
+        provenance=dict(provenance),
+        status=status,
+        record_sha256=sha256_text(canonical_json(record)),
+    )
+
+
+def source_record_from_record(record: Mapping[str, Any]) -> SourceEvidenceRecord:
+    return SourceEvidenceRecord(
+        source_type=str(record["source_type"]),
+        source_identity=str(record["source_identity"]),
+        payload=dict(record["payload"]),
+        provenance=dict(record["provenance"]),
+        status=str(record["status"]),
+        record_sha256=str(record["record_sha256"]),
+    )
+
+
+def validate_source_record(record: SourceEvidenceRecord) -> None:
+    expected = make_source_record(
+        record.source_type,
+        payload=record.payload,
+        provenance=record.provenance,
+        status=record.status,
+    )
+    for field in ("source_identity", "record_sha256"):
+        if getattr(record, field) != getattr(expected, field):
+            raise ValueError(f"tampered source record field: {field}")
+
+
+def validate_source_registry(
+    rule: EdgeRule,
+    left: str,
+    right: str,
+    payload: Mapping[str, Any],
+    evidence_sources: Mapping[str, str],
+    source_records: Mapping[tuple[str, str], SourceEvidenceRecord],
+) -> None:
+    for source_type, source_identity in evidence_sources.items():
+        record = source_records.get((source_type, source_identity))
+        if (
+            record is None
+            and source_type == "github_rest"
+            and source_identity == evidence_sources.get("public_metadata_snapshot")
+        ):
+            record = source_records.get(("public_metadata_snapshot", source_identity))
+        if record is None:
+            raise ValueError(f"missing source record: {source_type}")
+        validate_source_record(record)
+        if record.source_type != source_type and not (
+            source_type == "github_rest"
+            and record.source_type == "public_metadata_snapshot"
+            and source_identity == evidence_sources.get("public_metadata_snapshot")
+        ):
+            raise ValueError("source record type mismatch")
+        if record.source_identity != source_identity:
+            raise ValueError("source record identity mismatch")
+        if record.status != "COMPLETE":
+            raise ValueError("source record is incomplete")
+    if rule.edge_type == "DECLARED_GITHUB_FORK":
+        record = source_records[
+            ("public_metadata_snapshot", evidence_sources["public_metadata_snapshot"])
+        ]
+        public = record.payload
+        if public.get("fork") is not True:
+            raise ValueError("fork source record does not prove fork=true")
+        if normalize_repository(str(public.get("child_full_name", ""))) not in {left, right}:
+            raise ValueError("fork source record child endpoint mismatch")
+        if normalize_repository(str(public.get("parent_or_source_full_name", ""))) not in {
+            left,
+            right,
+        }:
+            raise ValueError("fork source record parent endpoint mismatch")
+        if public.get("left_repository_id") != payload["left_repository_id"]:
+            raise ValueError("fork source record repository ID mismatch")
+        if public.get("right_repository_id") != payload["right_repository_id"]:
+            raise ValueError("fork source record repository ID mismatch")
+    elif rule.edge_type == "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY":
+        record = source_records[("d1_visible_cache", evidence_sources["d1_visible_cache"])]
+        d1_payload = record.payload
+        for field in (
+            "identity_scope",
+            "matching_content_sha256",
+            "left_scope_identity",
+            "right_scope_identity",
+            "generated_vendor_boilerplate_exclusion",
+        ):
+            if d1_payload.get(field) != payload[field]:
+                raise ValueError("D1 source record does not support exact source identity")
+    elif rule.edge_type == "EXACT_AST_WITH_CORROBORATING_PROVENANCE":
+        record = source_records[("d1_visible_cache", evidence_sources["d1_visible_cache"])]
+        d1_payload = record.payload
+        for field in (
+            "left_stable_key",
+            "right_stable_key",
+            "normalized_ast_sha256",
+            "visible_role_left",
+            "visible_role_right",
+        ):
+            if d1_payload.get(field) != payload[field]:
+                raise ValueError("D1 source record does not support exact AST evidence")
+
+
 def validate_rule_semantics(
     rule: EdgeRule,
     left: str,
@@ -710,6 +868,9 @@ def validate_rule_semantics(
             raise ValueError("same-owner evidence must be derived from endpoints")
         if payload["owner"] != owner:
             raise ValueError("same-owner payload owner does not match endpoints")
+    elif rule.edge_type == "EXACT_AST_WITH_CORROBORATING_PROVENANCE":
+        if payload["left_stable_key"] == payload["right_stable_key"]:
+            raise ValueError("exact-AST stable keys must be distinct")
 
 
 def validate_source_payload_binding(
@@ -731,6 +892,10 @@ def validate_source_payload_binding(
         if payload["evidence_snapshot_hash"] != public_snapshot:
             raise ValueError("lineage snapshot identity must match the public metadata source")
     elif d1_visible is not None:
+        if "d1_visible_evidence_identity" in payload:
+            if payload["d1_visible_evidence_identity"] != d1_visible:
+                raise ValueError("D1 identity must match the source bundle")
+            return
         for field in (
             "matching_content_sha256",
             "left_scope_identity",
@@ -1074,6 +1239,7 @@ def validate_resolved_edge(
     *,
     protocol_sha256: str,
     allocation_repositories: set[str] | None = None,
+    source_records: Mapping[tuple[str, str], SourceEvidenceRecord] | None = None,
 ) -> None:
     if edge.edge_type not in EDGE_RULES:
         raise ValueError("invalid edge type")
@@ -1107,6 +1273,15 @@ def validate_resolved_edge(
             if getattr(candidate, field) != getattr(reconstructed, field):
                 raise ValueError(f"resolved edge candidate mismatch: {field}")
     rule = EDGE_RULES[edge.edge_type]
+    if source_records is not None:
+        validate_source_registry(
+            rule,
+            candidate.left_repository,
+            candidate.right_repository,
+            candidate.evidence_payload,
+            candidate.evidence_sources,
+            source_records,
+        )
     if edge.candidate_id != candidate.candidate_id:
         raise ValueError("tampered evidence edge field: candidate_id")
     if rule.review_requirement == "APPROVED_REQUIRED":
@@ -1196,6 +1371,7 @@ def build_components(
     protocol_sha256: str,
     candidates: Mapping[str, EvidenceCandidate] | None = None,
     dispositions: Mapping[str, ManualReviewDisposition] | None = None,
+    source_records: Mapping[tuple[str, str], SourceEvidenceRecord] | None = None,
 ) -> list[dict[str, Any]]:
     normalized = sorted({normalize_repository(repository) for repository in repositories})
     allocation_set = set(normalized)
@@ -1214,6 +1390,7 @@ def build_components(
             disposition,
             protocol_sha256=protocol_sha256,
             allocation_repositories=allocation_set,
+            source_records=source_records,
         )
         if edge.connecting:
             uf.union(edge.left_repository, edge.right_repository)
@@ -1258,6 +1435,7 @@ def edge_commitment(
     protocol_sha256: str | None = None,
     candidates: Mapping[str, EvidenceCandidate] | None = None,
     dispositions: Mapping[str, ManualReviewDisposition] | None = None,
+    source_records: Mapping[tuple[str, str], SourceEvidenceRecord] | None = None,
 ) -> str:
     _reject_duplicate_edges(edges)
     active_protocol = protocol_sha256 or protocol_contract()["protocol_sha256"]
@@ -1273,6 +1451,7 @@ def edge_commitment(
             candidate,
             disposition,
             protocol_sha256=active_protocol,
+            source_records=source_records,
         )
     records = [edge.as_record() for edge in sorted(edges, key=lambda item: item.edge_id)]
     return sha256_text(canonical_json({"edges": records}))
@@ -1425,6 +1604,7 @@ def protocol_contract() -> dict[str, Any]:
                 "cache_identity",
                 "allocation_repositories",
                 "repository_metadata_snapshots",
+                "source_records",
                 "evidence_candidates",
                 "typed_evidence_edges",
                 "manual_review_dispositions",
@@ -1650,6 +1830,14 @@ class FamilyGraphCache:
                 snapshot_sha256 TEXT NOT NULL,
                 FOREIGN KEY(repository) REFERENCES allocation_repositories(repository)
             );
+            CREATE TABLE IF NOT EXISTS source_records (
+                source_type TEXT NOT NULL,
+                source_identity TEXT NOT NULL,
+                record_json TEXT NOT NULL,
+                record_sha256 TEXT NOT NULL,
+                status TEXT NOT NULL,
+                PRIMARY KEY(source_type, source_identity)
+            );
             CREATE TABLE IF NOT EXISTS typed_evidence_edges (
                 edge_id TEXT PRIMARY KEY,
                 candidate_id TEXT NOT NULL,
@@ -1730,6 +1918,7 @@ class FamilyGraphCache:
         for table in (
             "allocation_repositories",
             "repository_metadata_snapshots",
+            "source_records",
             "evidence_candidates",
             "typed_evidence_edges",
             "manual_review_dispositions",
@@ -1795,6 +1984,15 @@ class FamilyGraphCache:
 
     def put_evidence_candidate(self, candidate: EvidenceCandidate) -> None:
         validate_evidence_candidate(candidate)
+        record_json = canonical_json(candidate.as_record())
+        existing = self.connection.execute(
+            "SELECT candidate_json FROM evidence_candidates WHERE candidate_id = ?",
+            (candidate.candidate_id,),
+        ).fetchone()
+        if existing is not None:
+            if str(existing[0]) != record_json:
+                raise ValueError("conflicting evidence candidate content")
+            return
         self.connection.execute(
             """
             INSERT INTO evidence_candidates(
@@ -1807,7 +2005,7 @@ class FamilyGraphCache:
                 candidate.left_repository,
                 candidate.right_repository,
                 candidate.edge_type,
-                canonical_json(candidate.as_record()),
+                record_json,
                 candidate.evidence_commitment,
             ),
         )
@@ -1821,8 +2019,10 @@ class FamilyGraphCache:
             protocol_sha256=self.identity.family_protocol_sha256,
         )
         existing = self.get_final_disposition_for_candidate(disposition.edge_candidate_id)
-        if existing is not None and existing.disposition_id != disposition.disposition_id:
-            raise ValueError("conflicting final disposition for candidate")
+        if existing is not None:
+            if existing != disposition:
+                raise ValueError("conflicting final disposition for candidate")
+            return
         self.connection.execute(
             """
             INSERT INTO manual_review_dispositions(
@@ -1855,7 +2055,17 @@ class FamilyGraphCache:
             candidate,
             disposition,
             protocol_sha256=self.identity.family_protocol_sha256,
+            source_records=self.get_source_registry(),
         )
+        record_json = canonical_json(edge.as_record())
+        existing = self.connection.execute(
+            "SELECT edge_json FROM typed_evidence_edges WHERE edge_id = ?",
+            (edge.edge_id,),
+        ).fetchone()
+        if existing is not None:
+            if str(existing[0]) != record_json:
+                raise ValueError("conflicting resolved edge content")
+            return
         self.connection.execute(
             """
             INSERT INTO typed_evidence_edges(
@@ -1871,10 +2081,65 @@ class FamilyGraphCache:
                 edge.right_repository,
                 edge.edge_type,
                 int(edge.connecting),
-                canonical_json(edge.as_record()),
+                record_json,
             ),
         )
         self.connection.commit()
+
+    def put_source_record(self, record: SourceEvidenceRecord) -> None:
+        validate_source_record(record)
+        record_json = canonical_json(record.as_record())
+        existing = self.connection.execute(
+            """
+            SELECT record_json FROM source_records
+            WHERE source_type = ? AND source_identity = ?
+            """,
+            (record.source_type, record.source_identity),
+        ).fetchone()
+        if existing is not None:
+            if str(existing[0]) != record_json:
+                raise ValueError("conflicting source record content")
+            return
+        self.connection.execute(
+            """
+            INSERT INTO source_records(
+                source_type, source_identity, record_json, record_sha256, status
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                record.source_type,
+                record.source_identity,
+                record_json,
+                record.record_sha256,
+                record.status,
+            ),
+        )
+        self.connection.commit()
+
+    def get_source_record(self, source_type: str, source_identity: str) -> SourceEvidenceRecord:
+        row = self.connection.execute(
+            """
+            SELECT record_json FROM source_records
+            WHERE source_type = ? AND source_identity = ?
+            """,
+            (source_type, source_identity),
+        ).fetchone()
+        if row is None:
+            raise ValueError("source record not found")
+        record = source_record_from_record(json.loads(str(row[0])))
+        validate_source_record(record)
+        if record.source_type != source_type or record.source_identity != source_identity:
+            raise ValueError("source record type or identity mismatch")
+        return record
+
+    def get_source_registry(self) -> dict[tuple[str, str], SourceEvidenceRecord]:
+        registry: dict[tuple[str, str], SourceEvidenceRecord] = {}
+        for source_type, source_identity in self.connection.execute(
+            "SELECT source_type, source_identity FROM source_records"
+        ):
+            record = self.get_source_record(str(source_type), str(source_identity))
+            registry[(record.source_type, record.source_identity)] = record
+        return registry
 
     def get_evidence_candidate(self, candidate_id: str) -> EvidenceCandidate:
         row = self.connection.execute(
@@ -1951,6 +2216,7 @@ class FamilyGraphCache:
             candidate,
             disposition,
             protocol_sha256=self.identity.family_protocol_sha256,
+            source_records=self.get_source_registry(),
         )
         return edge
 
@@ -2023,6 +2289,10 @@ def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
 def graph_completeness(
     items: Sequence[EvidenceEdge | EvidenceCandidate],
     *,
+    protocol_sha256: str,
+    candidates: Mapping[str, EvidenceCandidate],
+    dispositions: Mapping[str, ManualReviewDisposition],
+    source_records: Mapping[tuple[str, str], SourceEvidenceRecord],
     incomplete_metadata_records: int = 0,
 ) -> dict[str, int]:
     unresolved = 0
@@ -2032,15 +2302,34 @@ def graph_completeness(
     for item in items:
         if isinstance(item, EvidenceCandidate):
             validate_evidence_candidate(item)
+            validate_source_registry(
+                EDGE_RULES[item.edge_type],
+                item.left_repository,
+                item.right_repository,
+                item.evidence_payload,
+                item.evidence_sources,
+                source_records,
+            )
             rule = EDGE_RULES[item.edge_type]
             if rule.is_connecting_candidate and rule.review_requirement == "APPROVED_REQUIRED":
                 unresolved += 1
             elif not rule.is_connecting_candidate:
                 review_only += 1
             continue
-        validate_evidence_edge(
+        candidate = candidates.get(item.candidate_id)
+        if candidate is None:
+            raise ValueError("graph completeness missing candidate")
+        disposition = (
+            dispositions.get(item.disposition_id)
+            if item.disposition_id is not None
+            else None
+        )
+        validate_resolved_edge(
             item,
-            protocol_sha256=protocol_contract()["protocol_sha256"],
+            candidate,
+            disposition,
+            protocol_sha256=protocol_sha256,
+            source_records=source_records,
         )
         rule = EDGE_RULES[item.edge_type]
         if rule.is_connecting_candidate and item.review_status == "UNRESOLVED":

@@ -11,8 +11,6 @@ from relate.experiments import option_c0_family_connected_protocol as protocol
 
 TIMESTAMP = "2026-08-02T00:00:00+00:00"
 SOURCE_ID = "a" * 64
-PUBLIC_SOURCE_ID = "b" * 64
-D1_SOURCE_ID = "e" * 64
 CANONICAL_ALLOCATION = Path(
     "artifacts/canonical/option-c0/data-firewall-v1/"
     "option-c0-repository-allocation-v1.jsonl"
@@ -27,7 +25,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "child_full_name": "owner/a",
             "parent_or_source_full_name": "owner/b",
             "fork": True,
-            "metadata_snapshot_identity": PUBLIC_SOURCE_ID,
+            "metadata_snapshot_identity": SOURCE_ID,
             "snapshot_status": "COMPLETE",
         },
         "VERIFIED_REPOSITORY_SUCCESSION": {
@@ -35,11 +33,12 @@ def payload(edge_type: str) -> dict[str, object]:
             "successor_repository": "owner/b",
             "direction": "predecessor_to_successor",
             "public_succession_record": "public rename notice",
-            "record_snapshot_hash": PUBLIC_SOURCE_ID,
+            "record_snapshot_hash": SOURCE_ID,
         },
         "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY": {
             "identity_scope": "approved_non_generated_module",
-            "matching_content_sha256": D1_SOURCE_ID,
+            "d1_visible_evidence_identity": SOURCE_ID,
+            "matching_content_sha256": SOURCE_ID,
             "left_scope_identity": "f" * 64,
             "right_scope_identity": "1" * 64,
             "source_identity_provenance": "bounded visible source identity",
@@ -49,9 +48,19 @@ def payload(edge_type: str) -> dict[str, object]:
         "VERIFIED_SHARED_PACKAGE_LINEAGE": {
             "lineage_record_type": "continuation",
             "approved_lineage_record": "public package continuation",
-            "evidence_snapshot_hash": PUBLIC_SOURCE_ID,
+            "evidence_snapshot_hash": SOURCE_ID,
         },
         "EXACT_AST_WITH_CORROBORATING_PROVENANCE": {
+            "left_stable_key": "left",
+            "right_stable_key": "right",
+            "normalized_ast_sha256": "3" * 64,
+            "d1_visible_evidence_identity": SOURCE_ID,
+            "visible_role_left": "c0_fit",
+            "visible_role_right": "c0_iteration",
+            "left_function_identity": "left_fn",
+            "right_function_identity": "right_fn",
+            "left_path_suffix": "src/a.py",
+            "right_path_suffix": "src/a.py",
             "same_normalized_ast": True,
             "same_function_identity": True,
             "same_path_suffix": True,
@@ -71,7 +80,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "left_stable_key": "left",
             "right_stable_key": "right",
             "code_sha256": "7" * 64,
-            "d1_visible_evidence_identity": D1_SOURCE_ID,
+            "d1_visible_evidence_identity": SOURCE_ID,
             "visible_role_left": "c0_fit",
             "visible_role_right": "c0_iteration",
         },
@@ -80,7 +89,7 @@ def payload(edge_type: str) -> dict[str, object]:
             "left_stable_key": "left",
             "right_stable_key": "right",
             "hamming_distance": 0,
-            "d1_visible_evidence_identity": D1_SOURCE_ID,
+            "d1_visible_evidence_identity": SOURCE_ID,
         },
         "SIMILAR_REPOSITORY_NAME": {"similarity_method": "jaro", "score": 0.9},
         "SUFFIX_STRIPPED_NAME_MATCH": {"normalized_family_token": "pkg"},
@@ -90,26 +99,83 @@ def payload(edge_type: str) -> dict[str, object]:
     return dict(values[edge_type])
 
 
+def make_records(edge_type: str, evidence_payload: dict[str, object]):
+    rule = protocol.EDGE_RULES[edge_type]
+    records: dict[tuple[str, str], protocol.SourceEvidenceRecord] = {}
+    result: dict[str, str] = {}
+    for source_type in rule.evidence_source_requirements:
+        if source_type == "public_metadata_snapshot":
+            record_payload = {
+                "fork": evidence_payload.get("fork", False),
+                "child_full_name": evidence_payload.get("child_full_name", "owner/a"),
+                "parent_or_source_full_name": evidence_payload.get(
+                    "parent_or_source_full_name", "owner/b"
+                ),
+                "left_repository_id": evidence_payload.get("left_repository_id", "1"),
+                "right_repository_id": evidence_payload.get("right_repository_id", "2"),
+                "status": "COMPLETE",
+            }
+        elif source_type == "d1_visible_cache":
+            record_payload = dict(evidence_payload)
+            record_payload.pop("d1_visible_evidence_identity", None)
+        elif source_type == "allocation_manifest":
+            record_payload = {"allocation_manifest_sha256": protocol.ALLOCATION_MANIFEST_SHA256}
+        else:
+            record_payload = {"source_type": source_type}
+        record = protocol.make_source_record(
+            source_type,
+            payload=record_payload,
+            provenance={"generated_at": TIMESTAMP},
+        )
+        records[(record.source_type, record.source_identity)] = record
+        result[source_type] = record.source_identity
+    return result, records
+
+
+def bind_payload_sources(edge_type: str, evidence_payload: dict[str, object]):
+    source_map, records = make_records(edge_type, evidence_payload)
+    if edge_type == "DECLARED_GITHUB_FORK":
+        evidence_payload["metadata_snapshot_identity"] = source_map["public_metadata_snapshot"]
+        source_map["github_rest"] = source_map["public_metadata_snapshot"]
+    elif edge_type == "VERIFIED_REPOSITORY_SUCCESSION":
+        evidence_payload["record_snapshot_hash"] = source_map["public_metadata_snapshot"]
+    elif edge_type == "VERIFIED_SHARED_PACKAGE_LINEAGE":
+        evidence_payload["evidence_snapshot_hash"] = source_map["public_metadata_snapshot"]
+    elif "d1_visible_cache" in source_map:
+        evidence_payload["d1_visible_evidence_identity"] = source_map["d1_visible_cache"]
+    source_map, records = make_records(edge_type, evidence_payload)
+    if edge_type == "DECLARED_GITHUB_FORK":
+        source_map["github_rest"] = source_map["public_metadata_snapshot"]
+    return source_map, records
+
+
 def sources(edge_type: str) -> dict[str, str]:
     rule = protocol.EDGE_RULES[edge_type]
-    values = {
-        "github_rest": PUBLIC_SOURCE_ID,
-        "public_metadata_snapshot": PUBLIC_SOURCE_ID,
-        "d1_visible_cache": D1_SOURCE_ID,
-        "allocation_manifest": SOURCE_ID,
-        "manual_review_record": SOURCE_ID,
-        "fixture": SOURCE_ID,
-    }
-    return {source: values[source] for source in rule.evidence_source_requirements}
+    evidence_payload = payload(edge_type)
+    source_map, _records = bind_payload_sources(edge_type, evidence_payload)
+    return {source: source_map[source] for source in rule.evidence_source_requirements}
+
+
+def registry(edge_type: str, evidence_payload: dict[str, object] | None = None):
+    item = evidence_payload or payload(edge_type)
+    _source_map, records = bind_payload_sources(edge_type, item)
+    return records
+
+
+def put_registry(cache: protocol.FamilyGraphCache, records) -> None:
+    for record in records.values():
+        cache.put_source_record(record)
 
 
 def candidate(edge_type: str, evidence_payload: dict[str, object] | None = None):
+    item = evidence_payload or payload(edge_type)
+    source_map, _records = bind_payload_sources(edge_type, item)
     return protocol.make_evidence_candidate(
         "owner/a",
         "owner/b",
         edge_type,
-        evidence_sources=sources(edge_type),
-        evidence_payload=evidence_payload or payload(edge_type),
+        evidence_sources=source_map,
+        evidence_payload=item,
     )
 
 
@@ -158,12 +224,16 @@ def canonical_pair() -> tuple[str, str]:
 
 def reviewed_cache_context():
     left, right = canonical_pair()
+    evidence_payload = payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    source_map, _records = bind_payload_sources(
+        "EXACT_AST_WITH_CORROBORATING_PROVENANCE", evidence_payload
+    )
     cand = protocol.make_evidence_candidate(
         left,
         right,
         "EXACT_AST_WITH_CORROBORATING_PROVENANCE",
-        evidence_sources=sources("EXACT_AST_WITH_CORROBORATING_PROVENANCE"),
-        evidence_payload=payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE"),
+        evidence_sources=source_map,
+        evidence_payload=evidence_payload,
     )
     disp = disposition(cand)
     item = protocol.resolve_evidence_candidate(
@@ -291,6 +361,10 @@ def test_edge_commitment_is_order_independent_and_material_changes_change_it() -
 
 def test_component_commitment_is_order_independent() -> None:
     contract = protocol.protocol_contract()
+    exact_payload = payload("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY")
+    exact_sources, _records = bind_payload_sources(
+        "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY", exact_payload
+    )
     components = protocol.build_components(
         ["owner/c", "owner/a", "owner/b"],
         [
@@ -300,8 +374,8 @@ def test_component_commitment_is_order_independent() -> None:
                 "owner/b",
                 "owner/c",
                 "EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY",
-                evidence_sources=sources("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY"),
-                evidence_payload=payload("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY"),
+                evidence_sources=exact_sources,
+                evidence_payload=exact_payload,
                 ),
                 None,
                 protocol_sha256=contract["protocol_sha256"],
@@ -339,14 +413,34 @@ def test_conditional_connecting_cross_role_component_violates_family_disjointnes
 
 
 def test_nonconnecting_review_evidence_does_not_make_graph_incomplete() -> None:
-    completeness = protocol.graph_completeness([edge("SAME_OWNER_PROXY")])
+    cand = candidate("SAME_OWNER_PROXY")
+    item = protocol.resolve_evidence_candidate(
+        cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    completeness = protocol.graph_completeness(
+        [item],
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        candidates={cand.candidate_id: cand},
+        dispositions={},
+        source_records=registry("SAME_OWNER_PROXY", dict(cand.evidence_payload)),
+    )
     decision = protocol.family_graph_outcome(completeness)
     assert decision["family_graph_outcome"] == "FAMILY_GRAPH_COMPLETE_NO_CROSS_ROLE_COMPONENTS"
 
 
 def test_unresolved_connecting_candidate_makes_graph_incomplete() -> None:
     item = candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
-    completeness = protocol.graph_completeness([item])
+    completeness = protocol.graph_completeness(
+        [item],
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        candidates={},
+        dispositions={},
+        source_records=registry(
+            "EXACT_AST_WITH_CORROBORATING_PROVENANCE", dict(item.evidence_payload)
+        ),
+    )
     decision = protocol.family_graph_outcome(completeness)
     assert decision["family_graph_outcome"] == "FAMILY_GRAPH_INCOMPLETE_REVIEW_REQUIRED"
 
@@ -626,23 +720,54 @@ def test_resolved_edge_cache_foreign_keys_are_enforced(tmp_path: Path) -> None:
         with pytest.raises(ValueError, match="manual disposition not found"):
             cache.put_resolved_edge(item)
         cache.put_manual_review_disposition(disp)
+        with pytest.raises(ValueError, match="missing source record"):
+            cache.put_resolved_edge(item)
+        put_registry(
+            cache,
+            registry("EXACT_AST_WITH_CORROBORATING_PROVENANCE", dict(cand.evidence_payload)),
+        )
         cache.put_resolved_edge(item)
         assert cache.get_resolved_edge(item.edge_id) == item
 
 
 def test_source_snapshot_identities_must_match_source_bundle() -> None:
     fork = payload("DECLARED_GITHUB_FORK")
+    fork_sources, _records = bind_payload_sources("DECLARED_GITHUB_FORK", dict(fork))
     fork["metadata_snapshot_identity"] = "9" * 64
     with pytest.raises(ValueError, match="fork snapshot"):
-        candidate("DECLARED_GITHUB_FORK", fork)
+        protocol.make_evidence_candidate(
+            "owner/a",
+            "owner/b",
+            "DECLARED_GITHUB_FORK",
+            evidence_sources=fork_sources,
+            evidence_payload=fork,
+        )
     succession = payload("VERIFIED_REPOSITORY_SUCCESSION")
+    succession_sources, _records = bind_payload_sources(
+        "VERIFIED_REPOSITORY_SUCCESSION", dict(succession)
+    )
     succession["record_snapshot_hash"] = "9" * 64
     with pytest.raises(ValueError, match="succession snapshot"):
-        candidate("VERIFIED_REPOSITORY_SUCCESSION", succession)
+        protocol.make_evidence_candidate(
+            "owner/a",
+            "owner/b",
+            "VERIFIED_REPOSITORY_SUCCESSION",
+            evidence_sources=succession_sources,
+            evidence_payload=succession,
+        )
     lineage = payload("VERIFIED_SHARED_PACKAGE_LINEAGE")
+    lineage_sources, _records = bind_payload_sources(
+        "VERIFIED_SHARED_PACKAGE_LINEAGE", dict(lineage)
+    )
     lineage["evidence_snapshot_hash"] = "9" * 64
     with pytest.raises(ValueError, match="lineage snapshot"):
-        candidate("VERIFIED_SHARED_PACKAGE_LINEAGE", lineage)
+        protocol.make_evidence_candidate(
+            "owner/a",
+            "owner/b",
+            "VERIFIED_SHARED_PACKAGE_LINEAGE",
+            evidence_sources=lineage_sources,
+            evidence_payload=lineage,
+        )
 
 
 def test_noncanonical_initial_allocation_subset_is_rejected() -> None:
@@ -673,6 +798,202 @@ def test_edge_commitment_rejects_tampered_edges() -> None:
     item = edge("DECLARED_GITHUB_FORK")
     with pytest.raises(ValueError, match="edge_id"):
         protocol.edge_commitment([replace(item, edge_id="9" * 64)])
+
+
+def test_graph_completeness_counts_complete_mixed_state() -> None:
+    approved_cand, approved_disp, approved_edge = reviewed_context()
+    rejected_cand = candidate("VERIFIED_REPOSITORY_SUCCESSION")
+    rejected_disp = disposition(rejected_cand, "REJECTED")
+    rejected_edge = protocol.resolve_evidence_candidate(
+        rejected_cand,
+        rejected_disp,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    unresolved = candidate("SAME_MODULE_LINEAGE_WITH_CORROBORATION")
+    auto_cand = candidate("DECLARED_GITHUB_FORK")
+    auto_edge = protocol.resolve_evidence_candidate(
+        auto_cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    review_cand = candidate("SAME_OWNER_PROXY")
+    review_edge = protocol.resolve_evidence_candidate(
+        review_cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    candidates = {
+        item.candidate_id: item
+        for item in (approved_cand, rejected_cand, auto_cand, review_cand)
+    }
+    dispositions = {
+        approved_disp.disposition_id: approved_disp,
+        rejected_disp.disposition_id: rejected_disp,
+    }
+    records = {}
+    for item in (approved_cand, rejected_cand, unresolved, auto_cand, review_cand):
+        records.update(registry(item.edge_type, dict(item.evidence_payload)))
+    summary = protocol.graph_completeness(
+        [approved_edge, rejected_edge, unresolved, auto_edge, review_edge],
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+        candidates=candidates,
+        dispositions=dispositions,
+        source_records=records,
+    )
+    assert summary["approved_connecting_edges"] == 2
+    assert summary["rejected_connecting_candidates"] == 1
+    assert summary["unresolved_connecting_candidate_edges"] == 1
+    assert summary["nonconnecting_review_evidence_edges"] == 1
+
+
+def test_graph_completeness_refuses_missing_or_stale_review_state() -> None:
+    cand, disp, item = reviewed_context()
+    records = registry(cand.edge_type, dict(cand.evidence_payload))
+    with pytest.raises(ValueError, match="missing candidate"):
+        protocol.graph_completeness(
+            [item],
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            candidates={},
+            dispositions={disp.disposition_id: disp},
+            source_records=records,
+        )
+    with pytest.raises(ValueError, match="requires disposition"):
+        protocol.graph_completeness(
+            [item],
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            candidates={cand.candidate_id: cand},
+            dispositions={},
+            source_records=records,
+        )
+    stale = replace(disp, evidence_commitment="9" * 64)
+    with pytest.raises(ValueError, match="stale"):
+        protocol.graph_completeness(
+            [item],
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            candidates={cand.candidate_id: cand},
+            dispositions={stale.disposition_id: stale},
+            source_records=records,
+        )
+
+
+def test_exact_ast_evidence_binds_stable_keys_ast_hash_and_visible_source() -> None:
+    first = candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    changed_key = payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    changed_key["left_stable_key"] = "other"
+    assert candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE", changed_key).candidate_id != (
+        first.candidate_id
+    )
+    changed_ast = payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    changed_ast["normalized_ast_sha256"] = "9" * 64
+    assert candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE", changed_ast).candidate_id != (
+        first.candidate_id
+    )
+    bad = payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    source_map, _records = bind_payload_sources("EXACT_AST_WITH_CORROBORATING_PROVENANCE", bad)
+    bad["d1_visible_evidence_identity"] = "9" * 64
+    with pytest.raises(ValueError, match="D1 identity"):
+        protocol.make_evidence_candidate(
+            "owner/a",
+            "owner/b",
+            "EXACT_AST_WITH_CORROBORATING_PROVENANCE",
+            evidence_sources=source_map,
+            evidence_payload=bad,
+        )
+    hidden_role = payload("EXACT_AST_WITH_CORROBORATING_PROVENANCE")
+    hidden_role["visible_role_left"] = "c0_selection"
+    with pytest.raises(ValueError, match="visible role"):
+        candidate("EXACT_AST_WITH_CORROBORATING_PROVENANCE", hidden_role)
+
+
+def test_automatic_edges_require_validated_source_records() -> None:
+    fork_cand = candidate("DECLARED_GITHUB_FORK")
+    fork_edge = protocol.resolve_evidence_candidate(
+        fork_cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    with pytest.raises(ValueError, match="missing source record"):
+        protocol.validate_resolved_edge(
+            fork_edge,
+            fork_cand,
+            None,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            source_records={},
+        )
+    fabricated = dict(fork_cand.evidence_payload)
+    fabricated["fork"] = False
+    good_record = next(
+        record
+        for key, record in registry(
+            "DECLARED_GITHUB_FORK", dict(fork_cand.evidence_payload)
+        ).items()
+        if key[0] == "public_metadata_snapshot"
+    )
+    bad_record = replace(good_record, payload={**good_record.payload, "fork": False})
+    public_identity = fork_cand.evidence_sources["public_metadata_snapshot"]
+    bad_records = {
+        ("public_metadata_snapshot", public_identity): bad_record
+    }
+    with pytest.raises(ValueError, match="tampered source"):
+        protocol.validate_resolved_edge(
+            fork_edge,
+            fork_cand,
+            None,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            source_records=bad_records,
+        )
+    exact_cand = candidate("EXACT_CROSS_REPOSITORY_SOURCE_IDENTITY")
+    exact_edge = protocol.resolve_evidence_candidate(
+        exact_cand,
+        None,
+        protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+    )
+    with pytest.raises(ValueError, match="missing source record"):
+        protocol.validate_resolved_edge(
+            exact_edge,
+            exact_cand,
+            None,
+            protocol_sha256=protocol.protocol_contract()["protocol_sha256"],
+            source_records={},
+        )
+
+
+def test_source_record_validation_and_cache_retry_safety(tmp_path: Path) -> None:
+    records = registry("DECLARED_GITHUB_FORK")
+    record = next(iter(records.values()))
+    tampered = replace(record, record_sha256="9" * 64)
+    with pytest.raises(ValueError, match="tampered source"):
+        protocol.validate_source_record(tampered)
+    wrong_type = replace(record, source_type="allocation_manifest")
+    with pytest.raises(ValueError, match="tampered source|type mismatch|identity mismatch"):
+        protocol.validate_source_registry(
+            protocol.EDGE_RULES["DECLARED_GITHUB_FORK"],
+            "owner/a",
+            "owner/b",
+            payload("DECLARED_GITHUB_FORK"),
+            {"public_metadata_snapshot": record.source_identity},
+            {("public_metadata_snapshot", record.source_identity): wrong_type},
+        )
+    identity = protocol.default_cache_identity(protocol.protocol_contract()["protocol_sha256"])
+    with protocol.FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
+        cache.put_canonical_allocation_manifest(CANONICAL_ALLOCATION)
+        cache.put_source_record(record)
+        cache.put_source_record(record)
+        assert cache.get_source_record(record.source_type, record.source_identity) == record
+        cand, disp, item = reviewed_cache_context()
+        put_registry(
+            cache,
+            registry("EXACT_AST_WITH_CORROBORATING_PROVENANCE", dict(cand.evidence_payload)),
+        )
+        cache.put_evidence_candidate(cand)
+        cache.put_evidence_candidate(cand)
+        cache.put_manual_review_disposition(disp)
+        cache.put_manual_review_disposition(disp)
+        cache.put_resolved_edge(item)
+        cache.put_resolved_edge(item)
+        conflict = replace(cand, evidence_commitment="9" * 64)
+        with pytest.raises(ValueError, match="conflicting|tampered"):
+            cache.put_evidence_candidate(conflict)
 
 
 def test_allocation_manifest_rejects_bad_row_counts_and_duplicates(tmp_path: Path) -> None:

@@ -3,7 +3,7 @@
 Status: frozen for implementation review.
 
 Protocol identity:
-`49c2b5809e76187db0d0f2f33d025bea8d5b9b44387c14404e1b899ac736cf1e`
+`a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08`
 
 ## Scope
 
@@ -68,6 +68,15 @@ Rule payload evidence identities are cross-bound to source bundle entries. Fork,
 succession, and lineage records must match the public metadata snapshot identity
 in the bundle. D1-visible evidence must carry a stable visible evidence
 commitment tied to the `d1_visible_cache` source identity.
+
+Source bundle identities must resolve to validated immutable source records.
+Automatic fork and exact-source edges cannot validate from hash strings alone;
+their source records must support the endpoint-bound claim. Reviewed edges also
+require those source records in addition to a valid manual disposition.
+
+Exact-AST evidence identifies the specific reviewed visible pair through left
+and right stable keys, the normalized AST hash, visible roles, function
+identities, path suffixes, and the D1-visible evidence identity.
 
 ## Component Rule
 

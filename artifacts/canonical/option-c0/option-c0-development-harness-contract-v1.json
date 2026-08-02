@@ -5,6 +5,7 @@
   ],
   "c0_selection_access": false,
   "candidate_registration_required_before_iteration": true,
+  "candidate_registry_entries": 0,
   "coverage_anchors": [
     0.25,
     0.5,

@@ -563,35 +563,35 @@ def classify_overall(
     exact_review: Mapping[str, Any],
     owner_analysis: Mapping[str, Any],
     near_analysis: Mapping[str, Any],
+    *,
+    family_identity_rule_status: str = "NOT_FROZEN",
 ) -> dict[str, Any]:
+    if family_identity_rule_status != "NOT_FROZEN":
+        raise ValueError("D1.1 only supports an unfrozen family identity rule")
     owner_crossings = int(owner_analysis["owners_spanning_c0_fit_and_c0_iteration"])
     same_owner_near = int(near_analysis["same_owner_pair_count"])
     exact_classification = (
-        "RELATED_REPOSITORY_FAMILY_LEAKAGE"
+        "POSSIBLE_RELATED_REPOSITORY_FAMILY_LEAKAGE"
         if exact_review["same_owner"]
-        else "ISOLATED_SHARED_STRUCTURE"
+        else "INCONCLUSIVE_REQUIRES_FAMILY_RULE"
     )
-    if owner_crossings > 0 and same_owner_near > 0:
-        outcome = "D1_RELATED_REPOSITORY_REALLOCATION_REQUIRED"
-        next_action = "FREEZE_FAMILY_CONNECTED_REALLOCATION_PROTOCOL"
-        materiality = (
-            "same-owner fit/iteration crossings are broader than the single exact AST pair; "
-            "freeze a family rule before D2 rather than treating the pair as isolated"
-        )
-        confidence = "medium"
-    else:
-        outcome = "D1_CLASSIFICATION_INCONCLUSIVE"
-        next_action = "FREEZE_FAMILY_CONNECTED_REALLOCATION_PROTOCOL"
-        materiality = "insufficient evidence to advance to D2 without a frozen family rule"
-        confidence = "low"
+    outcome = "D1_CLASSIFICATION_INCONCLUSIVE"
+    next_action = "FREEZE_FAMILY_CONNECTED_REALLOCATION_PROTOCOL"
+    materiality = (
+        "repository-level independence passed the exact-code check, but family-level "
+        "independence remains unresolved; a family identity rule must be frozen before "
+        "deciding whether reallocation is required"
+    )
+    confidence = "medium"
     return {
         "exact_pair_classification": exact_classification,
-        "allocation_family_classification": (
-            "RELATED_REPOSITORY_FAMILY_LEAKAGE"
-            if owner_crossings > 0
-            else "INCONCLUSIVE_REQUIRES_ALLOCATION_RULE"
-        ),
+        "allocation_family_classification": "FAMILY_INDEPENDENCE_NOT_ESTABLISHED",
         "near_pair_classification": "HEURISTIC_NEAR_MATCHES_REQUIRE_BOUNDING_NOT_DUPLICATION_PROOF",
+        "family_identity_rule_status": family_identity_rule_status,
+        "owner_proxy_crossings_observed": owner_crossings,
+        "confirmed_related_family_crossings": None,
+        "material_contamination_established": False,
+        "reallocation_required": None,
         "materiality_assessment": materiality,
         "confidence": confidence,
         "overall_outcome": outcome,
@@ -604,11 +604,13 @@ def classify_overall(
         "evidence_against_the_assessment": [
             "exact source-code cross-role hashes remain zero",
             "the exact AST overlap directly involves two visible rows",
+            "same owner is a proxy observation, not a frozen family definition",
             "SimHash-near pairs are heuristic and are not treated as demonstrated duplication",
         ],
         "unresolved_limitations": [
             "canonical cache does not contain source bodies or normalized token sequences",
             "public metadata is repository-level and does not prove function-level provenance",
+            "confirmed related-family crossings are not established without a frozen rule",
             "hidden C0-selection and C1 row contents were not accessed",
         ],
         "prohibited_actions_remain": [

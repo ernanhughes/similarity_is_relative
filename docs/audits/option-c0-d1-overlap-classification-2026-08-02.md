@@ -2,12 +2,12 @@
 
 - Status: `D1_1_CLASSIFICATION_COMPLETE`
 - Audit context SHA-256: `49fe499ecf5d16293a52e716ceaf88f75e256e8583b6497b934a3d884c8fd265`
-- Overall outcome: `D1_RELATED_REPOSITORY_REALLOCATION_REQUIRED`
+- Overall outcome: `D1_CLASSIFICATION_INCONCLUSIVE`
 - Next allowed action: `FREEZE_FAMILY_CONNECTED_REALLOCATION_PROTOCOL`
 
 ## Exact Pair
 
-- Classification: `RELATED_REPOSITORY_FAMILY_LEAKAGE`
+- Classification: `POSSIBLE_RELATED_REPOSITORY_FAMILY_LEAKAGE`
 - Same source code: `false`
 - Same normalized AST: `true`
 - Same owner: `true`
@@ -33,7 +33,7 @@ SimHash-near pairs are heuristic candidates, not demonstrated duplication.
 
 ## Materiality
 
-same-owner fit/iteration crossings are broader than the single exact AST pair; freeze a family rule before D2 rather than treating the pair as isolated
+repository-level independence passed the exact-code check, but family-level independence remains unresolved; a family identity rule must be frozen before deciding whether reallocation is required
 
 ## Firewall
 

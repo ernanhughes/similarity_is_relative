@@ -281,13 +281,62 @@ def test_exact_pair_retained_separately_from_heuristic_pairs() -> None:
     assert analysis["classification_counts"]["EXACT_AST_RELATED_OWNER"] == 1
 
 
-def test_no_automatic_contamination_judgment_from_owner_equality() -> None:
-    exact = {"same_owner": True}
-    owner = {"owners_spanning_c0_fit_and_c0_iteration": 0}
+def test_owner_crossings_alone_do_not_imply_reallocation() -> None:
+    exact = {"same_owner": False}
+    owner = {"owners_spanning_c0_fit_and_c0_iteration": 168}
     near = {"same_owner_pair_count": 0}
     decision = d11.classify_overall(exact, owner, near)
-    assert decision["overall_outcome"] != "D1_ALLOCATION_ACCEPTABLE_WITH_DOCUMENTED_EXCEPTION"
-    assert decision["overall_outcome"] != "MATERIAL_ALLOCATION_CONTAMINATION"
+    assert decision["overall_outcome"] == "D1_CLASSIFICATION_INCONCLUSIVE"
+    assert decision["reallocation_required"] is None
+    assert decision["material_contamination_established"] is False
+
+
+def test_same_owner_near_pairs_alone_do_not_imply_reallocation() -> None:
+    exact = {"same_owner": True}
+    owner = {"owners_spanning_c0_fit_and_c0_iteration": 0}
+    near = {"same_owner_pair_count": 3}
+    decision = d11.classify_overall(exact, owner, near)
+    assert decision["overall_outcome"] == "D1_CLASSIFICATION_INCONCLUSIVE"
+    assert decision["reallocation_required"] is None
+
+
+def test_owner_crossings_plus_near_pairs_need_frozen_rule_for_reallocation() -> None:
+    exact = {"same_owner": True}
+    owner = {"owners_spanning_c0_fit_and_c0_iteration": 168}
+    near = {"same_owner_pair_count": 3}
+    decision = d11.classify_overall(exact, owner, near)
+    assert decision["overall_outcome"] == "D1_CLASSIFICATION_INCONCLUSIVE"
+    assert decision["next_allowed_action"] == "FREEZE_FAMILY_CONNECTED_REALLOCATION_PROTOCOL"
+    assert decision["family_identity_rule_status"] == "NOT_FROZEN"
+    assert decision["owner_proxy_crossings_observed"] == 168
+    assert decision["confirmed_related_family_crossings"] is None
+    assert decision["reallocation_required"] is None
+
+
+def test_same_owner_exact_ast_is_possible_family_not_proven_leakage() -> None:
+    exact = {"same_owner": True}
+    owner = {"owners_spanning_c0_fit_and_c0_iteration": 168}
+    near = {"same_owner_pair_count": 3}
+    decision = d11.classify_overall(exact, owner, near)
+    assert (
+        decision["exact_pair_classification"]
+        == "POSSIBLE_RELATED_REPOSITORY_FAMILY_LEAKAGE"
+    )
+    assert decision["exact_pair_classification"] != "RELATED_REPOSITORY_FAMILY_LEAKAGE"
+
+
+def test_reallocation_cannot_be_emitted_when_family_rule_not_frozen() -> None:
+    exact = {"same_owner": True}
+    owner = {"owners_spanning_c0_fit_and_c0_iteration": 168}
+    near = {"same_owner_pair_count": 3}
+    decision = d11.classify_overall(
+        exact,
+        owner,
+        near,
+        family_identity_rule_status="NOT_FROZEN",
+    )
+    assert decision["overall_outcome"] != "D1_RELATED_REPOSITORY_REALLOCATION_REQUIRED"
+    assert decision["reallocation_required"] is None
 
 
 def test_all_hidden_row_firewall_booleans_remain_false(

@@ -58,6 +58,7 @@ relate-option-c0-prepare-firewall = "relate.experiments.option_c0_data_firewall:
 relate-option-c0-verify-firewall = "relate.experiments.option_c0_data_firewall_independent:main"
 relate-option-c0-validate-harness = "relate.experiments.option_c0_mechanism_harness:main"
 relate-option-c0-discover = "relate.experiments.option_c0_canonical_recovery_entrypoint:main"
+relate-option-c0-audit-d1 = "relate.experiments.option_c0_d1_integrity_audit:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

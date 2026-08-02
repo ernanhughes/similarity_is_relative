@@ -76,7 +76,7 @@ def test_registry_stale_digest_is_covered_by_pre_execution_erratum():
     assert erratum["affected_registration_events"] == 6
     assert erratum["stale_published_digest"] == STALE_PUBLISHED_DIGEST
     assert erratum["correct_identities"] == {
-        "exact_file_sha256": EXPECTED_PLAN_FILE_SHA256,
-        "canonical_json_sha256": EXPECTED_PLAN_CANONICAL_SHA256,
         "candidate_registry_file_sha256": EXPECTED_REGISTRY_FILE_SHA256,
+        "canonical_json_sha256": EXPECTED_PLAN_CANONICAL_SHA256,
+        "exact_file_sha256": EXPECTED_PLAN_FILE_SHA256,
     }

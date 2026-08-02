@@ -1,0 +1,52 @@
+{
+  "checkpoint_id": "option-c0-diagnostic-interface-incident-v1",
+  "status": "PREPUBLICATION_DIAGNOSTIC_INTERFACE_FAILURE_RECORDED",
+  "observed_at_local": "2026-08-02T19:01:00+01:00",
+  "phase": "C0_ITERATION",
+  "classification": "IMPLEMENTATION_OR_DATA_INTEGRITY_FINDING",
+  "scientific_result_observed": false,
+  "mechanism_result_observed_by_researcher": false,
+  "mechanism_metrics_serialized": false,
+  "result_artifact_created": false,
+  "candidate_registry_evaluated_events_appended": false,
+  "discovery_ledger_event_appended": false,
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "local_result_branch_created": true,
+  "remote_result_branch_created": false,
+  "execution_state_before_failure": {
+    "visible_embedding_rows_generated_in_memory": 12117,
+    "primitive_models_fit_in_memory": true,
+    "query_transforms_fit_in_memory": true,
+    "first_selective_decision_array_computed_in_memory": true,
+    "first_diagnostic_bundle_completed": false
+  },
+  "failure": {
+    "exception": "AttributeError",
+    "message": "numpy.ndarray object has no attribute predictions",
+    "location": "option_c0_diagnostics.selective_diagnostics",
+    "cause": "The discovery runner supplied decision and labels in the opposite positional order from the declared diagnostics interfaces. Its joint primitive interval coverage call also supplied lower and upper matrices where the declared interface requires prediction and a per-primitive radius vector."
+  },
+  "correction_scope": [
+    "call selective diagnostics with labels before SelectiveDecision",
+    "call ranked risk-coverage diagnostics with labels before predictions",
+    "call stratified diagnostics with labels before SelectiveDecision",
+    "adapt lower and upper joint bounds to prediction plus a constant per-primitive radius",
+    "add focused regression tests",
+    "rerun the complete deterministic C0 iteration after reviewed merge"
+  ],
+  "unchanged": [
+    "candidate definitions",
+    "query forms",
+    "primitive definitions",
+    "thresholds",
+    "propagation rules",
+    "baselines",
+    "repository allocation",
+    "fit and calibration partition",
+    "C0 iteration rows",
+    "C0 selection firewall",
+    "C1 reserve firewall"
+  ],
+  "next_allowed_action": "REVIEW_AND_MERGE_DIAGNOSTIC_INTERFACE_CORRECTION"
+}

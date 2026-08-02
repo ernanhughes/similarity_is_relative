@@ -1,0 +1,42 @@
+{
+  "artifacts": {
+    "option-c0-candidate-plan-identity-erratum-v1.json": {
+      "bytes": 2059,
+      "file_sha256": "c1fa786fc5932bd5157ac2659ef8e6c58eb421d0d3200f339b6a096f362dc3dc"
+    },
+    "option-c0-candidate-registry-v1.jsonl": {
+      "bytes": 15455,
+      "file_sha256": "5ecef017282288d2715577396f162b2b3380828b64a1332ee45bf68b120990c9"
+    },
+    "option-c0-discovery-iteration-v1.json": {
+      "bytes": 460381,
+      "file_sha256": "ca81076fd21ecf97fc33dcd2a1690a2cd29443cb9cf5c26eba49c00095a1df99"
+    },
+    "option-c0-discovery-ledger-v1.jsonl": {
+      "bytes": 0,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "option-c0-initial-candidate-plan-v1.json": {
+      "bytes": 10632,
+      "file_sha256": "5af359e4a9d3b7eede8ca8d9e8a36bcac524164375f819c5676541503e5e3e0d"
+    }
+  },
+  "c0_selection_accessed": false,
+  "c1_rows_selected": false,
+  "candidate_evaluations": 6,
+  "candidate_plan_identity_erratum_sha256": "c1fa786fc5932bd5157ac2659ef8e6c58eb421d0d3200f339b6a096f362dc3dc",
+  "candidate_registrations": 6,
+  "candidate_registry_entries": 12,
+  "checkpoint_id": "option-c0-discovery-iteration-publication-v1",
+  "discovery_ledger_entries": 0,
+  "mechanism_result_observed": true,
+  "next_allowed_action": "C0_ITERATION_RESULT_AND_DISCOVERY_REVIEW",
+  "prohibited_actions": [
+    "C0 selection access before registry closure",
+    "C1 reserve access",
+    "C1 row selection",
+    "Option C scientific decision"
+  ],
+  "scientific_result_observed": false,
+  "status": "C0_ITERATION_RESULTS_PUBLISHED_PENDING_REVIEW"
+}

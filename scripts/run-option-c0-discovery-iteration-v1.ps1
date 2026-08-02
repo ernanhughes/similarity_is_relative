@@ -56,8 +56,9 @@ function Invoke-LoggedProcess {
 $RepoRoot = (Get-Location).Path
 $HarnessMergeCommit = "784353e4d2400e570d29c5b75ac611bd04e6664e"
 $ImplementationCommit = "d36436209d95eca555215a83856f042d241a90f4"
-$ExpectedPlanSha256 = "f8254d5fed4ab168f48e0c519a03c5e322ac2ae0ad52fc97cdbf43d1dac66e94"
-$ExpectedRegistrySha256 = "a34bf7696c0586c2683de817515fa5f849be7cab5ccf07a6a844474c94017282"
+$ExpectedPlanFileSha256 = "5af359e4a9d3b7eede8ca8d9e8a36bcac524164375f819c5676541503e5e3e0d"
+$ExpectedPlanCanonicalSha256 = "f8254d5fed4ab168f48e0c519a03c5e322ac2ae0ad52fc97cdbf43d1dac66e94"
+$ExpectedRegistryFileSha256 = "a34bf7696c0586c2683de817515fa5f849be7cab5ccf07a6a844474c94017282"
 
 $Plan = "artifacts/canonical/option-c0/candidate-plan-v1/option-c0-initial-candidate-plan-v1.json"
 $Registry = "artifacts/canonical/option-c0/candidate-plan-v1/option-c0-candidate-registry-v1.jsonl"
@@ -120,14 +121,43 @@ foreach ($Path in @($Plan, $Registry, $Identity, $Firewall)) {
     }
 }
 
-$ObservedPlan = (Get-FileHash $Plan -Algorithm SHA256).Hash.ToLowerInvariant()
-$ObservedRegistry = (Get-FileHash $Registry -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($ObservedPlan -ne $ExpectedPlanSha256) {
-    throw "Candidate-plan hash mismatch: $ObservedPlan"
+$ObservedPlanFile = (Get-FileHash $Plan -Algorithm SHA256).Hash.ToLowerInvariant()
+$ObservedRegistryFile = (Get-FileHash $Registry -Algorithm SHA256).Hash.ToLowerInvariant()
+$ObservedPlanCanonical = @'
+from __future__ import annotations
+
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+value = json.loads(path.read_text(encoding="utf-8"))
+payload = json.dumps(
+    value,
+    sort_keys=True,
+    separators=(",", ":"),
+    ensure_ascii=True,
+).encode()
+print(hashlib.sha256(payload).hexdigest())
+'@ | python - $Plan
+Assert-NativeExit -Step "canonical candidate-plan hashing" -ExitCode $LASTEXITCODE
+$ObservedPlanCanonical = ([string]$ObservedPlanCanonical).Trim().ToLowerInvariant()
+
+if ($ObservedPlanFile -ne $ExpectedPlanFileSha256) {
+    throw "Candidate-plan file hash mismatch: $ObservedPlanFile"
 }
-if ($ObservedRegistry -ne $ExpectedRegistrySha256) {
-    throw "Candidate-registry hash mismatch: $ObservedRegistry"
+if ($ObservedPlanCanonical -ne $ExpectedPlanCanonicalSha256) {
+    throw "Candidate-plan canonical JSON hash mismatch: $ObservedPlanCanonical"
 }
+if ($ObservedRegistryFile -ne $ExpectedRegistryFileSha256) {
+    throw "Candidate-registry file hash mismatch: $ObservedRegistryFile"
+}
+
+Write-Host "Candidate plan and registry identities verified."
+Write-Host "  plan file:      $ObservedPlanFile"
+Write-Host "  plan canonical: $ObservedPlanCanonical"
+Write-Host "  registry file:  $ObservedRegistryFile"
 
 Write-Host ""
 Write-Host "=== Validating the reviewed implementation ==="

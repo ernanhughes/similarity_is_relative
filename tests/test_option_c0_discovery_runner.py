@@ -162,6 +162,7 @@ def test_empirical_residual_mass_preserves_joint_residual_vectors():
         [
             [1.0, 1.0, -0.2],
             [0.1, -0.1, 0.1],
+            [0.0, 0.0, 0.0],
         ],
         dtype=np.float64,
     )
@@ -181,8 +182,9 @@ def test_empirical_residual_mass_preserves_joint_residual_vectors():
         beta=0.25,
         chunk_size=2,
     )
-    assert decision.predictions.tolist() == [True, True]
-    assert decision.accepted.tolist() == [True, False]
+    assert decision.predictions.tolist() == [True, True, False]
+    assert decision.accepted.tolist() == [True, True, False]
+    np.testing.assert_allclose(decision.scores, [1.0, 0.75, 0.5])
 
 
 def test_query_transform_uses_fit_medians_and_iqr_floor():

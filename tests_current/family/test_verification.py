@@ -47,7 +47,9 @@ def _build_fixture(
 
     d1 = tmp_path / "d1.json"
     d1.write_text(
-        json.dumps(d1_data if d1_data is not None else {"firewall_booleans": dict(COMMON_FIREWALL)}),
+        json.dumps(
+            d1_data if d1_data is not None else {"firewall_booleans": dict(COMMON_FIREWALL)}
+        ),
         encoding="utf-8",
     )
 
@@ -67,7 +69,11 @@ def _build_fixture(
 
     firewall = tmp_path / "firewall.json"
     firewall.write_text(
-        json.dumps(firewall_data if firewall_data is not None else {"allocation_context_sha256": "c" * 64}),
+        json.dumps(
+            firewall_data
+            if firewall_data is not None
+            else {"allocation_context_sha256": "c" * 64}
+        ),
         encoding="utf-8",
     )
 
@@ -244,7 +250,10 @@ class TestFirewallBooleans:
 class TestNonObjectJson:
     def test_non_object_json_rejected(self, tmp_path: Path) -> None:
         allocation = tmp_path / "allocation.jsonl"
-        allocation.write_text('{"repository":"owner/a","role":"c0_fit","row_count":1}\n', encoding="utf-8")
+        allocation.write_text(
+            '{"repository":"owner/a","role":"c0_fit","row_count":1}\n',
+            encoding="utf-8",
+        )
         d1 = tmp_path / "d1.json"
         d1.write_text("[]", encoding="utf-8")
         d11 = tmp_path / "d11.json"
@@ -305,8 +314,14 @@ class TestHistoricalCompatibility:
         )
         clean_result = verify_family_protocol_inputs(real_paths, expected)
         historical_result = historical.validate_frozen_protocol_inputs(Path("."))
-        assert historical_result["allocation_manifest_sha256"] == clean_result.allocation_manifest_sha256
-        assert historical_result["allocation_context_sha256"] == clean_result.allocation_context_sha256
+        assert (
+            historical_result["allocation_manifest_sha256"]
+            == clean_result.allocation_manifest_sha256
+        )
+        assert (
+            historical_result["allocation_context_sha256"]
+            == clean_result.allocation_context_sha256
+        )
         assert (
             historical_result["allocation_repository_commitment_sha256"]
             == clean_result.allocation_repository_commitment_sha256

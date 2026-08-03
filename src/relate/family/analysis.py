@@ -49,9 +49,15 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Final
 
+from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
+from relate.evidence.hashing import sha256_text
+from relate.family.graph import component_id
 from relate.family.models import AllocationEntry, EvidenceEdge
 from relate.family.repositories import ROLE_ORDER, normalize_repository
 from relate.family.rules import HARD_CONNECTING_EDGE_TYPES
+
+ROLE_CROSSING_ANALYSIS_SCHEMA_ID: Final = "relate-family-role-crossing-analysis-v1"
+BOUNDED_FAMILY_OUTCOME_SCHEMA_ID: Final = "relate-family-bounded-outcome-v1"
 
 HARD_OR_EXACT_CONNECTING_EDGE_TYPES: Final[frozenset[str]] = frozenset(
     HARD_CONNECTING_EDGE_TYPES
@@ -134,6 +140,8 @@ def analyse_role_crossings(
     allocation_entries: Sequence[AllocationEntry],
     components: Sequence[Mapping[str, Any]],
     resolved_edges: Sequence[EvidenceEdge],
+    *,
+    protocol_sha256: str,
 ) -> RoleCrossingAnalysis:
     """Compute bounded cross-role crossing facts from already-validated inputs.
 
@@ -157,11 +165,15 @@ def analyse_role_crossings(
         row_count_by_repository[repo] = entry.row_count
 
     seen_in_components: set[str] = set()
+    seen_component_ids: set[str] = set()
     normalized_components: list[tuple[str, tuple[str, ...]]] = []
     for component in components:
         component_id_value = str(component.get("component_id", ""))
         if not component_id_value.strip():
             raise ValueError("component_id must be a nonempty string")
+        if component_id_value in seen_component_ids:
+            raise ValueError(f"duplicate component ID: {component_id_value}")
+        seen_component_ids.add(component_id_value)
         raw_repositories = list(component.get("repositories") or [])
         if not raw_repositories:
             raise ValueError(f"component has no repositories: {component_id_value!r}")
@@ -176,7 +188,10 @@ def analyse_role_crossings(
             normalized_repositories.append(repo)
         if int(component.get("repository_count", -1)) != len(normalized_repositories):
             raise ValueError(f"component repository_count is malformed: {component_id_value!r}")
-        normalized_components.append((component_id_value, tuple(sorted(normalized_repositories))))
+        repositories = tuple(sorted(normalized_repositories))
+        if component_id_value != component_id(repositories, protocol_sha256):
+            raise ValueError(f"component_id is stale or tampered: {component_id_value!r}")
+        normalized_components.append((component_id_value, repositories))
 
     missing_from_components = set(role_by_repository) - seen_in_components
     if missing_from_components:
@@ -259,4 +274,34 @@ def analyse_role_crossings(
         role_pair_impacts=role_pair_impacts,
         largest_crossing_component_repository_count=largest,
         hard_or_exact_fit_iteration_crossing_observed=hard_or_exact_fit_iteration_crossing_observed,
+    )
+
+
+def role_crossing_analysis_commitment(
+    analysis: RoleCrossingAnalysis, *, protocol_sha256: str
+) -> str:
+    """Versioned scientific commitment for bounded role-crossing facts."""
+    return sha256_text(
+        canonical_json(
+            {
+                "schema_id": ROLE_CROSSING_ANALYSIS_SCHEMA_ID,
+                "family_protocol_sha256": protocol_sha256,
+                "analysis": analysis.as_record(),
+            }
+        )
+    )
+
+
+def bounded_family_outcome_commitment(
+    outcome: Mapping[str, Any], *, protocol_sha256: str
+) -> str:
+    """Versioned scientific commitment for the frozen bounded family outcome."""
+    return sha256_text(
+        canonical_json(
+            {
+                "schema_id": BOUNDED_FAMILY_OUTCOME_SCHEMA_ID,
+                "family_protocol_sha256": protocol_sha256,
+                "outcome": dict(outcome),
+            }
+        )
     )

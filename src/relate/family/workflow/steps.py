@@ -25,12 +25,17 @@ from typing import Any
 
 from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
 from relate.evidence.hashing import sha256_text
-from relate.family.analysis import analyse_role_crossings
+from relate.family.analysis import (
+    analyse_role_crossings,
+    bounded_family_outcome_commitment,
+    role_crossing_analysis_commitment,
+)
 from relate.family.commitments import component_commitment, edge_commitment
 from relate.family.edges import resolve_evidence_candidate
 from relate.family.graph import build_components
 from relate.family.models import EvidenceCandidate, EvidenceEdge, ManualReviewDisposition
 from relate.family.outcome import family_graph_outcome, graph_completeness
+from relate.family.repositories import load_allocation_manifest
 from relate.family.store import FamilyGraphCache, FamilyGraphCacheIdentity
 from relate.family.verification import (
     FamilyProtocolExpectedIdentity,
@@ -90,6 +95,9 @@ class VerifyFamilyInputsStep:
         declared = {
             "allocation_manifest_sha256": verified.allocation_manifest_sha256,
             "allocation_context_sha256": verified.allocation_context_sha256,
+            "allocation_repository_commitment_sha256": (
+                verified.allocation_repository_commitment_sha256
+            ),
             "d1_audit_result_sha256": verified.d1_result_sha256,
             "d1_1_classification_sha256": verified.d1_1_classification_sha256,
         }
@@ -123,17 +131,30 @@ class RegisterAllocationStep:
         store_path: Path,
         cache_identity: FamilyGraphCacheIdentity,
         allocation_manifest_path: Path,
+        expected_allocation_repository_commitment: str,
     ) -> None:
         self._store_path = store_path
         self._cache_identity = cache_identity
         self._allocation_manifest_path = allocation_manifest_path
+        self._expected_allocation_repository_commitment = expected_allocation_repository_commitment
 
     def execute(
         self, context: WorkflowContext, previous_results: Mapping[str, StepResult]
     ) -> StepResult:
+        manifest_entries = load_allocation_manifest(
+            self._allocation_manifest_path,
+            expected_sha256=self._cache_identity.allocation_manifest_sha256,
+        )
+        unauthorized = sorted(
+            {entry.role for entry in manifest_entries} - set(context.allowed_roles)
+        )
+        if unauthorized:
+            raise ValueError(f"allocation role outside allowed_roles: {unauthorized}")
         with FamilyGraphCache(self._store_path, identity=self._cache_identity) as cache:
             commitment = cache.put_canonical_allocation_manifest(self._allocation_manifest_path)
             entries = cache.list_allocation_repositories()
+        if commitment != self._expected_allocation_repository_commitment:
+            raise ValueError("allocation repository commitment mismatch")
         role_repository_counts: dict[str, int] = {}
         role_row_counts: dict[str, int] = {}
         for entry in entries:
@@ -164,15 +185,21 @@ class RegisterPreparedEvidenceStep:
         store_path: Path,
         cache_identity: FamilyGraphCacheIdentity,
         evidence_bundle: FamilyEvidenceBundle,
+        expected_bundle_commitment: str,
     ) -> None:
         self._store_path = store_path
         self._cache_identity = cache_identity
         self._evidence_bundle = evidence_bundle
+        self._expected_bundle_commitment = expected_bundle_commitment
 
     def execute(
         self, context: WorkflowContext, previous_results: Mapping[str, StepResult]
     ) -> StepResult:
         bundle_commitment = evidence_bundle_commitment(self._evidence_bundle)
+        if bundle_commitment != self._expected_bundle_commitment:
+            raise ValueError("prepared evidence bundle commitment changed")
+        if context.inputs.get("evidence_bundle_commitment") != bundle_commitment:
+            raise ValueError("workflow context evidence bundle commitment mismatch")
         with FamilyGraphCache(self._store_path, identity=self._cache_identity) as cache:
             for record in self._evidence_bundle.source_records:
                 cache.put_source_record(record)
@@ -250,6 +277,16 @@ class ResolveCandidatesStep:
                 dispositions=dispositions_by_id,
                 source_records=source_registry,
             )
+            cache.put_phase_commitment(
+                "resolved_edges",
+                status="COMPLETE",
+                commitment_sha256=commitment,
+                metadata={
+                    "edge_count": len(edges),
+                    "review_status_counts": review_status_counts,
+                    "family_protocol_sha256": self._protocol_sha256,
+                },
+            )
         payload: dict[str, Any] = {
             "edge_commitment": commitment,
             "edge_count": len(edges),
@@ -300,7 +337,37 @@ class AssessGraphReadinessStep:
                 incomplete_metadata_records=self._incomplete_metadata_records,
             )
         outcome = family_graph_outcome(completeness)
-        payload: dict[str, Any] = {"completeness": completeness, "outcome": outcome}
+        readiness_commitment = sha256_text(
+            canonical_json(
+                {
+                    "schema_id": "relate-family-readiness-v1",
+                    "family_protocol_sha256": self._protocol_sha256,
+                    "completeness": completeness,
+                    "outcome": outcome,
+                }
+            )
+        )
+        payload: dict[str, Any] = {
+            "completeness": completeness,
+            "outcome": outcome,
+            "readiness_commitment": readiness_commitment,
+        }
+        with FamilyGraphCache(self._store_path, identity=self._cache_identity) as cache:
+            cache.put_phase_commitment(
+                "graph_readiness",
+                status="COMPLETE" if not (
+                    completeness["incomplete_metadata_records"]
+                    or completeness["unresolved_connecting_candidate_edges"]
+                ) else "INCOMPLETE",
+                commitment_sha256=readiness_commitment,
+                metadata={
+                    "family_graph_outcome": outcome["family_graph_outcome"],
+                    "incomplete_metadata_records": completeness["incomplete_metadata_records"],
+                    "unresolved_connecting_candidate_edges": (
+                        completeness["unresolved_connecting_candidate_edges"]
+                    ),
+                },
+            )
         if completeness["incomplete_metadata_records"]:
             return StepResult.blocked(
                 "FAMILY_GRAPH_INCOMPLETE_METADATA", output=payload, commitment_payload=payload
@@ -373,9 +440,12 @@ class AnalyseRoleCrossingsStep:
     name = "analyse_role_crossings"
     version = "1"
 
-    def __init__(self, *, store_path: Path, cache_identity: FamilyGraphCacheIdentity) -> None:
+    def __init__(
+        self, *, store_path: Path, cache_identity: FamilyGraphCacheIdentity, protocol_sha256: str
+    ) -> None:
         self._store_path = store_path
         self._cache_identity = cache_identity
+        self._protocol_sha256 = protocol_sha256
 
     def execute(
         self, context: WorkflowContext, previous_results: Mapping[str, StepResult]
@@ -384,9 +454,18 @@ class AnalyseRoleCrossingsStep:
             allocation_entries = cache.list_allocation_repositories()
             components = cache.get_component_memberships()
             edges = cache.list_resolved_edges()
-            analysis = analyse_role_crossings(allocation_entries, components, edges)
+            unauthorized = sorted(
+                {entry.role for entry in allocation_entries} - set(context.allowed_roles)
+            )
+            if unauthorized:
+                raise ValueError(f"allocation role outside allowed_roles: {unauthorized}")
+            analysis = analyse_role_crossings(
+                allocation_entries, components, edges, protocol_sha256=self._protocol_sha256
+            )
             record = analysis.as_record()
-            commitment = sha256_text(canonical_json(record))
+            commitment = role_crossing_analysis_commitment(
+                analysis, protocol_sha256=self._protocol_sha256
+            )
             cache.put_phase_commitment(
                 "role_crossing_analysis",
                 status="COMPLETE",
@@ -407,9 +486,12 @@ class DetermineFamilyOutcomeStep:
     name = "determine_family_outcome"
     version = "1"
 
-    def __init__(self, *, store_path: Path, cache_identity: FamilyGraphCacheIdentity) -> None:
+    def __init__(
+        self, *, store_path: Path, cache_identity: FamilyGraphCacheIdentity, protocol_sha256: str
+    ) -> None:
         self._store_path = store_path
         self._cache_identity = cache_identity
+        self._protocol_sha256 = protocol_sha256
 
     def execute(
         self, context: WorkflowContext, previous_results: Mapping[str, StepResult]
@@ -430,7 +512,9 @@ class DetermineFamilyOutcomeStep:
                 "unexpected incomplete outcome reached DetermineFamilyOutcomeStep: "
                 f"{outcome['family_graph_outcome']}"
             )
-        outcome_commitment = sha256_text(canonical_json(outcome))
+        outcome_commitment = bounded_family_outcome_commitment(
+            outcome, protocol_sha256=self._protocol_sha256
+        )
         with FamilyGraphCache(self._store_path, identity=self._cache_identity) as cache:
             cache.put_phase_commitment(
                 "family_outcome",

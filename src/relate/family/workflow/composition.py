@@ -26,6 +26,8 @@ This module must not import from relate.experiments or relate.cli.
 
 from __future__ import annotations
 
+from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
+from relate.evidence.hashing import sha256_text
 from relate.family.store import CACHE_SCHEMA_ID, make_cache_identity
 from relate.family.workflow.identity import compute_family_workflow_source_identity
 from relate.family.workflow.models import (
@@ -33,6 +35,7 @@ from relate.family.workflow.models import (
     FamilyWorkflowConfig,
     FamilyWorkflowPlan,
     evidence_bundle_commitment,
+    validate_sha256_identity,
 )
 from relate.family.workflow.steps import (
     AnalyseRoleCrossingsStep,
@@ -60,6 +63,24 @@ def build_family_graph_workflow(config: FamilyWorkflowConfig) -> FamilyWorkflowP
     placed into the returned ``WorkflowContext``, so the Stage 2C run
     identity commitment binds all of it.
     """
+    source_identity = compute_family_workflow_source_identity(config.repo_root)
+    validate_sha256_identity(source_identity, label="computed workflow source identity")
+    if config.workflow_source_identity != source_identity:
+        raise ValueError("caller-supplied workflow source identity does not match source files")
+
+    bundle_commitment = evidence_bundle_commitment(config.evidence_bundle)
+    run_identity = sha256_text(
+        canonical_json(
+            {
+                "schema_id": "relate-family-workflow-run-v1",
+                "family_protocol_sha256": config.family_protocol_sha256,
+                "workflow_source_identity": source_identity,
+                "evidence_bundle_commitment": bundle_commitment,
+                "run_id": config.run_id,
+            }
+        )
+    )
+
     cache_identity = make_cache_identity(
         family_protocol_sha256=config.family_protocol_sha256,
         allocation_manifest_sha256=config.expected_identity.allocation_manifest_sha256,
@@ -67,7 +88,7 @@ def build_family_graph_workflow(config: FamilyWorkflowConfig) -> FamilyWorkflowP
         d1_audit_result_sha256=config.expected_identity.d1_result_sha256,
         d1_1_classification_sha256=config.expected_identity.d1_1_classification_sha256,
         cache_schema_version=CACHE_SCHEMA_ID,
-        family_runner_source_identity=config.workflow_source_identity,
+        family_runner_source_identity=source_identity,
     )
 
     steps = (
@@ -79,11 +100,15 @@ def build_family_graph_workflow(config: FamilyWorkflowConfig) -> FamilyWorkflowP
             store_path=config.store_path,
             cache_identity=cache_identity,
             allocation_manifest_path=config.allocation_manifest_path,
+            expected_allocation_repository_commitment=(
+                config.expected_identity.allocation_repository_commitment_sha256
+            ),
         ),
         RegisterPreparedEvidenceStep(
             store_path=config.store_path,
             cache_identity=cache_identity,
             evidence_bundle=config.evidence_bundle,
+            expected_bundle_commitment=bundle_commitment,
         ),
         ResolveCandidatesStep(
             store_path=config.store_path,
@@ -104,10 +129,12 @@ def build_family_graph_workflow(config: FamilyWorkflowConfig) -> FamilyWorkflowP
         AnalyseRoleCrossingsStep(
             store_path=config.store_path,
             cache_identity=cache_identity,
+            protocol_sha256=config.family_protocol_sha256,
         ),
         DetermineFamilyOutcomeStep(
             store_path=config.store_path,
             cache_identity=cache_identity,
+            protocol_sha256=config.family_protocol_sha256,
         ),
     )
     definition = WorkflowDefinition(
@@ -125,11 +152,12 @@ def build_family_graph_workflow(config: FamilyWorkflowConfig) -> FamilyWorkflowP
         ),
         "d1_audit_result_sha256": config.expected_identity.d1_result_sha256,
         "d1_1_classification_sha256": config.expected_identity.d1_1_classification_sha256,
-        "workflow_source_identity": config.workflow_source_identity,
+        "workflow_source_identity": source_identity,
+        "family_workflow_run_identity": run_identity,
         "cache_schema_version": CACHE_SCHEMA_ID,
     }
     inputs = {
-        "evidence_bundle_commitment": evidence_bundle_commitment(config.evidence_bundle),
+        "evidence_bundle_commitment": bundle_commitment,
         "execution_mode": config.execution_mode.value,
     }
     context = WorkflowContext(

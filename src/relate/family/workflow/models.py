@@ -26,17 +26,34 @@ from relate.evidence.canonical_json import canonical_json_compact_unicode as can
 from relate.evidence.hashing import sha256_text
 from relate.family.edges import validate_evidence_candidate, validate_manual_review_disposition
 from relate.family.models import EvidenceCandidate, ManualReviewDisposition, SourceEvidenceRecord
+from relate.family.repositories import ROLE_ORDER
 from relate.family.sources import validate_source_record
 from relate.family.store import FamilyGraphCacheIdentity
 from relate.family.verification import FamilyProtocolExpectedIdentity, FamilyProtocolInputPaths
 from relate.workflows import WorkflowContext, WorkflowDefinition
 
 FAMILY_EVIDENCE_BUNDLE_SCHEMA_ID: Final = "relate-family-evidence-bundle-v1"
+_SHA256_HEX_LENGTH: Final = 64
 
 
-def _reject_canonical_path(path: Path, *, label: str) -> None:
-    normalized = str(path).replace("\\", "/")
-    if "artifacts/canonical" in normalized:
+def validate_sha256_identity(value: str, *, label: str) -> None:
+    if not isinstance(value, str) or len(value) != _SHA256_HEX_LENGTH:
+        raise ValueError(f"{label} must be a SHA-256 hex digest")
+    try:
+        int(value, 16)
+    except ValueError as exc:
+        raise ValueError(f"{label} must be a SHA-256 hex digest") from exc
+
+
+def _resolve_under_repo(path: Path, *, repo_root: Path) -> Path:
+    candidate = path if path.is_absolute() else repo_root / path
+    return candidate.resolve(strict=False)
+
+
+def _reject_canonical_path(path: Path, *, label: str, repo_root: Path) -> None:
+    canonical_root = (repo_root / "artifacts" / "canonical").resolve(strict=False)
+    resolved = _resolve_under_repo(path, repo_root=repo_root)
+    if resolved == canonical_root or canonical_root in resolved.parents:
         raise ValueError(
             f"noncanonical family workflow rejects a canonical path for {label}: {path}"
         )
@@ -131,6 +148,20 @@ def evidence_bundle_commitment(bundle: FamilyEvidenceBundle) -> str:
     return sha256_text(canonical_json(bundle.as_commitment_record()))
 
 
+def validate_evidence_bundle_protocol(
+    bundle: FamilyEvidenceBundle, *, family_protocol_sha256: str
+) -> None:
+    """Fail before durable writes if any disposition is bound to another protocol."""
+    validate_sha256_identity(family_protocol_sha256, label="family_protocol_sha256")
+    candidates_by_id = {candidate.candidate_id: candidate for candidate in bundle.candidates}
+    for disposition in bundle.dispositions:
+        validate_manual_review_disposition(
+            disposition,
+            candidates_by_id[disposition.edge_candidate_id],
+            protocol_sha256=family_protocol_sha256,
+        )
+
+
 class FamilyWorkflowExecutionMode(StrEnum):
     """Only NONCANONICAL exists in this stage. There is no canonical mode."""
 
@@ -150,7 +181,10 @@ class FamilyStoreSpec:
     identity: FamilyGraphCacheIdentity
 
     def __post_init__(self) -> None:
-        _reject_canonical_path(self.path, label="store path")
+        # StoreSpec is also used by tests with temp stores outside the repo;
+        # composition performs repo-root canonical containment validation.
+        if not self.path:
+            raise ValueError("store path must be nonempty")
 
 
 @dataclass(frozen=True)
@@ -182,12 +216,42 @@ class FamilyWorkflowConfig:
             raise ValueError(
                 "only FamilyWorkflowExecutionMode.NONCANONICAL is supported in this stage"
             )
-        _reject_canonical_path(self.work_dir, label="work directory")
-        _reject_canonical_path(self.store_path, label="store path")
+        repo_root = self.repo_root.resolve(strict=False)
+        for field_name in (
+            "allocation_manifest_sha256",
+            "allocation_context_sha256",
+            "allocation_repository_commitment_sha256",
+            "d1_result_sha256",
+            "d1_1_classification_sha256",
+        ):
+            validate_sha256_identity(getattr(self.expected_identity, field_name), label=field_name)
+        validate_sha256_identity(self.family_protocol_sha256, label="family_protocol_sha256")
+        validate_sha256_identity(self.workflow_source_identity, label="workflow_source_identity")
+
+        _reject_canonical_path(self.work_dir, label="work directory", repo_root=repo_root)
+        _reject_canonical_path(self.store_path, label="store path", repo_root=repo_root)
         _reject_canonical_path(
-            self.allocation_manifest_path, label="allocation manifest path"
+            self.allocation_manifest_path, label="allocation manifest path", repo_root=repo_root
         )
-        object.__setattr__(self, "allowed_roles", frozenset(self.allowed_roles))
+        for label, path in (
+            ("allocation input path", self.input_paths.allocation_manifest),
+            ("firewall publication path", self.input_paths.firewall_publication),
+            ("D1 result path", self.input_paths.d1_result),
+            ("D1.1 classification path", self.input_paths.d1_1_classification),
+        ):
+            _reject_canonical_path(path, label=label, repo_root=repo_root)
+
+        roles = frozenset(self.allowed_roles)
+        if not roles:
+            raise ValueError("allowed_roles must be nonempty")
+        unknown = roles - set(ROLE_ORDER)
+        if unknown:
+            raise ValueError(f"unknown allowed role names: {sorted(unknown)}")
+        validate_evidence_bundle_protocol(
+            self.evidence_bundle, family_protocol_sha256=self.family_protocol_sha256
+        )
+        object.__setattr__(self, "repo_root", repo_root)
+        object.__setattr__(self, "allowed_roles", roles)
 
 
 @dataclass(frozen=True)

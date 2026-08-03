@@ -53,6 +53,14 @@ src/relate/
 │   │                          graph-specific SHA-256 commitments)
 │   ├── outcome.py            (Stage 2D — graph_completeness, family_graph_outcome:
 │   │                          bounded completeness and outcome decision)
+│   ├── analysis.py           (Stage 2E — bounded role-crossing analysis and
+│   │                          protocol-bound scientific commitments)
+│   ├── workflow/             (Stage 2E — explicit noncanonical family workflow)
+│   │   ├── identity.py        (source manifest identity)
+│   │   ├── models.py          (config, evidence bundle, noncanonical path guard)
+│   │   ├── steps.py           (verify/register/resolve/readiness/components/
+│   │   │                      analysis/outcome steps)
+│   │   └── composition.py     (WorkflowDefinition + WorkflowContext plan builder)
 │   └── store.py              (Stage 2B persistence + Stage 2D — component-membership
 │                              and phase-commitment APIs, deterministic list readers)
 ├── evidence/
@@ -88,6 +96,18 @@ relate.workflows
 It contains no family-graph workflow, no canonical-graph execution, and no
 persistence. It must never import `relate.experiments`, `relate.family`, or
 `relate.cli` (enforced by `tests_current/workflows/test_dependency_boundaries.py`).
+
+The Stage 2E family workflow composes the generic kernel from the family side:
+
+```text
+relate.family.workflow
+    -> relate.workflows
+    -> relate.family capabilities
+    -> relate.evidence
+```
+
+That direction is intentional: `relate.workflows` stays domain-neutral, and
+canonical execution/publication remain outside the composed workflow.
 The future composition direction, once a family workflow exists, is:
 
 ```text

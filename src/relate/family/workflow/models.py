@@ -24,10 +24,15 @@ from typing import Any, Final
 
 from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
 from relate.evidence.hashing import sha256_text
-from relate.family.edges import validate_evidence_candidate, validate_manual_review_disposition
+from relate.family.edges import (
+    evidence_candidate_from_record,
+    manual_review_disposition_from_record,
+    validate_evidence_candidate,
+    validate_manual_review_disposition,
+)
 from relate.family.models import EvidenceCandidate, ManualReviewDisposition, SourceEvidenceRecord
 from relate.family.repositories import ROLE_ORDER
-from relate.family.sources import validate_source_record
+from relate.family.sources import source_record_from_record, validate_source_record
 from relate.family.store import FamilyGraphCacheIdentity
 from relate.family.verification import FamilyProtocolExpectedIdentity, FamilyProtocolInputPaths
 from relate.workflows import WorkflowContext, WorkflowDefinition
@@ -146,6 +151,37 @@ class FamilyEvidenceBundle:
 def evidence_bundle_commitment(bundle: FamilyEvidenceBundle) -> str:
     """Deterministic SHA-256 commitment over a prepared evidence bundle."""
     return sha256_text(canonical_json(bundle.as_commitment_record()))
+
+
+def family_evidence_bundle_from_record(record: dict[str, Any]) -> FamilyEvidenceBundle:
+    """Reconstruct and validate a family evidence bundle from a JSON record."""
+    expected = {FAMILY_EVIDENCE_BUNDLE_SCHEMA_ID}
+    schema = record.get("schema_id")
+    if schema not in expected:
+        raise ValueError(f"unsupported family evidence bundle schema: {schema!r}")
+    allowed = {
+        "schema_id",
+        "source_records",
+        "candidates",
+        "dispositions",
+        "incomplete_metadata_records",
+    }
+    unexpected = set(record) - allowed
+    if unexpected:
+        raise ValueError(f"unexpected evidence bundle fields: {sorted(unexpected)}")
+    return FamilyEvidenceBundle(
+        source_records=tuple(
+            source_record_from_record(item) for item in record.get("source_records", ())
+        ),
+        candidates=tuple(
+            evidence_candidate_from_record(item) for item in record.get("candidates", ())
+        ),
+        dispositions=tuple(
+            manual_review_disposition_from_record(item)
+            for item in record.get("dispositions", ())
+        ),
+        incomplete_metadata_records=int(record.get("incomplete_metadata_records", 0)),
+    )
 
 
 def validate_evidence_bundle_protocol(

@@ -142,6 +142,30 @@ class FamilyReviewPacket:
         return dict(self.record)
 
 
+def family_review_packet_from_record(record: Mapping[str, Any]) -> FamilyReviewPacket:
+    """Reconstruct a review packet and require its committed non-conclusion shape."""
+    data = dict(record)
+    if data.get("schema_id") != FAMILY_REVIEW_PACKET_SCHEMA_ID:
+        raise ValueError("unsupported family review packet schema")
+    if data.get("publication_scope") != PUBLICATION_SCOPE_BOUNDED_FAMILY_RESULT_ONLY:
+        raise ValueError("family review packet publication scope mismatch")
+    if data.get("packet_contains") != "BOUNDED_FAMILY_GRAPH_FACTS_ONLY":
+        raise ValueError("family review packet scope is not bounded")
+    not_concluded = tuple(data.get("not_concluded", ()))
+    for required in NOT_CONCLUDED:
+        if required not in not_concluded:
+            raise ValueError(f"family review packet missing non-conclusion: {required}")
+    firewall = data.get("firewall_declarations", {})
+    for key in (
+        "c0_selection_row_content_accessed",
+        "c1_row_content_accessed",
+        "hidden_row_content_accessed",
+    ):
+        if firewall.get(key) is not False:
+            raise ValueError(f"family review packet firewall declaration is not false: {key}")
+    return FamilyReviewPacket(record=data)
+
+
 def family_review_packet_commitment(packet: FamilyReviewPacket) -> str:
     return sha256_text(canonical_json(packet.as_record()))
 

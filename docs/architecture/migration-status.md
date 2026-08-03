@@ -1300,11 +1300,74 @@ allocation changes, reallocation, materiality, and D2 remain gated.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2F)
 
-**Stage 2G — Supported Family CLI and Canonical Execution Authorization**
+## Stage 2G — Supported Family CLI and Canonical Execution Authorization
 
-Provide a thin supported entrypoint and explicit authorization gate. Canonical
-execution itself must remain a separately reviewed act rather than an
-automatic consequence of merging code.
+Stage 2G adds a supported thin CLI and identity-bound canonical execution
+authorization records without adding a canonical executor.
+
+New modules:
+
+- `relate.cli.family` and `relate.cli.json_io`;
+- `relate.family.authorization`.
+
+New entrypoint:
+
+- `relate-family = "relate.cli.family:main"`.
+
+Supported commands:
+
+- `run-noncanonical`;
+- `make-publication-disposition`;
+- `publish-review`;
+- `create-canonical-execution-request`;
+- `make-canonical-execution-authorization`;
+- `verify-canonical-execution-authorization`.
+
+CLI run configuration schema:
+
+- `relate-family-noncanonical-run-config-v1`.
+
+Canonical authorization schemas:
+
+- request: `relate-family-canonical-execution-request-v1`;
+- authorization: `relate-family-canonical-execution-authorization-v1`.
+
+The request binds protocol SHA, workflow name/version/source identity,
+requested run ID, allowed roles, completed review-packet commitment,
+evidence-bundle commitment, canonical input paths and hashes, allocation
+context/repository identities, intended fresh noncanonical staging paths, and
+machine-readable prohibitions. It contains no canonical publication
+destination.
+
+The authorization permits only `AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION`
+or `WITHHOLD_EXACT_CANONICAL_FAMILY_EXECUTION`. It cannot reuse bounded review
+publication disposition strings and does not authorize canonical publication,
+materiality, reallocation, or D2.
+
+Validation recomputes request commitment, authorization ID, current workflow
+source identity, canonical input hashes and firewall declarations,
+review-packet commitment, evidence-bundle commitment, allowed roles, and
+staging-store freshness. It performs no execution and no durable writes.
+
+Exit semantics:
+
+- `0`: success or authorization verified as authorized;
+- `1`: invariant, validation, I/O, or execution failure;
+- `3`: workflow blocked or authorization explicitly withheld.
+
+Canonical execution remains absent. Canonical publication remains absent.
+Materiality, reallocation, allocation changes, and D2 remain gated.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2G)
+
+**Stage 2H — Authorized One-Shot Canonical Family Execution**
+
+Consume one exact, validated authorization to execute the bound family workflow
+against canonical inputs and write only to the authorized noncanonical staging
+store. Stage 2H must still not publish a canonical result, determine
+materiality, alter allocation, or start D2.
 
 ---
 

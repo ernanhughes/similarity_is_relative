@@ -86,6 +86,12 @@ src/relate/
 │   └── runner.py                (WorkflowRunner: ordering, blocking, failure, resume)
 ├── verification/
 ├── publication/
+├── cli/                       (Stage 2G — supported command adapters)
+│   ├── __init__.py
+│   ├── json_io.py
+│   └── family.py              (`relate-family` noncanonical workflow,
+│                               review publication, and canonical request/
+│                               authorization validation commands)
 └── audits/
 ```
 
@@ -125,6 +131,18 @@ completed noncanonical workflow
 Workflow completion does not automatically publish. The publication boundary
 rejects canonical destinations and does not authorize materiality,
 reallocation, or D2.
+
+Stage 2G adds supported CLI and authorization records:
+
+```text
+relate.cli.family
+    -> relate.family.workflow / review / publication / authorization
+    -> relate.workflows
+    -> relate.evidence
+```
+
+The CLI exposes no command that consumes authorization to execute the canonical
+graph. `FamilyWorkflowExecutionMode` still contains only `NONCANONICAL`.
 The future composition direction, once a family workflow exists, is:
 
 ```text

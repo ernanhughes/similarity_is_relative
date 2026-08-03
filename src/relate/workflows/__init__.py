@@ -55,6 +55,7 @@ from relate.workflows.trace import (
     WorkflowTraceEventType,
     WorkflowTraceSink,
 )
+from relate.workflows.validation import validate_completed_run
 
 __all__ = [
     "RUN_IDENTITY_SCHEMA_ID",
@@ -88,4 +89,5 @@ __all__ = [
     "step_output_commitment",
     "tuple_to_json_list",
     "validate_json_value",
+    "validate_completed_run",
 ]

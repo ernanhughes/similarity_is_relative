@@ -55,6 +55,10 @@ src/relate/
 │   │                          bounded completeness and outcome decision)
 │   ├── analysis.py           (Stage 2E — bounded role-crossing analysis and
 │   │                          protocol-bound scientific commitments)
+│   ├── review.py             (Stage 2F — deterministic bounded review packets
+│   │                          and materiality-input presentation)
+│   ├── publication.py        (Stage 2F — human publication disposition and
+│   │                          immutable noncanonical review bundle writer)
 │   ├── workflow/             (Stage 2E — explicit noncanonical family workflow)
 │   │   ├── identity.py        (source manifest identity)
 │   │   ├── models.py          (config, evidence bundle, noncanonical path guard)
@@ -108,6 +112,19 @@ relate.family.workflow
 
 That direction is intentional: `relate.workflows` stays domain-neutral, and
 canonical execution/publication remain outside the composed workflow.
+
+Stage 2F adds a separate post-workflow boundary:
+
+```text
+completed noncanonical workflow
+    -> relate.family.review
+    -> relate.family.publication
+    -> noncanonical immutable artifact
+```
+
+Workflow completion does not automatically publish. The publication boundary
+rejects canonical destinations and does not authorize materiality,
+reallocation, or D2.
 The future composition direction, once a family workflow exists, is:
 
 ```text

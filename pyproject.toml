@@ -80,3 +80,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/relate/experiments/e00_multiseed.py" = ["B008"]
+# The historical protocol module re-exports symbols from relate.family.*; all
+# imports that appear unused within the file body are intentional re-exports.
+"src/relate/experiments/option_c0_family_connected_protocol.py" = ["F401"]

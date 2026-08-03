@@ -38,7 +38,21 @@ src/relate/
 │   ├── e00*.py
 │   ├── e01*.py
 │   ├── option_b_*.py
-│   └── option_c0_*.py
+│   └── option_c0_*.py        (historical facades; re-export from relate.family.*)
+├── family/                   (Stage 2A — pure family domain)
+│   ├── __init__.py
+│   ├── models.py             (EDGE_SCHEMA_ID, EdgeRule, AllocationEntry, ManualReviewDisposition,
+│   │                          EvidenceCandidate, EvidenceEdge, SourceEvidenceRecord)
+│   ├── rules.py              (EDGE_RULES, taxonomy tuples, edge_rules_contract)
+│   ├── repositories.py       (normalize_repository, allocation operations, canonical constants)
+│   ├── sources.py            (source-evidence construction, payload firewall, public_metadata_snapshot)
+│   └── edges.py              (candidate, disposition, edge construction and validation)
+├── evidence/
+│   ├── canonical_json.py
+│   ├── hashing.py
+│   ├── atomic_io.py
+│   ├── immutable.py
+│   └── sqlite.py
 ├── verification/
 ├── publication/
 └── audits/
@@ -73,22 +87,20 @@ This preserved the reviewed historical run, but it is not an acceptable basis fo
 
 ### `option_c0_family_connected_protocol.py`
 
-This module currently contains:
+As of Stage 2A this module re-exports pure family-domain symbols from `relate.family.*`
+and retains only historical-only responsibilities:
 
-- frozen protocol constants;
-- repository and evidence domain models;
-- edge taxonomy and rules;
-- payload and source validation;
-- manual review dispositions;
-- graph construction;
-- commitments and decision rules;
-- SQLite schema and persistence;
-- cache identity;
-- contract generation;
-- frozen-input verification;
-- command-line parsing.
+- frozen protocol constants (`SCHEMA_ID`, `CACHE_SCHEMA_ID`, D1 SHAs, allocation SHAs);
+- `FamilyGraphCacheIdentity` and `default_cache_identity` (source-hash-sensitive; deferred to Stage 2B);
+- `FamilyGraphCache` — SQLite schema and persistence;
+- `protocol_contract` — full protocol contract assembly;
+- frozen-input verification (`verify_protocol_contract`, `verify_firewall_artifact`);
+- graph construction and outcome calculation;
+- atomic protocol publication;
+- CLI entry point.
 
-These responsibilities must be separated before the canonical family graph runner is implemented.
+These remaining responsibilities must be separated before the canonical family graph runner
+is implemented. See Stage 2B (family persistence extraction).
 
 ### `option_c0_d1_integrity_audit.py`
 
@@ -263,12 +275,12 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-The next code PR should extract the smallest stable evidence capabilities:
+**Stage 2B — Family persistence extraction**
 
-- canonical JSON;
-- text and file hashing;
-- atomic UTF-8/JSON publication;
-- immutable overwrite refusal;
-- SQLite pragma and identity helpers.
+Move `FamilyGraphCache`, `FamilyGraphCacheIdentity` and `default_cache_identity` into a
+clean `relate.family.store` module without executing the canonical graph.  This will
+complete the clean family boundary before any family graph runner is written.
 
-It must not change the family protocol output, run the family graph, alter canonical evidence or resume C0 scientific work.
+Previous immediate-next note (now completed as Stage 2A): the family domain extraction
+PR extracted pure family-domain capabilities from `option_c0_family_connected_protocol`
+into `relate.family.*` without changing the protocol payload or SHA.

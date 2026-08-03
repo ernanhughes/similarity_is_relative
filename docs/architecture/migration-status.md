@@ -306,7 +306,209 @@ Stage B stop-condition checks:
 
 ---
 
-## Recommended Next Architecture Stage
+## Stage 2A — Family Domain Extraction
+
+**Branch:** `architecture/family-domain-extraction`
+
+**New package:** `src/relate/family/`
+
+**PR classification:** `DOMAIN_EXTRACTION`
+
+### Summary of what moved
+
+Pure family-domain capabilities were extracted from the 2338-line monolith
+`relate.experiments.option_c0_family_connected_protocol` into a clean package
+with no imports from `relate.experiments`, `relate.workflows` or `relate.cli`.
+
+The historical module was rewritten to re-export all moved symbols explicitly
+so that every existing caller continues to work without modification.
+
+### Allowed dependency direction (achieved)
+
+```text
+historical protocol module
+    -> relate.family.*
+        -> relate.evidence.*
+```
+
+No reverse imports. No circular imports inside `relate.family`.
+
+---
+
+### Moved symbol groups
+
+#### `relate.family.models`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `EDGE_SCHEMA_ID`, `EdgeRule`, `AllocationEntry`, `ManualReviewDisposition`, `EvidenceCandidate`, `EvidenceEdge`, `SourceEvidenceRecord` |
+| new module | `relate.family.models` |
+| responsibility | Pure immutable frozen dataclasses; no external dependencies |
+| compatibility facade | Explicit re-export in historical module |
+| clean module imports experiments | no |
+| scientific behaviour changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| canonical artifacts changed | no |
+| remaining historical responsibility | None for these symbols |
+| future extraction stage | Stage 2B (family persistence) |
+| known uncertainty | None |
+
+#### `relate.family.rules`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `EDGE_RULES`, `HARD_CONNECTING_EDGE_TYPES`, `CONDITIONAL_CONNECTING_EDGE_TYPES`, `NONCONNECTING_EDGE_TYPES`, `CONNECTING_EDGE_TYPES`, `ALL_EDGE_TYPES`, `edge_rules_contract` |
+| new module | `relate.family.rules` |
+| responsibility | Frozen edge-rule taxonomy and rule-derived constants |
+| compatibility facade | Explicit re-export; `historical.EDGE_RULES is clean.EDGE_RULES` (same object) |
+| clean module imports experiments | no |
+| scientific behaviour changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| canonical artifacts changed | no |
+| remaining historical responsibility | None for these symbols |
+| future extraction stage | Stage 2B |
+| known uncertainty | `CONFIDENCE_CATEGORIES` appears in both `rules.py` and `sources.py`; each has an independent use and both duplicate the historical value |
+
+#### `relate.family.repositories`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `normalize_repository`, `repository_owner`, `load_allocation_manifest`, `allocation_repository_commitment`, `validate_canonical_allocation_entries`, `ROLE_ORDER`, `REPOSITORY_PATTERN`, `ALLOCATION_REPOSITORY_COUNT`, `ALLOCATION_REPOSITORY_COMMITMENT_SHA256`, `ALLOCATION_ROLE_REPOSITORY_COUNTS`, `ALLOCATION_ROLE_ROW_COUNTS` |
+| new module | `relate.family.repositories` |
+| responsibility | Pure repository identity and allocation-domain operations |
+| compatibility facade | Explicit re-export |
+| clean module imports experiments | no |
+| scientific behaviour changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| canonical artifacts changed | no |
+| remaining historical responsibility | None for these symbols |
+| future extraction stage | Stage 2B |
+| known uncertainty | None |
+
+#### `relate.family.sources`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `validate_payload_firewall`, `payload_hash`, `validate_source_identity`, `validate_source_registry`, `validate_evidence_source_bundle`, `source_bundle_commitment`, `make_source_record`, `source_record_from_record`, `validate_source_record`, `public_metadata_snapshot`, `parse_timestamp`, `HASH_PATTERN`, `LOCATOR_PATTERN`, `ALLOWED_EVIDENCE_SOURCES`, `METADATA_STATUSES`, `PUBLIC_METADATA_FIELDS`, `MAX_EVIDENCE_STRING_LENGTH`, `FORBIDDEN_PAYLOAD_PATTERNS` |
+| new module | `relate.family.sources` |
+| responsibility | Pure source-evidence construction and validation |
+| compatibility facade | Explicit re-export |
+| clean module imports experiments | no |
+| scientific behaviour changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| canonical artifacts changed | no |
+| remaining historical responsibility | None for these symbols |
+| future extraction stage | Stage 2B |
+| known uncertainty | `validate_payload_firewall` and `payload_hash` are listed under `edges.py` in the problem statement but were placed in `sources.py` to avoid a circular import: `sources.py` needs `payload_hash` for `public_metadata_snapshot`, and `edges.py` imports `sources.py`. Placing them in `edges.py` would create `sources→edges→sources`. The boundary is functionally equivalent. |
+
+#### `relate.family.edges`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `derive_edge_id`, `validate_rule_payload`, `validate_rule_semantics`, `validate_source_payload_binding`, `make_evidence_candidate`, `validate_evidence_candidate`, `evidence_candidate_from_record`, `make_manual_review_disposition`, `validate_manual_review_disposition`, `manual_review_disposition_from_record`, `resolve_evidence_candidate`, `make_evidence_edge` (wrapped — see below), `validate_evidence_edge`, `validate_resolved_edge`, `evidence_edge_from_record`, `PROTOCOL_VERSION`, `REVIEW_DISPOSITIONS` |
+| new module | `relate.family.edges` |
+| responsibility | Pure edge, candidate and review construction and validation |
+| compatibility facade | Explicit re-export; `make_evidence_edge` wrapped (see below) |
+| clean module imports experiments | no |
+| scientific behaviour changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| canonical artifacts changed | no |
+| remaining historical responsibility | None for these symbols |
+| future extraction stage | Stage 2B |
+| known uncertainty | `make_evidence_edge` in the clean package accepts `protocol_sha256` as an explicit keyword argument. The historical module wraps it and supplies `protocol_contract()["protocol_sha256"]`. This keeps the clean domain module free from any dependency on the historical module. |
+
+---
+
+### Symbols deliberately left in the historical module
+
+| Symbol | Reason |
+|---|---|
+| `FamilyGraphCacheIdentity` | `default_cache_identity` uses `sha256_file(Path(__file__))`, making the default runner source identity file-path-sensitive. Moving it to `relate.family` would change the hash. Deferred to Stage 2B. |
+| `default_cache_identity` | Depends on `FamilyGraphCacheIdentity` and `__file__` |
+| `FamilyGraphCache` | SQLite persistence — not a pure domain capability |
+| `protocol_contract` | Assembles the full protocol contract from frozen inputs; references canonical artifact path |
+| `verify_protocol_contract` | Canonical-input verification; reads artifact files |
+| `verify_firewall_artifact` | Firewall artifact verification |
+| `graph_component_*`, `family_outcome_*` | Graph construction and outcome calculation |
+| `atomic_write_protocol` | File publication |
+| `main`, argument parser | CLI entry point |
+| `SCHEMA_ID`, `CACHE_SCHEMA_ID`, `D1_*`, `ALLOCATION_MANIFEST_SHA256`, `ALLOCATION_CONTEXT_SHA256` | Historical-only protocol constants; not pure domain |
+
+---
+
+### Cycles avoided
+
+- `payload_hash` / `validate_payload_firewall` placed in `sources.py` (not `edges.py`) to
+  avoid `sources → edges → sources` circular import.
+- No circular imports were created inside `relate.family`.
+
+---
+
+### Apparently pure function deferred
+
+- `FamilyGraphCacheIdentity` appears structurally pure but references `sha256_file(__file__)`.
+  Moving it would change the default cache identity for future runs. Deferred to Stage 2B.
+
+---
+
+### Current callers inspected
+
+| Caller | Uses | Action |
+|---|---|---|
+| `tests_current/integration/test_family_graph_cache_evidence.py` | `FamilyGraphCache`, `FamilyGraphCacheIdentity` | Both kept in historical module; no change required |
+| `src/relate/evidence/canonical_json.py` | Reference in comments only | No action |
+
+---
+
+### Callers updated
+
+None. The historical module continues to expose the same names via explicit re-exports.
+No external caller required modification.
+
+---
+
+### Protocol compatibility verification
+
+- Protocol SHA preserved exactly: `a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08`
+- `git diff -- artifacts/canonical` is empty (confirmed)
+- `historical.EvidenceEdge is clean.EvidenceEdge` → True (same Python object)
+
+---
+
+### Tests added
+
+```text
+tests_current/family/
+  __init__.py
+  test_repositories.py   — normalize, owner, commitment, manifest, validation
+  test_rules.py          — taxonomy ordering, partition, required fields, contract
+  test_sources.py        — source records, payload firewall, timestamps, metadata
+  test_edges.py          — candidates, dispositions, edges, round-trip
+  test_protocol_compatibility.py — object identity, data equality, no forbidden imports
+```
+
+---
+
+### Recommended next PR
+
+**Stage 2B — Family persistence extraction**
+
+Move `FamilyGraphCache`, `FamilyGraphCacheIdentity`, `default_cache_identity` and their
+SQLite schema into a clean `relate.family.store` module without executing the canonical graph.
+
+---
+
+## Recommended Next Architecture Stage (post-Stage 2B)
 
 **Stage C — Domain decomposition of capability stores**
 

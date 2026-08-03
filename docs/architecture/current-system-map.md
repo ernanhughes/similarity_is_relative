@@ -63,6 +63,8 @@ src/relate/
 │   │                          executable request/authorization records)
 │   ├── execution.py          (Stage 2H — one-shot authorized canonical-input
 │   │                          execution to noncanonical staging)
+│   ├── execution_review.py   (Stage 2I — read-only review of staged
+│   │                          canonical execution evidence)
 │   ├── workflow/             (Stage 2E — explicit noncanonical family workflow)
 │   │   ├── identity.py        (source manifest identity)
 │   │   ├── models.py          (config, evidence bundle, noncanonical path guard)
@@ -167,6 +169,23 @@ under that authorized staging directory. It does not publish canonical results,
 does not change allocation, does not decide materiality or reallocation, and
 does not start D2. `FamilyWorkflowExecutionMode` still contains only
 `NONCANONICAL`.
+
+Stage 2I adds a read-only evidence review boundary:
+
+```text
+relate.cli.family
+    -> relate.family.execution_review
+        -> relate.family.authorization
+        -> relate.family.execution artifact validators
+        -> relate.family.review
+        -> relate.family.store
+        -> relate.evidence
+```
+
+It validates staged claim, receipt, failure, trace and review-packet evidence,
+compares completed scientific payloads with the authorized rehearsal, and can
+write an immutable noncanonical review bundle. It does not execute the
+workflow and does not authorize canonical publication.
 
 The future composition direction remains:
 
@@ -405,12 +424,17 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2I — Canonical execution review boundary**
+**Stage 2J — Canonical publication authorization boundary**
 
-Review the noncanonical staged claim, receipt, trace, and review packet
-created by Stage 2H without promoting anything into `artifacts/canonical`.
-Canonical publication, materiality, allocation changes, reallocation, model
-refit, C0 replay, protected-row access, and D2 remain separate gated acts.
+Introduce a separate authorization boundary for canonical publication only
+after reviewed completed execution evidence exists. Materiality, allocation
+changes, reallocation, model refit, C0 replay, protected-row access, and D2
+remain separate gated acts.
+
+Previous immediate-next note (completed as Stage 2I): a read-only execution
+evidence review boundary was added for staged canonical-input execution
+artifacts. It creates noncanonical review reports, dispositions, and bundles
+only.
 
 Previous immediate-next note (completed as Stage 2H): executable v2
 canonical-execution request and authorization records were added; v1 remains

@@ -39,6 +39,7 @@ from relate.family.canonical_publication_authorization import (
     canonical_family_publication_candidate_from_record,
     canonical_family_publication_request_commitment,
     canonical_family_publication_request_from_record,
+    validate_canonical_family_publication_authorization,
 )
 from relate.family.execution_review import (
     CanonicalExecutionReviewBundle,
@@ -112,8 +113,12 @@ class CanonicalPublicationRecordChainValidation:
     candidate_file_sha256: str
     execution_review_bundle_commitment: str
     canonical_destination: str
+    canonical_parent: str
     audit_work_dir: str
     publisher_source_identity: str
+    family_protocol_sha256: str
+    execution_review_report_commitment: str
+    execution_review_disposition_id: str
 
     def as_record(self) -> dict[str, Any]:
         return dict(self.__dict__)
@@ -200,25 +205,64 @@ def _load_optional_json(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     ), sha256_file(path)
 
 
-def _validate_common_chain_fields(
-    record: dict[str, Any], chain: CanonicalPublicationRecordChainValidation
+def _validate_expected_fields(
+    record: dict[str, Any], expected: dict[str, Any], *, label: str
 ) -> None:
-    expected = {
+    for key, value in expected.items():
+        if record.get(key) != value:
+            raise ValueError(f"{label} {key} mismatch")
+
+
+def _expected_claim_fields(chain: CanonicalPublicationRecordChainValidation) -> dict[str, Any]:
+    return {
         "executable_request_commitment": chain.executable_request_commitment,
         "executable_authorization_id": chain.executable_authorization_id,
         "stage_2j_publication_request_commitment": chain.stage_2j_request_commitment,
         "stage_2j_publication_authorization_id": chain.stage_2j_authorization_id,
+        "family_protocol_sha256": chain.family_protocol_sha256,
         "canonical_publication_candidate_commitment": chain.candidate_commitment,
+        "canonical_publication_candidate_file_sha256": chain.candidate_file_sha256,
+        "accepted_execution_review_bundle_commitment": chain.execution_review_bundle_commitment,
+        "intended_canonical_destination": chain.canonical_destination,
+        "intended_canonical_parent": chain.canonical_parent,
+        "canonical_publisher_source_identity": chain.publisher_source_identity,
+        "payload_policy": PAYLOAD_POLICY,
+        "continuing_prohibitions": list(CONTINUING_PROHIBITIONS),
     }
-    for key, value in expected.items():
-        if record.get(key) != value:
-            raise ValueError(f"audit record {key} mismatch")
-    candidate_sha = record.get(
-        "canonical_publication_candidate_file_sha256",
-        record.get("source_candidate_file_sha256"),
-    )
-    if candidate_sha != chain.candidate_file_sha256:
-        raise ValueError("audit record candidate file SHA mismatch")
+
+
+def _expected_receipt_fields(chain: CanonicalPublicationRecordChainValidation) -> dict[str, Any]:
+    return {
+        "publication_status": "COMPLETED",
+        "executable_request_commitment": chain.executable_request_commitment,
+        "executable_authorization_id": chain.executable_authorization_id,
+        "stage_2j_publication_request_commitment": chain.stage_2j_request_commitment,
+        "stage_2j_publication_authorization_id": chain.stage_2j_authorization_id,
+        "family_protocol_sha256": chain.family_protocol_sha256,
+        "canonical_publisher_source_identity": chain.publisher_source_identity,
+        "canonical_publication_candidate_commitment": chain.candidate_commitment,
+        "source_candidate_file_sha256": chain.candidate_file_sha256,
+        "published_destination_file_sha256": chain.candidate_file_sha256,
+        "accepted_execution_review_bundle_commitment": chain.execution_review_bundle_commitment,
+        "execution_review_report_commitment": chain.execution_review_report_commitment,
+        "execution_review_disposition_id": chain.execution_review_disposition_id,
+        "canonical_destination": chain.canonical_destination,
+        "canonical_parent": chain.canonical_parent,
+        "payload_policy": PAYLOAD_POLICY,
+        "continuing_prohibitions": list(CONTINUING_PROHIBITIONS),
+    }
+
+
+def _expected_failure_fields(chain: CanonicalPublicationRecordChainValidation) -> dict[str, Any]:
+    return {
+        "executable_request_commitment": chain.executable_request_commitment,
+        "executable_authorization_id": chain.executable_authorization_id,
+        "stage_2j_publication_request_commitment": chain.stage_2j_request_commitment,
+        "stage_2j_publication_authorization_id": chain.stage_2j_authorization_id,
+        "canonical_destination": chain.canonical_destination,
+        "canonical_publication_candidate_commitment": chain.candidate_commitment,
+        "canonical_publication_candidate_file_sha256": chain.candidate_file_sha256,
+    }
 
 
 def canonical_publication_claim_from_record(record: dict[str, Any]) -> dict[str, Any]:
@@ -460,6 +504,19 @@ def validate_canonical_publication_record_chain(
     executable_request_commitment = executable_canonical_publication_request_commitment(
         executable_request
     )
+    s2j_validation = validate_canonical_family_publication_authorization(
+        repo_root=root,
+        request=s2j_request,
+        authorization=s2j_auth,
+        candidate=candidate,
+        execution_review_bundle=bundle,
+        require_destination_absent=False,
+        require_current_source_identity=False,
+    )
+    if s2j_validation.request_commitment != s2j_request_commitment:
+        raise ValueError("Stage 2J authorization request commitment mismatch")
+    if s2j_validation.authorization_id != s2j_auth_record["authorization_id"]:
+        raise ValueError("Stage 2J authorization ID mismatch")
     checks = {
         "stage_2j_publication_request_commitment": s2j_request_commitment,
         "stage_2j_publication_request_file_sha256": stage_2j_request_file_sha256,
@@ -522,8 +579,12 @@ def validate_canonical_publication_record_chain(
         candidate_file_sha256=candidate_file_sha256,
         execution_review_bundle_commitment=bundle_commitment,
         canonical_destination=destination,
+        canonical_parent=parent,
         audit_work_dir=audit_work_dir,
         publisher_source_identity=exec_req_record["canonical_publisher_source_identity"],
+        family_protocol_sha256=exec_req_record["family_protocol_sha256"],
+        execution_review_report_commitment=exec_req_record["execution_review_report_commitment"],
+        execution_review_disposition_id=exec_req_record["execution_review_disposition_id"],
     )
 
 
@@ -544,6 +605,12 @@ def _validate_trace_sequence(
         prefix = tuple(event_types[:-1])
         if prefix != _COMPLETED_EVENTS[: len(prefix)]:
             raise ValueError("failed trace prefix is malformed")
+        if failure["claim_persisted"] and "CLAIM_PERSISTED" not in prefix:
+            raise ValueError("failure trace does not include persisted claim")
+        if not failure["claim_persisted"] and "CLAIM_PERSISTED" in prefix:
+            raise ValueError("trace claims persisted claim but failure does not")
+        if failure["canonical_file_created"] and "CANONICAL_DESTINATION_CREATED" not in prefix:
+            raise ValueError("failure trace does not include canonical creation")
         if not failure["canonical_file_created"] and "CANONICAL_DESTINATION_CREATED" in prefix:
             raise ValueError("trace claims canonical creation but failure does not")
     for event in events:
@@ -622,7 +689,7 @@ def inspect_canonical_publication_evidence(
         canonical_publication_failure_from_record(failure_raw) if failure_raw is not None else None
     )
     if claim is not None:
-        _validate_common_chain_fields(claim, chain)
+        _validate_expected_fields(claim, _expected_claim_fields(chain), label="claim")
         if claim["claim_commitment"] != sha256_text(
             canonical_json({k: v for k, v in claim.items() if k != "claim_commitment"})
         ):
@@ -646,7 +713,7 @@ def inspect_canonical_publication_evidence(
     if receipt is not None:
         if claim is None or trace is None:
             raise ValueError("completed receipt requires claim and trace")
-        _validate_common_chain_fields(receipt, chain)
+        _validate_expected_fields(receipt, _expected_receipt_fields(chain), label="receipt")
         if receipt["claim_commitment"] != claim["claim_commitment"]:
             raise ValueError("receipt claim commitment mismatch")
         if receipt["trace_file_sha256"] != trace_sha:
@@ -656,17 +723,25 @@ def inspect_canonical_publication_evidence(
         trace_summary = _validate_trace_sequence(trace, chain=chain, failure=None)
         terminal = CanonicalPublicationTerminalStatus.VALID_COMPLETED
     elif failure is not None:
-        _validate_common_chain_fields(failure, chain)
+        _validate_expected_fields(failure, _expected_failure_fields(chain), label="failure")
         if failure["claim_persisted"] and claim is None:
             raise ValueError("failure says claim persisted but claim is missing")
         if failure["canonical_file_created"]:
             if not destination_exists or destination_sha != failure["canonical_file_sha256"]:
                 raise ValueError("failure canonical file evidence mismatch")
-            terminal = CanonicalPublicationTerminalStatus.VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED
+            terminal = (
+                CanonicalPublicationTerminalStatus.VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED
+                if trace is not None
+                else CanonicalPublicationTerminalStatus.INCOMPLETE_TERMINAL_EVIDENCE
+            )
         else:
             if destination_exists:
                 raise ValueError("failure says no canonical file but destination exists")
-            terminal = CanonicalPublicationTerminalStatus.VALID_FAILED_BEFORE_CANONICAL_CREATION
+            terminal = (
+                CanonicalPublicationTerminalStatus.VALID_FAILED_BEFORE_CANONICAL_CREATION
+                if trace is not None
+                else CanonicalPublicationTerminalStatus.INCOMPLETE_TERMINAL_EVIDENCE
+            )
         trace_summary = (
             _validate_trace_sequence(trace, chain=chain, failure=failure)
             if trace is not None
@@ -762,6 +837,98 @@ def _closure_eligibility(status: str) -> dict[str, bool]:
     }
 
 
+def _validate_report_semantics(data: dict[str, Any]) -> None:
+    status = data["terminal_status"]
+    completed = status == CanonicalPublicationTerminalStatus.VALID_COMPLETED
+    failed_before = (
+        status == CanonicalPublicationTerminalStatus.VALID_FAILED_BEFORE_CANONICAL_CREATION
+    )
+    partial = (
+        status == CanonicalPublicationTerminalStatus.VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED
+    )
+    incomplete = status == CanonicalPublicationTerminalStatus.INCOMPLETE_TERMINAL_EVIDENCE
+    if data["publication_completed"] is not completed:
+        raise ValueError("publication completion flag does not match terminal status")
+    if data["audit_finalization_completed"] is not completed:
+        raise ValueError("audit finalization flag does not match terminal status")
+    if completed:
+        if not data["canonical_artifact_exists"]:
+            raise ValueError("completed report requires canonical artifact")
+        if not data["canonical_artifact_exact_bytes_verified"]:
+            raise ValueError("completed report requires exact canonical bytes")
+        if data["receipt_commitment"] is None:
+            raise ValueError("completed report requires receipt commitment")
+        if data["failure_commitment"] is not None:
+            raise ValueError("completed report cannot have failure commitment")
+        if data["canonical_destination_file_sha256"] != data["candidate_file_sha256"]:
+            raise ValueError("completed report destination SHA mismatch")
+        if not data["trace_validation_summary"].get("events_validated"):
+            raise ValueError("completed report requires validated trace")
+        if not data["receipt_validation_summary"].get("validated"):
+            raise ValueError("completed report requires validated receipt")
+    elif failed_before:
+        if data["canonical_artifact_exists"]:
+            raise ValueError("failed-before-canonical report cannot have artifact")
+        if data["canonical_artifact_exact_bytes_verified"]:
+            raise ValueError("failed-before-canonical report cannot verify bytes")
+        if data["canonical_destination_file_sha256"] is not None:
+            raise ValueError("failed-before-canonical report cannot bind destination SHA")
+        if data["receipt_commitment"] is not None:
+            raise ValueError("failed-before-canonical report cannot have receipt commitment")
+        if data["failure_commitment"] is None:
+            raise ValueError("failed-before-canonical report requires failure commitment")
+        if not data["trace_validation_summary"].get("events_validated"):
+            raise ValueError("failed-before-canonical report requires validated trace")
+        if not data["failure_validation_summary"].get("validated"):
+            raise ValueError("failed-before-canonical report requires validated failure")
+    elif partial:
+        if not data["canonical_artifact_exists"]:
+            raise ValueError("partial-success report requires canonical artifact")
+        if not data["canonical_artifact_exact_bytes_verified"]:
+            raise ValueError("partial-success report requires exact canonical bytes")
+        if data["canonical_destination_file_sha256"] != data["candidate_file_sha256"]:
+            raise ValueError("partial-success report destination SHA mismatch")
+        if data["receipt_commitment"] is not None:
+            raise ValueError("partial-success report cannot have receipt commitment")
+        if data["failure_commitment"] is None:
+            raise ValueError("partial-success report requires failure commitment")
+        if not data["trace_validation_summary"].get("events_validated"):
+            raise ValueError("partial-success report requires validated trace")
+        if not data["failure_validation_summary"].get("validated"):
+            raise ValueError("partial-success report requires validated failure")
+    elif incomplete:
+        if data["publication_completed"] or data["audit_finalization_completed"]:
+            raise ValueError("incomplete report cannot claim completed finalization")
+        if data["receipt_commitment"] is not None:
+            raise ValueError("incomplete report cannot have receipt commitment")
+    byte_summary = data["canonical_byte_validation_summary"]
+    if byte_summary.get("destination_exists") != data["canonical_artifact_exists"]:
+        raise ValueError("canonical byte summary existence mismatch")
+    if byte_summary.get("exact_bytes_verified") != data["canonical_artifact_exact_bytes_verified"]:
+        raise ValueError("canonical byte summary exact-bytes mismatch")
+    if byte_summary.get("destination_sha256") != data["canonical_destination_file_sha256"]:
+        raise ValueError("canonical byte summary destination SHA mismatch")
+
+
+def _disposition_is_eligible(report_record: dict[str, Any], disposition: str) -> bool:
+    eligibility = report_record["closure_eligibility"]
+    return (
+        disposition == WITHHOLD_CANONICAL_PUBLICATION_CLOSURE
+        or (
+            disposition == CLOSE_COMPLETED_CANONICAL_PUBLICATION
+            and eligibility["completed_publication_closure"]
+        )
+        or (
+            disposition == CLOSE_FAILED_PUBLICATION_WITHOUT_CANONICAL_ARTIFACT
+            and eligibility["failed_attempt_closure"]
+        )
+        or (
+            disposition == ACKNOWLEDGE_CANONICAL_ARTIFACT_WITH_INCOMPLETE_AUDIT_FINALIZATION
+            and eligibility["partial_success_acknowledgement"]
+        )
+    )
+
+
 def canonical_publication_evidence_review_report_from_record(
     record: dict[str, Any],
 ) -> CanonicalPublicationEvidenceReviewReport:
@@ -823,18 +990,7 @@ def canonical_publication_evidence_review_report_from_record(
     ):
         validate_sha256_identity(data[key], label=key)
     _validate_relative_path(data["canonical_destination"], label="canonical destination")
-    if data["terminal_status"] == "VALID_COMPLETED" and not data["publication_completed"]:
-        raise ValueError("completed report must mark publication completed")
-    if (
-        data["terminal_status"] == "VALID_FAILED_BEFORE_CANONICAL_CREATION"
-        and data["canonical_destination_file_sha256"] is not None
-    ):
-        raise ValueError("failed-before-canonical report cannot bind destination SHA")
-    if (
-        data["terminal_status"] == "VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED"
-        and data["receipt_commitment"] is not None
-    ):
-        raise ValueError("partial success cannot have receipt commitment")
+    _validate_report_semantics(data)
     _commit(data, "report_commitment")
     return CanonicalPublicationEvidenceReviewReport(record=data)
 
@@ -852,22 +1008,8 @@ def make_canonical_publication_closure_disposition(
     report_record = canonical_publication_evidence_review_report_from_record(
         report.as_record()
     ).as_record()
-    eligibility = report_record["closure_eligibility"]
-    if (
-        disposition == CLOSE_COMPLETED_CANONICAL_PUBLICATION
-        and not eligibility["completed_publication_closure"]
-    ):
-        raise ValueError("completed closure is not eligible")
-    if (
-        disposition == CLOSE_FAILED_PUBLICATION_WITHOUT_CANONICAL_ARTIFACT
-        and not eligibility["failed_attempt_closure"]
-    ):
-        raise ValueError("failed-attempt closure is not eligible")
-    if (
-        disposition == ACKNOWLEDGE_CANONICAL_ARTIFACT_WITH_INCOMPLETE_AUDIT_FINALIZATION
-        and not eligibility["partial_success_acknowledgement"]
-    ):
-        raise ValueError("partial-success acknowledgement is not eligible")
+    if not _disposition_is_eligible(report_record, disposition):
+        raise ValueError("publication closure disposition is not eligible")
     reviewer = validate_source_identity(reviewer_identity)
     timestamp = parse_timestamp(review_timestamp)
     reason = _reason(bounded_reason)
@@ -934,8 +1076,21 @@ def canonical_publication_closure_disposition_from_record(
         ).as_record()
         if data["review_report_commitment"] != report_record["report_commitment"]:
             raise ValueError("closure disposition is for another report")
-        if data["terminal_status"] != report_record["terminal_status"]:
-            raise ValueError("closure disposition terminal status mismatch")
+        mirrored = {
+            "terminal_status": report_record["terminal_status"],
+            "family_protocol_sha256": report_record["family_protocol_sha256"],
+            "executable_request_commitment": report_record["executable_request_commitment"],
+            "executable_authorization_id": report_record["executable_authorization_id"],
+            "candidate_commitment": report_record["candidate_commitment"],
+            "canonical_destination": report_record["canonical_destination"],
+            "canonical_destination_file_sha256": report_record[
+                "canonical_destination_file_sha256"
+            ],
+            "review_scope": PUBLICATION_REVIEW_SCOPE,
+        }
+        _validate_expected_fields(data, mirrored, label="closure disposition")
+        if not _disposition_is_eligible(report_record, data["disposition"]):
+            raise ValueError("publication closure disposition is not eligible")
     _commit(data, "disposition_id")
     return CanonicalPublicationClosureDisposition(record=data)
 
@@ -1000,6 +1155,14 @@ def canonical_publication_closure_bundle_from_record(
         canonical_json(disposition.as_record())
     ):
         raise ValueError("closure bundle disposition commitment mismatch")
+    mirrored = {
+        "terminal_status": report.as_record()["terminal_status"],
+        "canonical_destination": report.as_record()["canonical_destination"],
+        "canonical_destination_file_sha256": report.as_record()[
+            "canonical_destination_file_sha256"
+        ],
+    }
+    _validate_expected_fields(data, mirrored, label="closure bundle")
     if tuple(data["continuing_prohibitions"]) != CONTINUING_PROHIBITIONS:
         raise ValueError("closure bundle prohibitions changed")
     _commit(data, "bundle_commitment")

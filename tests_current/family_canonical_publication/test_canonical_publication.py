@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import shutil
 from pathlib import Path
 
 import pytest
 
+import relate.family.canonical_publication as canonical_publication
 from relate.cli.family import EXIT_FAILURE, EXIT_OK, main
 from relate.evidence.atomic_io import atomic_create_bytes_no_replace, atomic_write_json
 from relate.evidence.hashing import sha256_file
@@ -125,6 +127,24 @@ def test_atomic_create_bytes_no_replace_preserves_existing(tmp_path: Path) -> No
     assert not list(tmp_path.glob(".out.json.tmp-*"))
 
 
+def test_atomic_create_bytes_no_replace_preserves_original_write_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "out.json"
+
+    def fail_fsync(_descriptor: int) -> None:
+        raise RuntimeError("original fsync failure")
+
+    def fail_close(_descriptor: int) -> None:
+        raise OSError("masked close failure")
+
+    monkeypatch.setattr(os, "fsync", fail_fsync)
+    monkeypatch.setattr(os, "close", fail_close)
+    with pytest.raises(RuntimeError, match="original fsync failure"):
+        atomic_create_bytes_no_replace(destination, b"payload")
+    assert not destination.exists()
+
+
 def test_v2_validation_and_successful_one_shot_execution(tmp_path: Path) -> None:
     chain = _chain(tmp_path)
     validation = validate_executable_canonical_publication_authorization(
@@ -161,6 +181,15 @@ def test_v2_validation_and_successful_one_shot_execution(tmp_path: Path) -> None
     assert (audit / "canonical-publication-trace.json").exists()
     assert (audit / "canonical-publication-receipt.json").exists()
     assert not (audit / "canonical-publication-failure.json").exists()
+    receipt = _read(audit / "canonical-publication-receipt.json")
+    trace = _read(audit / "canonical-publication-trace.json")
+    assert receipt["trace_file_sha256"] == sha256_file(
+        audit / "canonical-publication-trace.json"
+    )
+    assert "RECEIPT_PERSISTED" not in {event["event_type"] for event in trace["events"]}
+    assert result.receipt_file_sha256 == sha256_file(
+        audit / "canonical-publication-receipt.json"
+    )
     with pytest.raises(ValueError, match="already exists"):
         execute_authorized_canonical_publication(
             repo_root=chain["repo"],
@@ -173,6 +202,35 @@ def test_v2_validation_and_successful_one_shot_execution(tmp_path: Path) -> None
             stage_2j_request_file_sha256=sha256_file(chain["stage2j_request_path"]),
             stage_2j_authorization_file_sha256=sha256_file(chain["stage2j_auth_path"]),
         )
+
+
+def test_receipt_write_failure_cannot_leave_receipt_and_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    chain = _chain(tmp_path)
+    original = canonical_publication.atomic_write_json
+
+    def fail_receipt(path: Path, value: dict) -> None:
+        if path.name == "canonical-publication-receipt.json":
+            raise RuntimeError("receipt persistence failed")
+        original(path, value)
+
+    monkeypatch.setattr(canonical_publication, "atomic_write_json", fail_receipt)
+    with pytest.raises(RuntimeError, match="receipt persistence failed"):
+        execute_authorized_canonical_publication(
+            repo_root=chain["repo"],
+            stage_2j_request=chain["stage2j_request"],
+            stage_2j_authorization=chain["stage2j_auth"],
+            executable_request=chain["exec_request"],
+            executable_authorization=chain["exec_auth"],
+            candidate_file=chain["candidate_path"],
+            execution_review_bundle_file=chain["bundle_path"],
+            stage_2j_request_file_sha256=sha256_file(chain["stage2j_request_path"]),
+            stage_2j_authorization_file_sha256=sha256_file(chain["stage2j_auth_path"]),
+        )
+    audit = chain["repo"] / ".writer/stage-2k/audit"
+    assert not (audit / "canonical-publication-receipt.json").exists()
+    assert (audit / "canonical-publication-failure.json").exists()
 
 
 def test_withheld_v2_execution_has_no_side_effects(tmp_path: Path) -> None:

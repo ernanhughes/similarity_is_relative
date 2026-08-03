@@ -75,14 +75,10 @@ def atomic_create_bytes_no_replace(destination: Path, content: bytes) -> None:
     temporary = destination.with_name(f".{destination.name}.tmp-{uuid.uuid4().hex}")
     try:
         descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
-        try:
-            with os.fdopen(descriptor, "wb") as handle:
-                handle.write(content)
-                handle.flush()
-                os.fsync(handle.fileno())
-        except Exception:
-            os.close(descriptor)
-            raise
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
         os.link(temporary, destination)
         fsync_directory(destination.parent)
     finally:

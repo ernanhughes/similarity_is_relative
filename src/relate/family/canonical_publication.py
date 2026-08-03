@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from dataclasses import dataclass
@@ -626,6 +627,11 @@ def _event(event_type: str, **values: Any) -> dict[str, Any]:
     return {"event_type": event_type, "timestamp": _now(), **values}
 
 
+def _json_file_sha256(value: dict[str, Any]) -> str:
+    payload = (json.dumps(value, indent=2, sort_keys=True) + "\n").encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
 def _claim(request: dict[str, Any], auth: dict[str, Any]) -> dict[str, Any]:
     payload = {
         "schema_id": PUBLICATION_CLAIM_SCHEMA_ID,
@@ -897,10 +903,9 @@ def execute_authorized_canonical_publication(
             "publication_timestamp": _now(),
         }
         receipt = {**payload, "receipt_commitment": sha256_text(canonical_json(payload))}
+        receipt_file_sha = _json_file_sha256(receipt)
         atomic_write_json(audit_dir / "canonical-publication-receipt.json", receipt)
         receipt_persisted = True
-        events.append(_event("RECEIPT_PERSISTED"))
-        atomic_write_json(trace_path, {"schema_id": PUBLICATION_TRACE_SCHEMA_ID, "events": events})
         return AuthorizedCanonicalPublicationResult(
             status=AuthorizedCanonicalPublicationStatus.COMPLETED,
             request_commitment=request_record["request_commitment"],
@@ -910,7 +915,7 @@ def execute_authorized_canonical_publication(
             canonical_destination_file_sha256=canonical_sha,
             audit_work_dir=audit_dir,
             receipt_commitment=receipt["receipt_commitment"],
-            receipt_file_sha256=sha256_file(audit_dir / "canonical-publication-receipt.json"),
+            receipt_file_sha256=receipt_file_sha,
         )
     except Exception as exc:
         if canonical_sha is None and destination.exists():

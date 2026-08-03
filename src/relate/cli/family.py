@@ -29,6 +29,15 @@ from relate.family.authorization import (
     validate_executable_canonical_authorization_v2,
 )
 from relate.family.execution import execute_authorized_canonical_family
+from relate.family.execution_review import (
+    ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW,
+    WITHHOLD_EXECUTION_EVIDENCE,
+    canonical_execution_review_disposition_from_record,
+    canonical_execution_review_report_from_record,
+    inspect_authorized_canonical_execution,
+    make_canonical_execution_review_disposition,
+    write_canonical_execution_review_bundle,
+)
 from relate.family.publication import (
     AUTHORIZE_BOUNDED_REVIEW_PUBLICATION,
     WITHHOLD_BOUNDED_REVIEW_PUBLICATION,
@@ -96,6 +105,14 @@ def _load_packet(path: Path):
 
 def _load_publication_disposition(path: Path):
     return family_publication_disposition_from_record(read_json_object(path))
+
+
+def _load_execution_review_report(path: Path):
+    return canonical_execution_review_report_from_record(read_json_object(path))
+
+
+def _load_execution_review_disposition(path: Path):
+    return canonical_execution_review_disposition_from_record(read_json_object(path))
 
 
 def _cmd_run_noncanonical(args: argparse.Namespace) -> int:
@@ -297,6 +314,75 @@ def _cmd_execute_authorized_canonical(args: argparse.Namespace) -> int:
     return EXIT_FAILURE
 
 
+def _cmd_review_authorized_canonical_execution(args: argparse.Namespace) -> int:
+    request_path = args.request
+    authorization_path = args.authorization
+    packet_path = args.review_packet
+    bundle_path = args.evidence_bundle
+    request = canonical_execution_request_v2_from_record(read_json_object(request_path))
+    authorization = canonical_execution_authorization_v2_from_record(
+        read_json_object(authorization_path)
+    )
+    report = inspect_authorized_canonical_execution(
+        repo_root=args.repo_root.resolve(strict=False),
+        request=request,
+        authorization=authorization,
+        authorization_review_packet=_load_packet(packet_path),
+        evidence_bundle=_load_bundle(bundle_path),
+        work_dir=args.work_dir,
+        file_identities={
+            "request": sha256_file(request_path),
+            "authorization": sha256_file(authorization_path),
+            "authorization_review_packet": sha256_file(packet_path),
+            "prepared_evidence_bundle": sha256_file(bundle_path),
+        },
+    )
+    write_json_object_immutable(args.output, report.as_record())
+    _emit(
+        {
+            "status": report.as_record()["terminal_execution_status"],
+            "report_commitment": report.report_commitment,
+            "eligible_for_publication_authorization_review": report.as_record()[
+                "eligible_for_publication_authorization_review"
+            ],
+        }
+    )
+    return (
+        EXIT_OK
+        if report.as_record()["terminal_execution_status"] == "VALID_COMPLETED"
+        else EXIT_BLOCKED_OR_WITHHELD
+    )
+
+
+def _cmd_make_execution_review_disposition(args: argparse.Namespace) -> int:
+    reason = (
+        args.reason
+        if args.reason is not None
+        else args.reason_file.read_text(encoding="utf-8")
+    )
+    disposition = make_canonical_execution_review_disposition(
+        report=_load_execution_review_report(args.report),
+        disposition=args.disposition,
+        reviewer_identity=args.reviewer,
+        review_timestamp=args.timestamp,
+        bounded_reason=reason,
+    )
+    write_json_object_immutable(args.output, disposition.as_record())
+    _emit({"status": "CREATED", "disposition_id": disposition.as_record()["disposition_id"]})
+    return EXIT_OK
+
+
+def _cmd_write_execution_review_bundle(args: argparse.Namespace) -> int:
+    receipt = write_canonical_execution_review_bundle(
+        report=_load_execution_review_report(args.report),
+        disposition=_load_execution_review_disposition(args.disposition),
+        destination=args.output,
+        repo_root=args.repo_root.resolve(strict=False),
+    )
+    _emit({"status": "WRITTEN", **receipt.as_record()})
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="relate-family")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -368,6 +454,41 @@ def build_parser() -> argparse.ArgumentParser:
     execute.add_argument("--review-packet", type=Path, required=True)
     execute.add_argument("--evidence-bundle", type=Path, required=True)
     execute.set_defaults(func=_cmd_execute_authorized_canonical)
+
+    review_execution = sub.add_parser("review-authorized-canonical-execution")
+    review_execution.add_argument("--repo-root", type=Path, required=True)
+    review_execution.add_argument("--request", type=Path, required=True)
+    review_execution.add_argument("--authorization", type=Path, required=True)
+    review_execution.add_argument("--review-packet", type=Path, required=True)
+    review_execution.add_argument("--evidence-bundle", type=Path, required=True)
+    review_execution.add_argument("--work-dir", type=Path, required=True)
+    review_execution.add_argument("--output", type=Path, required=True)
+    review_execution.set_defaults(func=_cmd_review_authorized_canonical_execution)
+
+    review_disp = sub.add_parser("make-canonical-execution-review-disposition")
+    review_disp.add_argument("--report", type=Path, required=True)
+    review_disp.add_argument(
+        "--disposition",
+        choices=(
+            ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW,
+            WITHHOLD_EXECUTION_EVIDENCE,
+        ),
+        required=True,
+    )
+    review_disp.add_argument("--reviewer", required=True)
+    review_disp.add_argument("--timestamp", required=True)
+    review_disp_reason = review_disp.add_mutually_exclusive_group(required=True)
+    review_disp_reason.add_argument("--reason")
+    review_disp_reason.add_argument("--reason-file", type=Path)
+    review_disp.add_argument("--output", type=Path, required=True)
+    review_disp.set_defaults(func=_cmd_make_execution_review_disposition)
+
+    review_bundle = sub.add_parser("write-canonical-execution-review-bundle")
+    review_bundle.add_argument("--repo-root", type=Path, required=True)
+    review_bundle.add_argument("--report", type=Path, required=True)
+    review_bundle.add_argument("--disposition", type=Path, required=True)
+    review_bundle.add_argument("--output", type=Path, required=True)
+    review_bundle.set_defaults(func=_cmd_write_execution_review_bundle)
     return parser
 
 

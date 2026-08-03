@@ -1446,11 +1446,69 @@ attribute.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2H)
 
-**Stage 2I — Canonical Execution Review Boundary**
+## Stage 2I — Canonical Execution Review Boundary
 
-Review the staged Stage 2H receipt and packet without promoting any artifact
-into `artifacts/canonical`, and keep canonical publication, materiality,
-allocation, reallocation, and D2 under separate future authorization.
+Stage 2I adds a read-only execution evidence review boundary over Stage 2H
+staged artifacts.
+
+New module:
+
+- `relate.family.execution_review`.
+
+New CLI commands:
+
+- `review-authorized-canonical-execution`;
+- `make-canonical-execution-review-disposition`;
+- `write-canonical-execution-review-bundle`.
+
+Reviewed artifact schemas:
+
+- `relate-family-canonical-execution-claim-v1`;
+- `relate-family-authorized-canonical-execution-receipt-v1`;
+- `relate-family-canonical-execution-failure-v1`;
+- `relate-family-canonical-execution-trace-v1`;
+- `relate-family-review-packet-v1`.
+
+New review schemas:
+
+- report: `relate-family-canonical-execution-review-report-v1`;
+- disposition: `relate-family-canonical-execution-review-disposition-v1`;
+- bundle: `relate-family-canonical-execution-review-bundle-v1`.
+
+Terminal states recognized:
+
+- `VALID_COMPLETED`;
+- `VALID_BLOCKED`;
+- `VALID_FAILED`;
+- `FAILED_BEFORE_CLAIM_PERSISTED`.
+
+The review validates v2 request/authorization identity binding, exact
+authorized work/store paths, canonical input hashes and firewall declarations,
+claim/receipt/failure/trace consistency, completed-step order, and completed
+scientific-payload equivalence against the authorized rehearsal packet.
+
+Source identity treatment is split into record-chain integrity and
+current-checkout reproducibility. A current checkout source mismatch is
+reported separately rather than treated as automatic historical-record
+tampering.
+
+Only a valid completed execution whose bounded scientific payload matches the
+authorized rehearsal becomes eligible for a later publication-authorization
+review. This eligibility does not authorize publication.
+
+All Stage 2I outputs remain noncanonical. Canonical publication, materiality,
+allocation changes, reallocation, model refit, C0 replay, protected-row access,
+and D2 remain gated.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2I)
+
+**Stage 2J — Canonical Publication Authorization Boundary**
+
+If justified by reviewed execution evidence, introduce a separate canonical
+publication authorization boundary. Do not combine it with materiality,
+allocation, reallocation, model refit, C0 replay, protected-row access, or D2.
 
 ---
 

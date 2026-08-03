@@ -424,24 +424,28 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2K — One-shot canonical publication executor boundary**
+**Stage 2L — Canonical publication evidence review and closure**
 
-Stage 2J completed validation-only canonical publication candidate, request,
-authorization, and verification records:
+Stage 2K completed one-shot authorized canonical publication execution:
 
 ```text
 relate.cli.family
-    -> relate.family.canonical_publication_authorization
+    -> relate.family.canonical_publication
+        -> relate.family.canonical_publication_authorization
         -> relate.family.execution_review
         -> relate.family.review
         -> relate.evidence
 ```
 
-The next boundary may add an executable publisher only if it consumes the exact
-Stage 2J records and preserves the one-candidate, one-absent-destination,
-overwrite-refusing contract. Materiality, allocation changes, reallocation,
-model refit, C0 replay, protected-row access, and D2 remain separate gated
-acts.
+The next boundary should review the publication evidence and close the
+publication audit without further canonical mutation. Materiality, allocation
+changes, reallocation, model refit, C0 replay, protected-row access, and D2
+remain separate gated acts.
+
+Previous immediate-next note (completed as Stage 2K): a distinct v2 executable
+publication request and human authorization were added, with publisher source
+identity, exact candidate-byte publication, no-replace canonical creation,
+noncanonical claim/trace/receipt/failure records, and replay rejection.
 
 Previous immediate-next note (completed as Stage 2I): a read-only execution
 evidence review boundary was added for staged canonical-input execution

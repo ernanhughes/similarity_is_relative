@@ -578,6 +578,7 @@ def _validate_request_chain(
     candidate: CanonicalFamilyPublicationCandidate,
     execution_review_bundle: CanonicalExecutionReviewBundle,
     require_destination_absent: bool,
+    require_current_source_identity: bool = True,
 ) -> dict[str, str]:
     request_record = canonical_family_publication_request_from_record(
         request.as_record()
@@ -591,9 +592,9 @@ def _validate_request_chain(
         raise ValueError("request is for another candidate")
     if request_record["accepted_execution_review_bundle_commitment"] != bundle_commitment:
         raise ValueError("request is for another execution review bundle")
-    if request_record["canonical_publication_contract_source_identity"] != (
-        compute_canonical_publication_contract_source_identity(repo_root)
-    ):
+    if require_current_source_identity and request_record[
+        "canonical_publication_contract_source_identity"
+    ] != compute_canonical_publication_contract_source_identity(repo_root):
         raise ValueError("canonical publication contract source identity mismatch")
     if require_destination_absent:
         destination = validate_intended_canonical_destination(
@@ -614,13 +615,16 @@ def validate_canonical_family_publication_authorization(
     authorization: CanonicalFamilyPublicationAuthorization,
     candidate: CanonicalFamilyPublicationCandidate,
     execution_review_bundle: CanonicalExecutionReviewBundle,
+    require_destination_absent: bool = True,
+    require_current_source_identity: bool = True,
 ) -> CanonicalPublicationAuthorizationValidation:
     validation = _validate_request_chain(
         repo_root=repo_root,
         request=request,
         candidate=candidate,
         execution_review_bundle=execution_review_bundle,
-        require_destination_absent=True,
+        require_destination_absent=require_destination_absent,
+        require_current_source_identity=require_current_source_identity,
     )
     request_record = request.as_record()
     auth_record = canonical_family_publication_authorization_from_record(

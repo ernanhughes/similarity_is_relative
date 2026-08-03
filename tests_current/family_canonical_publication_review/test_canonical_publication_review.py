@@ -8,8 +8,14 @@ import pytest
 
 from relate.cli.family import EXIT_OK, main
 from relate.evidence.atomic_io import atomic_write_json
-from relate.evidence.hashing import sha256_file
+from relate.evidence.canonical_json import canonical_json_compact_unicode
+from relate.evidence.hashing import sha256_file, sha256_text
 from relate.family.canonical_publication import execute_authorized_canonical_publication
+from relate.family.canonical_publication_authorization import (
+    AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+    make_canonical_family_publication_authorization,
+    make_canonical_family_publication_request,
+)
 from relate.family.canonical_publication_review import (
     CLOSE_COMPLETED_CANONICAL_PUBLICATION,
     WITHHOLD_CANONICAL_PUBLICATION_CLOSURE,
@@ -40,6 +46,12 @@ def _execute(chain: dict) -> None:
         stage_2j_request_file_sha256=sha256_file(chain["stage2j_request_path"]),
         stage_2j_authorization_file_sha256=sha256_file(chain["stage2j_auth_path"]),
     )
+
+
+def _commit_record(record: dict, field: str) -> dict:
+    payload = dict(record)
+    payload.pop(field, None)
+    return {**payload, field: sha256_text(canonical_json_compact_unicode(payload))}
 
 
 def _inspect(chain: dict):
@@ -198,6 +210,208 @@ def _inspect_incomplete_claim_only(chain: dict):
     claim = _claim(chain["exec_request"].as_record(), chain["exec_auth"].as_record())
     atomic_write_json(audit / "canonical-publication-claim.json", claim)
     return _inspect(chain)
+
+
+def test_report_parser_rejects_completed_without_receipt_and_exact_artifact(
+    tmp_path: Path,
+) -> None:
+    chain = _chain(tmp_path)
+    _execute(chain)
+    report = _inspect(chain).as_record()
+    forged = {
+        **report,
+        "canonical_artifact_exists": False,
+        "canonical_artifact_exact_bytes_verified": False,
+        "audit_finalization_completed": False,
+        "receipt_commitment": None,
+        "canonical_destination_file_sha256": None,
+    }
+    forged["canonical_byte_validation_summary"] = {
+        **forged["canonical_byte_validation_summary"],
+        "destination_exists": False,
+        "exact_bytes_verified": False,
+        "destination_sha256": None,
+    }
+    forged = _commit_record(forged, "report_commitment")
+    with pytest.raises(ValueError, match="terminal status|completed report"):
+        canonical_publication_evidence_review_report_from_record(forged)
+
+
+def test_disposition_parser_rejects_ineligible_disposition(tmp_path: Path) -> None:
+    chain = _chain(tmp_path)
+    report = _inspect_incomplete_claim_only(chain)
+    record = {
+        "schema_id": "relate-family-canonical-publication-closure-disposition-v1",
+        "review_report_commitment": report.as_record()["report_commitment"],
+        "terminal_status": report.as_record()["terminal_status"],
+        "family_protocol_sha256": report.as_record()["family_protocol_sha256"],
+        "executable_request_commitment": report.as_record()["executable_request_commitment"],
+        "executable_authorization_id": report.as_record()["executable_authorization_id"],
+        "candidate_commitment": report.as_record()["candidate_commitment"],
+        "canonical_destination": report.as_record()["canonical_destination"],
+        "canonical_destination_file_sha256": report.as_record()[
+            "canonical_destination_file_sha256"
+        ],
+        "review_scope": "CANONICAL_PUBLICATION_EVIDENCE_INTEGRITY_AND_CLOSURE_ONLY",
+        "disposition": CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+        "reviewer_identity": "reviewer:2l",
+        "review_timestamp": "2026-08-03T12:00:00+00:00",
+        "bounded_reason": "forged completed closure",
+        "continuing_prohibitions": list(report.as_record()["continuing_prohibitions"]),
+    }
+    record = _commit_record(record, "disposition_id")
+    with pytest.raises(ValueError, match="not eligible"):
+        canonical_publication_closure_disposition_from_record(record, report=report)
+
+
+def test_disposition_parser_rejects_mirrored_field_mismatch(tmp_path: Path) -> None:
+    chain = _chain(tmp_path)
+    _execute(chain)
+    report = _inspect(chain)
+    disposition = make_canonical_publication_closure_disposition(
+        report=report,
+        disposition=CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+        reviewer_identity="reviewer:2l",
+        review_timestamp="2026-08-03T12:00:00+00:00",
+        bounded_reason="close completed publication evidence",
+    ).as_record()
+    forged = _commit_record(
+        {**disposition, "canonical_destination": "artifacts/canonical/other.json"},
+        "disposition_id",
+    )
+    with pytest.raises(ValueError, match="canonical_destination mismatch"):
+        canonical_publication_closure_disposition_from_record(forged, report=report)
+
+
+def test_bundle_parser_rejects_top_level_report_mismatch(tmp_path: Path) -> None:
+    chain = _chain(tmp_path)
+    _execute(chain)
+    report = _inspect(chain)
+    disposition = make_canonical_publication_closure_disposition(
+        report=report,
+        disposition=CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+        reviewer_identity="reviewer:2l",
+        review_timestamp="2026-08-03T12:00:00+00:00",
+        bounded_reason="close completed publication evidence",
+    )
+    bundle = canonical_publication_closure_bundle_from_record(
+        {
+            **write_canonical_publication_closure_bundle(
+                report=report,
+                disposition=disposition,
+                destination=tmp_path / "bundle.json",
+                repo_root=chain["repo"],
+            ).as_record()
+        }
+    ).as_record()
+    forged = _commit_record(
+        {**bundle, "canonical_destination": "artifacts/canonical/other.json"},
+        "bundle_commitment",
+    )
+    with pytest.raises(ValueError, match="canonical_destination mismatch"):
+        canonical_publication_closure_bundle_from_record(forged)
+
+
+def test_historical_chain_rejects_authorization_for_another_stage2j_request(
+    tmp_path: Path,
+) -> None:
+    chain = _chain(tmp_path)
+    other_request = make_canonical_family_publication_request(
+        repo_root=chain["repo"],
+        candidate=chain["candidate"],
+        candidate_file_sha256=sha256_file(chain["candidate_path"]),
+        execution_review_bundle=chain["bundle"],
+        execution_review_bundle_file_sha256=sha256_file(chain["bundle_path"]),
+        intended_canonical_destination=Path("artifacts/canonical/option-c0/other.json"),
+    )
+    other_auth = make_canonical_family_publication_authorization(
+        repo_root=chain["repo"],
+        request=other_request,
+        candidate=chain["candidate"],
+        execution_review_bundle=chain["bundle"],
+        disposition=AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+        reviewer_identity="reviewer:2k",
+        review_timestamp="2026-08-03T12:00:00+00:00",
+        bounded_reason="authorize a different Stage 2J request",
+    )
+    chain = {**chain, "stage2j_auth": other_auth}
+    with pytest.raises(ValueError, match="Stage 2J|canonical publication authorization"):
+        _inspect(chain)
+
+
+def test_completed_review_rejects_claim_destination_mismatch(tmp_path: Path) -> None:
+    chain = _chain(tmp_path)
+    _execute(chain)
+    audit = chain["repo"] / ".writer/stage-2k/audit"
+    claim = _read(audit / "canonical-publication-claim.json")
+    claim = _commit_record(
+        {**claim, "intended_canonical_destination": "artifacts/canonical/other.json"},
+        "claim_commitment",
+    )
+    atomic_write_json(audit / "canonical-publication-claim.json", claim)
+    with pytest.raises(ValueError, match="claim intended_canonical_destination mismatch"):
+        _inspect(chain)
+
+
+def test_completed_review_rejects_receipt_protocol_or_bundle_mismatch(
+    tmp_path: Path,
+) -> None:
+    chain = _chain(tmp_path)
+    _execute(chain)
+    audit = chain["repo"] / ".writer/stage-2k/audit"
+    receipt = _read(audit / "canonical-publication-receipt.json")
+    receipt = _commit_record(
+        {**receipt, "accepted_execution_review_bundle_commitment": "0" * 64},
+        "receipt_commitment",
+    )
+    atomic_write_json(audit / "canonical-publication-receipt.json", receipt)
+    with pytest.raises(ValueError, match="receipt accepted_execution_review_bundle_commitment"):
+        _inspect(chain)
+
+
+def test_failed_before_canonical_requires_trace(tmp_path: Path) -> None:
+    from relate.family.canonical_publication import _claim
+
+    chain = _chain(tmp_path)
+    audit = chain["repo"] / ".writer/stage-2k/audit"
+    audit.mkdir(parents=True)
+    claim = _claim(chain["exec_request"].as_record(), chain["exec_auth"].as_record())
+    atomic_write_json(audit / "canonical-publication-claim.json", claim)
+    failure = {
+        "schema_id": "relate-family-canonical-publication-failure-v1",
+        "executable_request_commitment": chain["exec_request"].as_record()[
+            "request_commitment"
+        ],
+        "executable_authorization_id": chain["exec_auth"].as_record()["authorization_id"],
+        "stage_2j_publication_request_commitment": chain["stage2j_request"].as_record()[
+            "request_commitment"
+        ],
+        "stage_2j_publication_authorization_id": chain["stage2j_auth"].as_record()[
+            "authorization_id"
+        ],
+        "canonical_destination": "artifacts/canonical/option-c0/result.json",
+        "canonical_publication_candidate_commitment": chain["candidate"].as_record()[
+            "candidate_commitment"
+        ],
+        "canonical_publication_candidate_file_sha256": sha256_file(chain["candidate_path"]),
+        "failed_phase": "PUBLICATION_EXECUTION",
+        "bounded_exception_type": "RuntimeError",
+        "bounded_message": "failed before canonical creation",
+        "claim_persisted": True,
+        "canonical_parent_created": [],
+        "canonical_file_created": False,
+        "canonical_file_sha256": None,
+        "receipt_persisted": False,
+        "failure_timestamp": "2026-08-03T12:00:00+00:00",
+    }
+    atomic_write_json(
+        audit / "canonical-publication-failure.json",
+        _commit_record(failure, "failure_commitment"),
+    )
+    report = _inspect(chain).as_record()
+    assert report["terminal_status"] == "INCOMPLETE_TERMINAL_EVIDENCE"
+    assert report["failure_validation_summary"]["validated"] is True
+    assert report["trace_validation_summary"]["events_validated"] is False
 
 
 def test_cli_review_disposition_bundle_and_verify(

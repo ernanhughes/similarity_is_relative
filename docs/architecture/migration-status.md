@@ -1500,6 +1500,29 @@ All Stage 2I outputs remain noncanonical. Canonical publication, materiality,
 allocation changes, reallocation, model refit, C0 replay, protected-row access,
 and D2 remain gated.
 
+### Stage 2I.1 corrective note
+
+Stage 2I.1 hardens execution-review eligibility. Completed evidence now
+requires logical family-store validation by opening the authorized store with
+the receipt-bound `FamilyGraphCacheIdentity` and checking required phase
+commitments through public store APIs. A plain file at the store path is not
+sufficient.
+
+Trace validation now requires an exact ordered start/terminal event pair for
+every receipt step, with matching step names, versions and commitments. Empty
+traces are valid only for pre-run failures with no receipt.
+
+The review explicitly cross-checks authorization, claim and receipt fields
+against the v2 request, including protocol, workflow identity, executor
+identity, requested run ID, canonical input mapping, staging paths and
+continuing prohibitions. The firewall-publication file SHA is revalidated
+separately from the protocol input verifier.
+
+Reloaded reports recompute semantic eligibility rather than trusting the
+stored boolean. Bundle construction revalidates the report and disposition
+together and re-enforces that acceptance is possible only for eligible
+completed evidence.
+
 ---
 
 ## Recommended Next Architecture Stage (immediately after Stage 2I)

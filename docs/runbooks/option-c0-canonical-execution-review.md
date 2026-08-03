@@ -21,6 +21,11 @@ by the request.
 Valid completed evidence contains claim, trace, completed receipt, review
 packet, and store.
 
+The store must be a valid family graph store opened with the identity mapping
+bound in the receipt. Review validates required phase commitments through
+public `FamilyGraphCache` APIs; a file merely existing at the store path is
+not enough.
+
 Valid blocked evidence contains claim, trace, and blocked receipt. It must not
 contain a review packet or failure record.
 
@@ -42,6 +47,10 @@ states are included.
 
 A mismatch is an execution-integrity failure, not a materiality or
 contamination conclusion.
+
+Trace review requires an exact ordered start/terminal event pair for every
+receipt step. Completed and blocked receipts must have nonempty runner traces.
+An empty trace is valid only for failure before workflow runner construction.
 
 ## Disposition
 

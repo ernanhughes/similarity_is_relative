@@ -36,6 +36,7 @@ from relate.family.review import (
     reject_canonical_path,
 )
 from relate.family.sources import parse_timestamp, validate_source_identity
+from relate.family.store import FamilyGraphCache, FamilyGraphCacheIdentity
 from relate.family.verification import (
     FamilyProtocolExpectedIdentity,
     FamilyProtocolInputPaths,
@@ -172,6 +173,24 @@ def _validate_work_dir(*, repo_root: Path, request_record: dict[str, Any], work_
         raise ValueError("authorized store must be strictly beneath work_dir")
     if work_dir.resolve(strict=False) not in store.resolve(strict=False).parents:
         raise ValueError("authorized store must be strictly beneath work_dir")
+
+
+def _cache_identity_from_mapping(mapping: Any) -> FamilyGraphCacheIdentity:
+    data = _require_object(mapping, label="store identity mapping")
+    allowed = {
+        "family_protocol_sha256",
+        "allocation_manifest_sha256",
+        "allocation_context_sha256",
+        "d1_audit_result_sha256",
+        "d1_1_classification_sha256",
+        "cache_schema_version",
+        "family_runner_source_identity",
+    }
+    if set(data) != allowed:
+        raise ValueError("store identity mapping fields are malformed")
+    for key in allowed:
+        validate_sha256_identity(data[key], label=key) if key != "cache_schema_version" else None
+    return FamilyGraphCacheIdentity(**data)
 
 
 def _optional_artifact(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -320,18 +339,66 @@ def _validate_trace_against_receipt(
     events = trace["events"]
     if receipt is None:
         return {"event_count": len(events), "runner_events_validated": False}
-    by_step = {item["step_name"]: item for item in receipt["ordered_steps"]}
-    for event in events:
-        step = by_step.get(event["step_name"])
-        if step is None:
-            raise ValueError("trace event references step absent from receipt")
-        if event["event_type"] == "STEP_STARTED":
+    steps = receipt["ordered_steps"]
+    if not events:
+        raise ValueError("runner execution trace must be nonempty")
+    if len(events) != len(steps) * 2:
+        raise ValueError("trace event count does not match receipt steps")
+    for index, step in enumerate(steps):
+        start = events[index * 2]
+        terminal = events[index * 2 + 1]
+        if start["event_type"] != "STEP_STARTED":
+            raise ValueError("trace missing STEP_STARTED event")
+        expected_terminal = "STEP_BLOCKED" if step["status"] == "BLOCKED" else "STEP_COMPLETED"
+        if terminal["event_type"] != expected_terminal:
+            raise ValueError("trace terminal event does not match receipt status")
+        for event in (start, terminal):
+            if event["step_name"] != step["step_name"]:
+                raise ValueError("trace step-name mismatch")
+            if event["step_version"] != step["step_version"]:
+                raise ValueError("trace step-version mismatch")
             if event.get("input_commitment") != step["input_commitment"]:
                 raise ValueError("trace input commitment mismatch")
-        if event["event_type"] in {"STEP_COMPLETED", "STEP_BLOCKED"}:
-            if event.get("output_commitment") != step["output_commitment"]:
-                raise ValueError("trace output commitment mismatch")
+        if terminal.get("output_commitment") != step["output_commitment"]:
+            raise ValueError("trace output commitment mismatch")
+        if start.get("output_commitment") is not None:
+            raise ValueError("trace start event must not have output commitment")
     return {"event_count": len(events), "runner_events_validated": True}
+
+
+def _validate_store(
+    *,
+    store_path: Path,
+    receipt: dict[str, Any] | None,
+    execution_packet: FamilyReviewPacket | None,
+    terminal_status: ExecutionReviewTerminalStatus,
+) -> dict[str, Any]:
+    if terminal_status is not ExecutionReviewTerminalStatus.VALID_COMPLETED:
+        return {"store_exists": store_path.exists(), "logical_store_validation": "NOT_REQUIRED"}
+    if receipt is None or execution_packet is None:
+        raise ValueError("completed store validation requires receipt and packet")
+    if not store_path.exists():
+        raise ValueError("completed execution store is missing")
+    identity = _cache_identity_from_mapping(receipt["store_identity_mapping"])
+    with FamilyGraphCache(store_path, identity=identity) as cache:
+        phases = {item.phase: item.commitment_sha256 for item in cache.list_phase_commitments()}
+    identities = execution_packet.as_record()["identities"]
+    required = {
+        "initial_allocation": "allocation_repository_commitment_sha256",
+        "resolved_edges": "resolved_edge_commitment",
+        "family_components": "component_commitment",
+        "graph_readiness": "graph_readiness_commitment",
+        "role_crossing_analysis": "role_crossing_analysis_commitment",
+        "family_outcome": "bounded_outcome_commitment",
+    }
+    for phase, key in required.items():
+        if key in identities and phases.get(phase) != identities[key]:
+            raise ValueError(f"store phase commitment mismatch: {phase}")
+    return {
+        "store_exists": True,
+        "logical_store_validation": "VALIDATED",
+        "phase_count": len(phases),
+    }
 
 
 def inspect_authorized_canonical_execution(
@@ -352,6 +419,15 @@ def inspect_authorized_canonical_execution(
     request_commitment = canonical_execution_request_commitment(request)
     if auth_record["canonical_execution_request_commitment"] != request_commitment:
         raise ValueError("authorization is for another request")
+    for key in (
+        "family_protocol_sha256",
+        "workflow_source_identity",
+        "canonical_executor_source_identity",
+        "review_packet_commitment",
+        "requested_run_id",
+    ):
+        if auth_record[key] != request_record[key]:
+            raise ValueError(f"authorization {key} mismatch")
     if family_review_packet_commitment(authorization_review_packet) != request_record[
         "review_packet_commitment"
     ]:
@@ -380,6 +456,10 @@ def inspect_authorized_canonical_execution(
             d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
         ),
     )
+    if sha256_file(root / inputs["firewall_publication_path"]) != inputs[
+        "firewall_publication_sha256"
+    ]:
+        raise ValueError("firewall publication file SHA mismatch")
 
     claim_raw, claim_file_sha = _optional_artifact(work_dir / "canonical-execution-claim.json")
     receipt_raw, receipt_file_sha = _optional_artifact(
@@ -435,6 +515,21 @@ def inspect_authorized_canonical_execution(
             raise ValueError("claim request commitment mismatch")
         if claim["canonical_execution_authorization_id"] != auth_record["authorization_id"]:
             raise ValueError("claim authorization ID mismatch")
+        claim_expected = {
+            "requested_run_id": request_record["requested_run_id"],
+            "family_protocol_sha256": request_record["family_protocol_sha256"],
+            "workflow_source_identity": request_record["workflow_source_identity"],
+            "canonical_executor_source_identity": request_record[
+                "canonical_executor_source_identity"
+            ],
+            "intended_store_path": request_record["intended_noncanonical_staging"][
+                "fresh_store_path"
+            ],
+            "prohibitions": request_record["prohibitions"],
+        }
+        for key, expected_value in claim_expected.items():
+            if claim[key] != expected_value:
+                raise ValueError(f"claim {key} mismatch")
     if failure is not None:
         if failure["canonical_execution_request_commitment"] != request_commitment:
             raise ValueError("failure request commitment mismatch")
@@ -451,6 +546,21 @@ def inspect_authorized_canonical_execution(
             raise ValueError("receipt authorization ID mismatch")
         if receipt["claim_commitment"] != claim["claim_commitment"]:
             raise ValueError("receipt claim commitment mismatch")
+        receipt_expected = {
+            "family_protocol_sha256": request_record["family_protocol_sha256"],
+            "workflow_name": request_record["workflow_name"],
+            "workflow_version": request_record["workflow_version"],
+            "requested_run_id": request_record["requested_run_id"],
+            "workflow_source_identity": request_record["workflow_source_identity"],
+            "canonical_executor_source_identity": request_record[
+                "canonical_executor_source_identity"
+            ],
+            "canonical_inputs": request_record["canonical_inputs"],
+            "continuing_prohibitions": request_record["prohibitions"],
+        }
+        for key, expected_value in receipt_expected.items():
+            if receipt[key] != expected_value:
+                raise ValueError(f"receipt {key} mismatch")
         if receipt["staging_work_directory"] != _relative(root, work_dir):
             raise ValueError("receipt work directory mismatch")
         if receipt["staging_store_path"] != request_record["intended_noncanonical_staging"][
@@ -480,8 +590,12 @@ def inspect_authorized_canonical_execution(
     store_path = _repo_path(
         root, request_record["intended_noncanonical_staging"]["fresh_store_path"]
     )
-    if terminal_status is ExecutionReviewTerminalStatus.VALID_COMPLETED and not store_path.exists():
-        raise ValueError("completed execution store is missing")
+    store_summary = _validate_store(
+        store_path=store_path,
+        receipt=receipt,
+        execution_packet=execution_packet,
+        terminal_status=terminal_status,
+    )
     files = {
         **(file_identities or {}),
         "claim": claim_file_sha,
@@ -520,10 +634,7 @@ def inspect_authorized_canonical_execution(
             ),
         },
         "trace_validation_summary": trace_summary,
-        "store_validation_summary": {
-            "store_exists": store_path.exists(),
-            "logical_store_validation": "REQUIRED_FOR_COMPLETED_ONLY",
-        },
+        "store_validation_summary": store_summary,
         "receipt_validation_summary": receipt_summary,
         "scientific_payload_equivalence": {
             "authorization_rehearsal_payload_commitment": rehearsal_payload,
@@ -548,6 +659,56 @@ def canonical_execution_review_report_from_record(
     data = _require_object(record, label="canonical execution review report")
     if data.get("schema_id") != EXECUTION_REVIEW_REPORT_SCHEMA_ID:
         raise ValueError("unsupported canonical execution review report schema")
+    required = {
+        "schema_id",
+        "review_scope",
+        "terminal_execution_status",
+        "canonical_execution_request_commitment",
+        "canonical_execution_authorization_id",
+        "authorized_work_directory",
+        "authorized_store_path",
+        "claim_commitment",
+        "receipt_commitment",
+        "review_packet_commitment",
+        "file_sha256",
+        "source_identity_consistency",
+        "current_source_comparison",
+        "trace_validation_summary",
+        "store_validation_summary",
+        "receipt_validation_summary",
+        "scientific_payload_equivalence",
+        "continuing_prohibitions",
+        "eligible_for_publication_authorization_review",
+        "not_determined",
+        "report_commitment",
+    }
+    if set(data) != required:
+        raise ValueError("execution review report fields are malformed")
+    if data["review_scope"] != EXECUTION_REVIEW_SCOPE:
+        raise ValueError("execution review report scope mismatch")
+    if data["terminal_execution_status"] not in {
+        item.value for item in ExecutionReviewTerminalStatus
+    }:
+        raise ValueError("invalid terminal execution status")
+    validate_sha256_identity(
+        data["canonical_execution_request_commitment"],
+        label="canonical_execution_request_commitment",
+    )
+    if not isinstance(data["canonical_execution_authorization_id"], str):
+        raise ValueError("authorization ID must be a string")
+    scientific = _require_object(
+        data["scientific_payload_equivalence"], label="scientific payload equivalence"
+    )
+    if not isinstance(scientific.get("matches"), bool):
+        raise ValueError("scientific payload match flag is malformed")
+    eligible = (
+        data["terminal_execution_status"] == ExecutionReviewTerminalStatus.VALID_COMPLETED.value
+        and scientific["matches"] is True
+        and data["store_validation_summary"].get("logical_store_validation") == "VALIDATED"
+        and data["trace_validation_summary"].get("runner_events_validated") is True
+    )
+    if data["eligible_for_publication_authorization_review"] is not eligible:
+        raise ValueError("execution review report eligibility is stale")
     _commit(data, "report_commitment")
     return CanonicalExecutionReviewReport(record=data)
 
@@ -603,6 +764,8 @@ def make_canonical_execution_review_disposition(
 
 def canonical_execution_review_disposition_from_record(
     record: dict[str, Any],
+    *,
+    report: CanonicalExecutionReviewReport | None = None,
 ) -> CanonicalExecutionReviewDisposition:
     data = _require_object(record, label="execution review disposition")
     if data.get("schema_id") != EXECUTION_REVIEW_DISPOSITION_SCHEMA_ID:
@@ -616,6 +779,26 @@ def canonical_execution_review_disposition_from_record(
     validate_source_identity(data["reviewer_identity"])
     parse_timestamp(data["review_timestamp"])
     _reason(data["bounded_reason"])
+    if report is not None:
+        report_record = canonical_execution_review_report_from_record(
+            report.as_record()
+        ).as_record()
+        if data["review_report_commitment"] != report_record["report_commitment"]:
+            raise ValueError("execution review disposition is for another report")
+        for key in (
+            "canonical_execution_request_commitment",
+            "canonical_execution_authorization_id",
+            "terminal_execution_status",
+            "review_scope",
+        ):
+            if data[key] != report_record[key]:
+                raise ValueError(f"execution review disposition {key} mismatch")
+        if (
+            data["disposition"]
+            == ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW
+            and not report_record["eligible_for_publication_authorization_review"]
+        ):
+            raise ValueError("execution review report is not eligible for acceptance")
     return CanonicalExecutionReviewDisposition(record=data)
 
 
@@ -643,6 +826,8 @@ def make_canonical_execution_review_bundle(
     disposition_record = disposition.as_record()
     if disposition_record["review_report_commitment"] != report.report_commitment:
         raise ValueError("execution review disposition is for another report")
+    canonical_execution_review_report_from_record(report_record)
+    canonical_execution_review_disposition_from_record(disposition_record, report=report)
     payload = {
         "schema_id": EXECUTION_REVIEW_BUNDLE_SCHEMA_ID,
         "execution_review_report": report_record,

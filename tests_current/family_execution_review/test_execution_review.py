@@ -18,11 +18,13 @@ from relate.family.execution_review import (
     ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW,
     WITHHOLD_EXECUTION_EVIDENCE,
     bounded_scientific_payload_commitment,
+    canonical_execution_review_report_from_record,
     inspect_authorized_canonical_execution,
     make_canonical_execution_review_disposition,
     write_canonical_execution_review_bundle,
 )
 from relate.family.review import FamilyReviewPacket, family_review_packet_commitment
+from relate.family.store import CACHE_SCHEMA_ID, FamilyGraphCache, make_cache_identity
 from relate.family.verification import FamilyProtocolExpectedIdentity, FamilyProtocolInputPaths
 from relate.family.workflow.composition import (
     FAMILY_GRAPH_WORKFLOW_NAME,
@@ -83,6 +85,11 @@ def _packet(bundle: FamilyEvidenceBundle) -> FamilyReviewPacket:
                     historical.ALLOCATION_REPOSITORY_COMMITMENT_SHA256
                 ),
                 "evidence_bundle_commitment": evidence_bundle_commitment(bundle),
+                "resolved_edge_commitment": "4" * 64,
+                "component_commitment": "5" * 64,
+                "graph_readiness_commitment": "6" * 64,
+                "role_crossing_analysis_commitment": "7" * 64,
+                "bounded_outcome_commitment": "8" * 64,
             },
             "bounded_family_outcome": {"family_graph_outcome": "TEST_OUTCOME"},
             "bounded_role_crossing_analysis": {"cross_role_connecting_components": 0},
@@ -218,7 +225,17 @@ def _receipt(request, auth, claim, *, status: str, packet_commitment: str | None
         "canonical_inputs": dict(record["canonical_inputs"]),
         "staging_work_directory": staging["work_dir"],
         "staging_store_path": staging["fresh_store_path"],
-        "store_identity_mapping": {"family_runner_source_identity": "1" * 64},
+        "store_identity_mapping": {
+            "family_protocol_sha256": record["family_protocol_sha256"],
+            "allocation_manifest_sha256": record["canonical_inputs"]["allocation_manifest_sha256"],
+            "allocation_context_sha256": record["canonical_inputs"]["allocation_context_sha256"],
+            "d1_audit_result_sha256": record["canonical_inputs"]["d1_result_sha256"],
+            "d1_1_classification_sha256": record["canonical_inputs"][
+                "d1_1_classification_sha256"
+            ],
+            "cache_schema_version": CACHE_SCHEMA_ID,
+            "family_runner_source_identity": "1" * 64,
+        },
         "workflow_run_identity_commitment": "3" * 64,
         "ordered_steps": steps,
         "continuing_prohibitions": list(record["prohibitions"]),
@@ -272,7 +289,6 @@ def _write_completed(tmp_path: Path):
     work_dir = Path.cwd() / request.as_record()["intended_noncanonical_staging"]["work_dir"]
     work_dir.mkdir(parents=True)
     store = Path.cwd() / request.as_record()["intended_noncanonical_staging"]["fresh_store_path"]
-    store.write_text("placeholder", encoding="utf-8")
     packet = _packet_like(rehearsal_packet)
     claim = _claim(request, auth)
     receipt = _receipt(
@@ -286,6 +302,45 @@ def _write_completed(tmp_path: Path):
     atomic_write_json(work_dir / "canonical-execution-review-packet.json", packet.as_record())
     atomic_write_json(work_dir / "canonical-execution-receipt.json", receipt)
     atomic_write_json(work_dir / "canonical-execution-trace.json", _trace(receipt))
+    identity = make_cache_identity(**receipt["store_identity_mapping"])
+    with FamilyGraphCache(store, identity=identity) as cache:
+        identities = packet.as_record()["identities"]
+        cache.put_phase_commitment(
+            "initial_allocation",
+            status="COMPLETE",
+            commitment_sha256=identities["allocation_repository_commitment_sha256"],
+            metadata={},
+        )
+        cache.put_phase_commitment(
+            "resolved_edges",
+            status="COMPLETE",
+            commitment_sha256=identities["resolved_edge_commitment"],
+            metadata={},
+        )
+        cache.put_phase_commitment(
+            "family_components",
+            status="COMPLETE",
+            commitment_sha256=identities["component_commitment"],
+            metadata={},
+        )
+        cache.put_phase_commitment(
+            "graph_readiness",
+            status="COMPLETE",
+            commitment_sha256=identities["graph_readiness_commitment"],
+            metadata={},
+        )
+        cache.put_phase_commitment(
+            "role_crossing_analysis",
+            status="COMPLETE",
+            commitment_sha256=identities["role_crossing_analysis_commitment"],
+            metadata={},
+        )
+        cache.put_phase_commitment(
+            "family_outcome",
+            status="COMPLETE",
+            commitment_sha256=identities["bounded_outcome_commitment"],
+            metadata={},
+        )
     return request, auth, rehearsal_packet, bundle, work_dir
 
 
@@ -303,6 +358,36 @@ def test_completed_execution_review_report_is_eligible(tmp_path: Path) -> None:
     assert record["terminal_execution_status"] == "VALID_COMPLETED"
     assert record["eligible_for_publication_authorization_review"] is True
     assert record["scientific_payload_equivalence"]["matches"] is True
+
+
+def test_completed_review_rejects_placeholder_store(tmp_path: Path) -> None:
+    request, auth, packet, bundle, work_dir = _write_completed(tmp_path)
+    store = Path.cwd() / request.as_record()["intended_noncanonical_staging"]["fresh_store_path"]
+    store.unlink()
+    store.write_text("placeholder", encoding="utf-8")
+    with pytest.raises(Exception, match="file is not a database|malformed|schema"):
+        inspect_authorized_canonical_execution(
+            repo_root=Path.cwd(),
+            request=request,
+            authorization=auth,
+            authorization_review_packet=packet,
+            evidence_bundle=bundle,
+            work_dir=work_dir,
+        )
+
+
+def test_completed_review_rejects_empty_trace(tmp_path: Path) -> None:
+    request, auth, packet, bundle, work_dir = _write_completed(tmp_path)
+    atomic_write_json(work_dir / "canonical-execution-trace.json", _trace(None))
+    with pytest.raises(ValueError, match="nonempty|count"):
+        inspect_authorized_canonical_execution(
+            repo_root=Path.cwd(),
+            request=request,
+            authorization=auth,
+            authorization_review_packet=packet,
+            evidence_bundle=bundle,
+            work_dir=work_dir,
+        )
 
 
 def test_blocked_execution_review_is_not_eligible(tmp_path: Path) -> None:
@@ -426,6 +511,70 @@ def test_disposition_and_bundle_are_noncanonical_and_immutable(tmp_path: Path) -
             report=report,
             disposition=disposition,
             destination=output,
+            repo_root=Path.cwd(),
+        )
+
+
+def test_forged_failed_report_with_eligibility_is_rejected(tmp_path: Path) -> None:
+    request, auth, packet, bundle, work_dir = _write_completed(tmp_path)
+    report = inspect_authorized_canonical_execution(
+        repo_root=Path.cwd(),
+        request=request,
+        authorization=auth,
+        authorization_review_packet=packet,
+        evidence_bundle=bundle,
+        work_dir=work_dir,
+    )
+    forged = report.as_record()
+    forged["terminal_execution_status"] = "VALID_FAILED"
+    from relate.evidence.canonical_json import canonical_json_compact_unicode
+    from relate.evidence.hashing import sha256_text
+
+    payload = dict(forged)
+    payload.pop("report_commitment")
+    forged["report_commitment"] = sha256_text(canonical_json_compact_unicode(payload))
+    with pytest.raises(ValueError, match="eligibility"):
+        canonical_execution_review_report_from_record(forged)
+
+
+def test_bundle_rejects_forged_acceptance_for_blocked_report(tmp_path: Path) -> None:
+    request, rehearsal_packet, bundle = _v2_request(tmp_path)
+    auth = _auth(request)
+    work_dir = Path.cwd() / request.as_record()["intended_noncanonical_staging"]["work_dir"]
+    work_dir.mkdir(parents=True)
+    claim = _claim(request, auth)
+    receipt = _receipt(request, auth, claim, status="BLOCKED")
+    atomic_write_json(work_dir / "canonical-execution-claim.json", claim)
+    atomic_write_json(work_dir / "canonical-execution-receipt.json", receipt)
+    atomic_write_json(work_dir / "canonical-execution-trace.json", _trace(receipt))
+    report = inspect_authorized_canonical_execution(
+        repo_root=Path.cwd(),
+        request=request,
+        authorization=auth,
+        authorization_review_packet=rehearsal_packet,
+        evidence_bundle=bundle,
+        work_dir=work_dir,
+    )
+    disposition = make_canonical_execution_review_disposition(
+        report=report,
+        disposition=WITHHOLD_EXECUTION_EVIDENCE,
+        reviewer_identity="reviewer:2i",
+        review_timestamp="2026-08-03T12:00:00+00:00",
+        bounded_reason="blocked evidence",
+    ).as_record()
+    disposition["disposition"] = ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW
+    from relate.evidence.canonical_json import canonical_json_compact_unicode
+    from relate.evidence.hashing import sha256_text
+    from relate.family.execution_review import CanonicalExecutionReviewDisposition
+
+    payload = dict(disposition)
+    payload.pop("disposition_id")
+    disposition["disposition_id"] = sha256_text(canonical_json_compact_unicode(payload))
+    with pytest.raises(ValueError, match="not eligible"):
+        write_canonical_execution_review_bundle(
+            report=report,
+            disposition=CanonicalExecutionReviewDisposition(record=disposition),
+            destination=tmp_path / "forged.json",
             repo_root=Path.cwd(),
         )
 

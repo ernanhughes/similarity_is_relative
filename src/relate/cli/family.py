@@ -28,6 +28,19 @@ from relate.family.authorization import (
     validate_canonical_execution_authorization,
     validate_executable_canonical_authorization_v2,
 )
+from relate.family.canonical_publication import (
+    AUTHORIZE_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+    EXECUTABLE_PUBLICATION_AUTHORIZATION_SCHEMA_ID,
+    EXECUTABLE_PUBLICATION_REQUEST_SCHEMA_ID,
+    WITHHOLD_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+    executable_canonical_publication_authorization_v2_from_record,
+    executable_canonical_publication_request_commitment,
+    executable_canonical_publication_request_v2_from_record,
+    execute_authorized_canonical_publication,
+    make_executable_canonical_family_publication_authorization_v2,
+    make_executable_canonical_family_publication_request_v2,
+    validate_executable_canonical_publication_authorization,
+)
 from relate.family.canonical_publication_authorization import (
     AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
     WITHHOLD_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
@@ -518,6 +531,128 @@ def _cmd_verify_canonical_publication_authorization(args: argparse.Namespace) ->
     return EXIT_OK if result.status == "AUTHORIZED" else EXIT_BLOCKED_OR_WITHHELD
 
 
+def _load_stage_2j_publication_request(path: Path):
+    return canonical_family_publication_request_from_record(read_json_object(path))
+
+
+def _load_stage_2j_publication_authorization(path: Path):
+    return canonical_family_publication_authorization_from_record(read_json_object(path))
+
+
+def _load_publication_candidate(path: Path):
+    return canonical_family_publication_candidate_from_record(read_json_object(path))
+
+
+def _cmd_create_executable_canonical_publication_request(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve(strict=False)
+    _reject_canonical_output(args.output, repo_root, "executable canonical publication request")
+    request = make_executable_canonical_family_publication_request_v2(
+        repo_root=repo_root,
+        stage_2j_request=_load_stage_2j_publication_request(args.stage_2j_request),
+        stage_2j_request_file_sha256=sha256_file(args.stage_2j_request),
+        stage_2j_authorization=_load_stage_2j_publication_authorization(
+            args.stage_2j_authorization
+        ),
+        stage_2j_authorization_file_sha256=sha256_file(args.stage_2j_authorization),
+        candidate=_load_publication_candidate(args.candidate),
+        candidate_file_sha256=sha256_file(args.candidate),
+        execution_review_bundle=_load_execution_review_bundle(args.execution_review_bundle),
+        execution_review_bundle_file_sha256=sha256_file(args.execution_review_bundle),
+        intended_noncanonical_audit_work_dir=args.audit_work_dir,
+    )
+    write_json_object_immutable(args.output, request.as_record())
+    _emit(
+        {
+            "status": "CREATED",
+            "request_commitment": executable_canonical_publication_request_commitment(
+                request
+            ),
+        }
+    )
+    return EXIT_OK
+
+
+def _cmd_make_executable_canonical_publication_authorization(
+    args: argparse.Namespace,
+) -> int:
+    request = executable_canonical_publication_request_v2_from_record(
+        read_json_object(args.request)
+    )
+    reason = (
+        args.reason
+        if args.reason is not None
+        else args.reason_file.read_text(encoding="utf-8")
+    )
+    authorization = make_executable_canonical_family_publication_authorization_v2(
+        request=request,
+        disposition=args.disposition,
+        reviewer_identity=args.reviewer,
+        review_timestamp=args.timestamp,
+        bounded_reason=reason,
+    )
+    write_json_object_immutable(args.output, authorization.as_record())
+    _emit({"status": "CREATED", "authorization_id": authorization.as_record()["authorization_id"]})
+    return EXIT_OK
+
+
+def _cmd_verify_executable_canonical_publication_authorization(
+    args: argparse.Namespace,
+) -> int:
+    result = validate_executable_canonical_publication_authorization(
+        repo_root=args.repo_root.resolve(strict=False),
+        stage_2j_request=_load_stage_2j_publication_request(args.stage_2j_request),
+        stage_2j_request_file_sha256=sha256_file(args.stage_2j_request),
+        stage_2j_authorization=_load_stage_2j_publication_authorization(
+            args.stage_2j_authorization
+        ),
+        stage_2j_authorization_file_sha256=sha256_file(args.stage_2j_authorization),
+        request=executable_canonical_publication_request_v2_from_record(
+            read_json_object(args.request)
+        ),
+        authorization=executable_canonical_publication_authorization_v2_from_record(
+            read_json_object(args.authorization)
+        ),
+        candidate=_load_publication_candidate(args.candidate),
+        candidate_file_sha256=sha256_file(args.candidate),
+        execution_review_bundle=_load_execution_review_bundle(args.execution_review_bundle),
+        execution_review_bundle_file_sha256=sha256_file(args.execution_review_bundle),
+    )
+    _emit(result.as_record())
+    return EXIT_OK if result.status == "AUTHORIZED" else EXIT_BLOCKED_OR_WITHHELD
+
+
+def _cmd_execute_authorized_canonical_publication(args: argparse.Namespace) -> int:
+    raw_request = read_json_object(args.request)
+    raw_auth = read_json_object(args.authorization)
+    if raw_request.get("schema_id") != EXECUTABLE_PUBLICATION_REQUEST_SCHEMA_ID:
+        raise ValueError(
+            "Stage 2J canonical publication records are validation-only and are not executable"
+        )
+    if raw_auth.get("schema_id") != EXECUTABLE_PUBLICATION_AUTHORIZATION_SCHEMA_ID:
+        raise ValueError(
+            "Stage 2J canonical publication records are validation-only and are not executable"
+        )
+    result = execute_authorized_canonical_publication(
+        repo_root=args.repo_root.resolve(strict=False),
+        stage_2j_request=_load_stage_2j_publication_request(args.stage_2j_request),
+        stage_2j_authorization=_load_stage_2j_publication_authorization(
+            args.stage_2j_authorization
+        ),
+        executable_request=executable_canonical_publication_request_v2_from_record(
+            raw_request
+        ),
+        executable_authorization=executable_canonical_publication_authorization_v2_from_record(
+            raw_auth
+        ),
+        candidate_file=args.candidate,
+        execution_review_bundle_file=args.execution_review_bundle,
+        stage_2j_request_file_sha256=sha256_file(args.stage_2j_request),
+        stage_2j_authorization_file_sha256=sha256_file(args.stage_2j_authorization),
+    )
+    _emit(result.as_summary())
+    return EXIT_OK if result.status.value == "COMPLETED" else EXIT_BLOCKED_OR_WITHHELD
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="relate-family")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -667,6 +802,56 @@ def build_parser() -> argparse.ArgumentParser:
     pub_verify.add_argument("--candidate", type=Path, required=True)
     pub_verify.add_argument("--execution-review-bundle", type=Path, required=True)
     pub_verify.set_defaults(func=_cmd_verify_canonical_publication_authorization)
+
+    pub_exec_req = sub.add_parser("create-executable-canonical-publication-request")
+    pub_exec_req.add_argument("--repo-root", type=Path, required=True)
+    pub_exec_req.add_argument("--stage-2j-request", type=Path, required=True)
+    pub_exec_req.add_argument("--stage-2j-authorization", type=Path, required=True)
+    pub_exec_req.add_argument("--candidate", type=Path, required=True)
+    pub_exec_req.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_exec_req.add_argument("--audit-work-dir", type=Path, required=True)
+    pub_exec_req.add_argument("--output", type=Path, required=True)
+    pub_exec_req.set_defaults(func=_cmd_create_executable_canonical_publication_request)
+
+    pub_exec_auth = sub.add_parser("make-executable-canonical-publication-authorization")
+    pub_exec_auth.add_argument("--request", type=Path, required=True)
+    pub_exec_auth.add_argument(
+        "--disposition",
+        choices=(
+            AUTHORIZE_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+            WITHHOLD_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+        ),
+        required=True,
+    )
+    pub_exec_auth.add_argument("--reviewer", required=True)
+    pub_exec_auth.add_argument("--timestamp", required=True)
+    pub_exec_auth_reason = pub_exec_auth.add_mutually_exclusive_group(required=True)
+    pub_exec_auth_reason.add_argument("--reason")
+    pub_exec_auth_reason.add_argument("--reason-file", type=Path)
+    pub_exec_auth.add_argument("--output", type=Path, required=True)
+    pub_exec_auth.set_defaults(func=_cmd_make_executable_canonical_publication_authorization)
+
+    pub_exec_verify = sub.add_parser("verify-executable-canonical-publication-authorization")
+    pub_exec_verify.add_argument("--repo-root", type=Path, required=True)
+    pub_exec_verify.add_argument("--stage-2j-request", type=Path, required=True)
+    pub_exec_verify.add_argument("--stage-2j-authorization", type=Path, required=True)
+    pub_exec_verify.add_argument("--request", type=Path, required=True)
+    pub_exec_verify.add_argument("--authorization", type=Path, required=True)
+    pub_exec_verify.add_argument("--candidate", type=Path, required=True)
+    pub_exec_verify.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_exec_verify.set_defaults(
+        func=_cmd_verify_executable_canonical_publication_authorization
+    )
+
+    pub_execute = sub.add_parser("execute-authorized-canonical-publication")
+    pub_execute.add_argument("--repo-root", type=Path, required=True)
+    pub_execute.add_argument("--stage-2j-request", type=Path, required=True)
+    pub_execute.add_argument("--stage-2j-authorization", type=Path, required=True)
+    pub_execute.add_argument("--request", type=Path, required=True)
+    pub_execute.add_argument("--authorization", type=Path, required=True)
+    pub_execute.add_argument("--candidate", type=Path, required=True)
+    pub_execute.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_execute.set_defaults(func=_cmd_execute_authorized_canonical_publication)
     return parser
 
 

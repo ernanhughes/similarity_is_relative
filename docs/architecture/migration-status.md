@@ -1585,13 +1585,81 @@ rows or start D2.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2J)
 
-**Stage 2K — One-Shot Canonical Publication Executor Boundary**
+## Stage 2K — One-Shot Authorized Canonical Publication
 
-If Stage 2J authorization is accepted, introduce a separate executable
-publication contract that consumes the exact request, authorization, candidate,
-and accepted execution-review bundle. It must still be one-shot, destination
-specific, overwrite-refusing, and separate from materiality, allocation,
-reallocation, protected-row access and D2.
+Stage 2K adds a distinct executable v2 boundary for one authorized canonical
+bounded-family-result publication. Stage 2J v1 request and authorization
+records remain validation-only and still report
+`executable_publication_authority: false`.
+
+New module:
+
+- `relate.family.canonical_publication`.
+
+New CLI commands:
+
+- `create-executable-canonical-publication-request`;
+- `make-executable-canonical-publication-authorization`;
+- `verify-executable-canonical-publication-authorization`;
+- `execute-authorized-canonical-publication`.
+
+New schemas:
+
+- executable request: `relate-family-canonical-publication-request-v2`;
+- executable authorization:
+  `relate-family-canonical-publication-authorization-v2`;
+- claim: `relate-family-canonical-publication-claim-v1`;
+- trace: `relate-family-canonical-publication-trace-v1`;
+- receipt: `relate-family-authorized-canonical-publication-receipt-v1`;
+- failure: `relate-family-canonical-publication-failure-v1`;
+- publisher source manifest:
+  `relate-family-canonical-publisher-source-manifest-v1`.
+
+The v2 request binds the exact Stage 2J request and authorization file hashes,
+candidate logical commitment, candidate file SHA-256, accepted execution-review
+bundle commitment and file SHA-256, exact canonical destination and parent,
+exact noncanonical audit work directory, publisher source identity, publication
+scope, payload policy and continuing prohibitions.
+
+The payload policy is
+`PUBLISH_EXACT_AUTHORIZED_CANDIDATE_FILE_BYTES`: execution reads and validates
+the candidate file bytes before the claim, retains those bytes, and publishes
+those exact bytes. The canonical destination SHA-256 must equal the authorized
+candidate file SHA-256.
+
+Canonical creation uses a no-replace byte primitive that writes a complete
+temporary sibling and creates the destination with an exclusive hard link. It
+does not use replace semantics for the authorized destination.
+
+The audit work directory is the one-shot claim. Once it is created, all claim
+construction, parent creation, candidate revalidation, canonical byte creation,
+trace writing and receipt writing run inside the terminal-record boundary.
+Successful publication writes claim, trace and receipt. Failures after claim
+write bounded failure evidence and trace where possible. If the canonical file
+is created and audit finalization fails, the failure record reports
+`canonical_file_created: true` and includes the destination SHA; the canonical
+file is not rolled back.
+
+Replay is rejected by the bound audit work directory and by the existing
+canonical destination. Withheld v2 authorization has no filesystem side
+effects.
+
+Stage 2K changes no family evidence rules, graph connectivity semantics,
+family outcome semantics, protocol payload or protocol SHA. It does not
+determine materiality, establish material contamination, change allocation,
+authorize reallocation, refit models, replay C0, access protected rows or start
+D2.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2K)
+
+**Stage 2L — Canonical Publication Evidence Review and Closure**
+
+Review the Stage 2K request, authorization, claim, trace, receipt or failure,
+verify destination bytes and SHA, distinguish completed versus partial-failure
+terminal states, and create noncanonical publication-review records. Stage 2L
+must perform no further canonical mutation.
 
 ---
 

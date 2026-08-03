@@ -58,3 +58,32 @@ def atomic_write_json(path: Path, value: Mapping[str, Any]) -> None:
         fsync_directory(path.parent)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def atomic_create_bytes_no_replace(destination: Path, content: bytes) -> None:
+    """Create *destination* from complete bytes without overwrite or replacement.
+
+    The temporary file is created exclusively in the destination's parent, then
+    linked into place with ``os.link``. The link operation fails if the
+    destination appears concurrently. This function intentionally does not fall
+    back to replace semantics.
+    """
+    if destination.exists():
+        raise FileExistsError(f"destination already exists: {destination}")
+    if not destination.parent.exists():
+        raise FileNotFoundError(f"destination parent is missing: {destination.parent}")
+    temporary = destination.with_name(f".{destination.name}.tmp-{uuid.uuid4().hex}")
+    try:
+        descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+        try:
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+        except Exception:
+            os.close(descriptor)
+            raise
+        os.link(temporary, destination)
+        fsync_directory(destination.parent)
+    finally:
+        temporary.unlink(missing_ok=True)

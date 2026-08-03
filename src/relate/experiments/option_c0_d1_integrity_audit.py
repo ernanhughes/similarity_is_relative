@@ -31,6 +31,7 @@ from relate.evidence.atomic_io import atomic_write_json as _atomic_write_json
 from relate.evidence.canonical_json import canonical_json_compact_ascii as _canonical_json
 from relate.evidence.hashing import sha256_bytes as _sha256_bytes
 from relate.evidence.hashing import sha256_file as _sha256_file
+from relate.evidence.sqlite import enforce_wal_pragmas, verify_wal_pragmas
 from relate.experiments import option_c0_discovery_runner as discovery_runner
 
 AUDIT_SCHEMA: Final = "option-c0-d1-integrity-audit-v1"
@@ -301,9 +302,7 @@ class IntegrityAuditCache:
         self.path = path
         path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(path)
-        self.connection.execute("PRAGMA journal_mode=WAL")
-        self.connection.execute("PRAGMA synchronous=FULL")
-        self.connection.execute("PRAGMA foreign_keys=ON")
+        enforce_wal_pragmas(self.connection)
         self.connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS contexts (
@@ -403,18 +402,10 @@ class IntegrityAuditCache:
         self.connection.commit()
 
     def verify_pragmas(self) -> dict[str, Any]:
-        journal_mode = str(self.connection.execute("PRAGMA journal_mode").fetchone()[0]).lower()
-        synchronous = int(self.connection.execute("PRAGMA synchronous").fetchone()[0])
-        foreign_keys = int(self.connection.execute("PRAGMA foreign_keys").fetchone()[0])
-        result = {
-            "journal_mode": journal_mode,
-            "synchronous": synchronous,
-            "foreign_keys": foreign_keys,
-            "synchronous_full": synchronous == 2,
-        }
-        if journal_mode != "wal" or synchronous != 2 or foreign_keys != 1:
-            raise ValueError("integrity cache SQLite pragmas are not enforced")
-        return result
+        try:
+            return verify_wal_pragmas(self.connection)
+        except ValueError as exc:
+            raise ValueError("integrity cache SQLite pragmas are not enforced") from exc
 
     def visible_row_count(self, context_sha256: str) -> int:
         row = self.connection.execute(

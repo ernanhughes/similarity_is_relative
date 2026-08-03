@@ -16,6 +16,7 @@ from typing import Any, Final
 
 from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
 from relate.evidence.hashing import sha256_file, sha256_text
+from relate.evidence.sqlite import bind_cache_identity, enforce_wal_pragmas, verify_wal_pragmas
 
 SCHEMA_ID: Final = "option-c0-family-connected-allocation-contract-v1"
 EDGE_SCHEMA_ID: Final = "option-c0-family-evidence-edge-v1"
@@ -1774,9 +1775,7 @@ class FamilyGraphCache:
         self.identity = identity
         path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(path)
-        self.connection.execute("PRAGMA foreign_keys=ON")
-        self.connection.execute("PRAGMA journal_mode=WAL")
-        self.connection.execute("PRAGMA synchronous=FULL")
+        enforce_wal_pragmas(self.connection)
         self._create_schema()
         self._verify_pragmas()
         self._bind_identity()
@@ -1791,11 +1790,10 @@ class FamilyGraphCache:
         self.close()
 
     def _verify_pragmas(self) -> None:
-        foreign_keys = self.connection.execute("PRAGMA foreign_keys").fetchone()[0]
-        synchronous = self.connection.execute("PRAGMA synchronous").fetchone()[0]
-        journal_mode = self.connection.execute("PRAGMA journal_mode").fetchone()[0]
-        if int(foreign_keys) != 1 or int(synchronous) != 2 or str(journal_mode).lower() != "wal":
-            raise RuntimeError("family graph cache SQLite pragmas are not enforced")
+        try:
+            verify_wal_pragmas(self.connection)
+        except ValueError as exc:
+            raise RuntimeError("family graph cache SQLite pragmas are not enforced") from exc
 
     def _create_schema(self) -> None:
         self.connection.executescript(
@@ -1878,27 +1876,16 @@ class FamilyGraphCache:
 
     def _bind_identity(self) -> None:
         expected = self.identity.as_mapping()
-        rows = {
-            str(key): str(value)
-            for key, value in self.connection.execute("SELECT key, value FROM cache_identity")
-        }
-        if rows:
-            if set(rows) != set(expected):
-                raise ValueError("family graph cache identity key set mismatch")
-            for key, value in expected.items():
-                if rows[key] != value:
-                    raise ValueError(f"family graph cache identity mismatch: {key}")
-        elif self._has_data_rows():
-            raise ValueError("family graph cache contains data without identity")
-        self.connection.executemany(
-            """
-            INSERT INTO cache_identity(key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value
-            """,
-            sorted(self.identity.as_mapping().items()),
-        )
-        self.connection.commit()
+        try:
+            bind_cache_identity(self.connection, "cache_identity", expected, self._has_data_rows)
+        except ValueError as exc:
+            msg = str(exc)
+            if "key set mismatch" in msg:
+                raise ValueError("family graph cache identity key set mismatch") from exc
+            if "contains data rows without identity" in msg:
+                raise ValueError("family graph cache contains data without identity") from exc
+            # Value mismatch: extract the key name from the neutral message.
+            raise ValueError(str(exc).replace("cache_identity", "family graph cache")) from exc
 
     def _has_data_rows(self) -> bool:
         for table in (

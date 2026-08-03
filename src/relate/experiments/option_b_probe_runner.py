@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments.option_b_predicted_executor import (
     PredictedExecutorArtifacts,
     fit_predicted_executor_contract,
@@ -52,14 +53,6 @@ class VerifiedProbeInputs:
     validation_stable_keys: tuple[str, ...]
     test_stable_keys: tuple[str, ...]
     evidence: dict[str, Any]
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def _load_json(path: Path) -> dict[str, Any]:

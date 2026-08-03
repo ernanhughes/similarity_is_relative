@@ -9,7 +9,6 @@ mechanism evaluation to the reviewed discovery runner.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from collections.abc import Callable, Sequence
@@ -18,6 +17,7 @@ from typing import Any, Final
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments import option_c0_discovery_runner as runner
 from relate.experiments.option_b_embedding import (
     canonical_embed_batch,
@@ -46,10 +46,6 @@ EXECUTION_ERRATUM: Final = Path(
 
 class DiscoveryIdentityError(RuntimeError):
     """Raised when source and embedding identity roles are inconsistent."""
-
-
-def _sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _load_json(path: Path) -> dict[str, Any]:

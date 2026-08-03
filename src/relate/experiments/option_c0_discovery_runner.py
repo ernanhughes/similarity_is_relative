@@ -24,6 +24,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments.option_b_embedding import (
     canonical_embed_loaded,
     load_canonical_backend,
@@ -259,14 +260,6 @@ def _canonical_json(value: Any) -> str:
 
 def _sha256_json(value: Any) -> str:
     return hashlib.sha256(_canonical_json(value).encode()).hexdigest()
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def load_discovery_plan(path: Path) -> DiscoveryPlan:

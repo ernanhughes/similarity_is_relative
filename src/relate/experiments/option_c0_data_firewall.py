@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
+
 ROLE_NAMES: Final = ("c0_fit", "c0_iteration", "c0_selection", "c1_reserve")
 C0_PHASE_LABELS: Final = ("C0_FIT", "C0_ITERATION", "C0_SELECTION")
 DISCOVERY_CLASSIFICATIONS: Final = (
@@ -102,10 +104,6 @@ class AllocationConfig:
 
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
 
 
 def _sha256_json(value: Any) -> str:

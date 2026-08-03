@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -11,14 +10,13 @@ from typing import Any, Final
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_bytes
+from relate.evidence.sqlite import enforce_wal_pragmas
+
 CACHE_SCHEMA: Final = "option-c0-embedding-cache-v1"
 DEFAULT_CACHE_PATH: Final = Path(
     ".writer/option-c0/cache/option-c0-embeddings-v1.sqlite3"
 )
-
-
-def sha256_bytes(payload: bytes) -> str:
-    return hashlib.sha256(payload).hexdigest()
 
 
 def canonical_json_sha256(value: Any) -> str:
@@ -53,9 +51,7 @@ class OptionC0EmbeddingCache:
         self.path = path
         path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(path)
-        self.connection.execute("PRAGMA journal_mode=WAL")
-        self.connection.execute("PRAGMA synchronous=FULL")
-        self.connection.execute("PRAGMA foreign_keys=ON")
+        enforce_wal_pragmas(self.connection)
         self.connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS fingerprints (

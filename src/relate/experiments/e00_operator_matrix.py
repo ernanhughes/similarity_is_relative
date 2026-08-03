@@ -6,7 +6,6 @@ Consumes the frozen E00.1 arrays. It never regenerates synthetic data.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,6 +19,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import average_precision_score
 from sklearn.preprocessing import StandardScaler
 
+from relate.evidence.hashing import sha256_file
 from relate.experiments.e00 import (
     BINARY_REGIMES,
     REGIMES,
@@ -35,14 +35,6 @@ class OperatorConfig:
     retrieval_ks: tuple[int, ...] = (10, 25, 50, 100)
     ridge_alpha: float = 1.0
     pls_ranks: tuple[int, ...] = (4, 16)
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def _normalise_rows(values: np.ndarray) -> np.ndarray:

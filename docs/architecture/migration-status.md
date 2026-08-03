@@ -1183,17 +1183,73 @@ None of the listed stop conditions were triggered:
 
 ---
 
-## Recommended Next Architecture Stage (immediately after Stage 2D)
+## Stage 2E — Family Input Verification and Explicit Workflow Composition
 
-**Stage 2E — Family Input Verification and Explicit Workflow Composition**
+Stage 2E extracts frozen-input verification and composes the first explicit
+noncanonical family workflow. The workflow sequence is fixed:
+`verify_family_inputs`, `register_allocation`, `register_prepared_evidence`,
+`resolve_candidates`, `assess_graph_readiness`, `build_family_components`,
+`analyse_role_crossings`, `determine_family_outcome`.
 
-Extract frozen-input and protocol-level firewall verification from the
-historical module; create explicit family workflow steps; compose those
-steps using `relate.workflows`; use the clean family domain, store, graph,
-and outcome capabilities built so far; support blocked review or metadata
-states via the Stage 2C blocked-execution contract; remain noncanonical
-until separately authorized. Must still not execute or publish the
-canonical family graph.
+The composed workflow is noncanonical only. It rejects any configured work,
+store, allocation, firewall, D1, or D1.1 path contained under
+`artifacts/canonical` using resolved path containment, while the historical
+verification wrapper remains able to read canonical files for compatibility.
+No canonical graph execution or publication step exists.
+
+Identity schemas added:
+
+- `relate-family-workflow-source-manifest-v1` binds an explicit sorted list of
+  execution-critical source files by repository-relative POSIX path and file
+  SHA-256. It contains no timestamps or absolute paths. Composition recomputes
+  this value and rejects a caller-supplied mismatch.
+- `relate-family-evidence-bundle-v1` binds prepared source records,
+  candidates, dispositions, and incomplete metadata count. Dispositions are
+  checked against the configured family protocol SHA before durable writes.
+- `relate-family-role-crossing-analysis-v1` binds bounded role-crossing facts
+  and the family protocol SHA.
+- `relate-family-bounded-outcome-v1` binds the frozen bounded family outcome
+  and the family protocol SHA.
+
+`allowed_roles` now has behavioral meaning: every allocation role processed by
+the workflow must be explicitly authorized, and unknown or empty role sets are
+rejected. Allocation repository commitment is verified at the input boundary
+and after allocation registration.
+
+Resolved-edge and graph-readiness phases are now durably recorded via
+`FamilyGraphCache.put_phase_commitment`. Blocked readiness records an
+`INCOMPLETE` family phase before returning `BLOCKED`; invariant, identity,
+hash, firewall, stale evidence, and tampered component failures raise through
+the generic runner as `WorkflowExecutionError`.
+
+Changed-evidence/store rule: a changed evidence bundle changes the workflow
+run identity commitment and requires a fresh workflow run ID and fresh family
+store path. Identical replay may reuse the same store; a changed bundle must
+not resume the old checkpoint chain or reuse populated durable state.
+
+Hard/exact decision: authoritative support exists in
+`docs/protocols/option-c0-family-connected-allocation-protocol-v1.md`, whose
+Decision Rule names `hard_or_exact_fit_iteration_crossing_observed` and whose
+Evidence Model lists `EXACT_AST_WITH_CORROBORATING_PROVENANCE` as the exact
+conditional connecting edge. The implementation therefore includes it in the
+hard-or-exact taxonomy without changing the frozen edge rules or protocol
+payload.
+
+Historical compatibility remains bounded to verification facades and the
+historical CLI. The workflow does not publish, does not alter allocation, does
+not access C0 selection or C1 reserve row contents, does not infer materiality,
+does not authorize reallocation, and does not start D2.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2E)
+
+**Stage 2F — Family Review and Publication Boundary**
+
+Extract or define the human-review/publication boundary around any completed
+noncanonical family workflow result. Publication, materiality review,
+reallocation, and D2 remain gated and must not be inferred from the Stage 2E
+bounded crossing facts alone.
 
 ---
 

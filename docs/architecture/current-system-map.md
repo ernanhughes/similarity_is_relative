@@ -47,8 +47,14 @@ src/relate/
 │   ├── repositories.py       (normalize_repository, allocation operations, canonical constants)
 │   ├── sources.py            (source-evidence construction, payload firewall, public_metadata_snapshot)
 │   ├── edges.py              (candidate, disposition, edge construction and validation)
-│   └── store.py              (Stage 2B — FamilyGraphCache, FamilyGraphCacheIdentity,
-│                              make_cache_identity: SQLite schema and persistence)
+│   ├── graph.py              (Stage 2D — UnionFind, component_id, build_components:
+│   │                          pure connected-component construction)
+│   ├── commitments.py        (Stage 2D — component_commitment, edge_commitment:
+│   │                          graph-specific SHA-256 commitments)
+│   ├── outcome.py            (Stage 2D — graph_completeness, family_graph_outcome:
+│   │                          bounded completeness and outcome decision)
+│   └── store.py              (Stage 2B persistence + Stage 2D — component-membership
+│                              and phase-commitment APIs, deterministic list readers)
 ├── evidence/
 │   ├── canonical_json.py
 │   ├── hashing.py
@@ -91,6 +97,11 @@ family workflow composition
     -> relate.evidence
 ```
 
+`relate.workflows.commitments` and `relate.family.commitments` (Stage 2D)
+are deliberately separate and must not be conflated: the former binds
+workflow execution steps and results; the latter binds scientific graph
+records (resolved edges, connected components). Neither imports the other.
+
 Most console commands point directly into `relate.experiments`. Data reconstruction, identity validation, embeddings, model fitting, support logic, diagnostics, evidence writing, recovery and command-line parsing are therefore exposed as experiment implementation details.
 
 ## Current Option C0 execution chain
@@ -122,8 +133,12 @@ This preserved the reviewed historical run, but it is not an acceptable basis fo
 
 As of Stage 2A this module re-exports pure family-domain symbols from `relate.family.*`.
 As of Stage 2B it additionally re-exports `CACHE_SCHEMA_ID`, `FamilyGraphCache`, and
-`FamilyGraphCacheIdentity` from `relate.family.store`. It retains only historical-only
-responsibilities:
+`FamilyGraphCacheIdentity` from `relate.family.store`. As of Stage 2D it additionally
+re-exports `UnionFind`, `build_components`, `component_id` (from `relate.family.graph`)
+and `family_graph_outcome`, `graph_completeness` (from `relate.family.outcome`) directly,
+and keeps only thin wrappers for `component_commitment`/`edge_commitment` (from
+`relate.family.commitments`) that supply the default `protocol_sha256`. It retains only
+historical-only responsibilities:
 
 - frozen protocol constants (`SCHEMA_ID`, D1 SHAs, allocation SHAs — `CACHE_SCHEMA_ID` now
   originates in `relate.family.store`);
@@ -131,12 +146,11 @@ responsibilities:
   cannot move without changing its meaning — see migration-status.md Stage 2B);
 - `protocol_contract` — full protocol contract assembly;
 - frozen-input verification (`validate_frozen_protocol_inputs`, `validate_firewall_booleans`);
-- graph construction and outcome calculation (`build_components`, `family_graph_outcome`, etc.);
 - atomic protocol publication (`write_protocol_contract`);
 - CLI entry point.
 
 These remaining responsibilities must be separated before the canonical family graph runner
-is implemented. See Stage 2C (minimal workflow contracts and execution model).
+is implemented. See Stage 2E (family input verification and explicit workflow composition).
 
 ### `option_c0_d1_integrity_audit.py`
 
@@ -311,16 +325,27 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2D — Family graph and outcome capability extraction**
+**Stage 2E — Family input verification and explicit workflow composition**
 
-Extract `UnionFind`, component construction, component commitments, edge
-commitments, graph completeness checks, and bounded family outcome
-calculation from `option_c0_family_connected_protocol.py` into clean
-`relate.family` modules, plus the minimal clean family-store interfaces
-needed for component memberships and phase commitments. Still no canonical
-family graph execution.
+Extract frozen-input and protocol-level firewall verification from the
+historical module; create explicit family workflow steps; compose those
+steps using `relate.workflows`; use the clean family domain, store, graph,
+and outcome capabilities; support blocked review or metadata states; remain
+noncanonical until separately authorized. Still no canonical family graph
+execution or publication.
 
-Previous immediate-next note (now completed as Stage 2C): a domain-neutral
+Previous immediate-next note (now completed as Stage 2D): `UnionFind`,
+`build_components`, `component_id` moved to `relate.family.graph`;
+`component_commitment`, `edge_commitment` moved to `relate.family.commitments`
+(with explicit-`protocol_sha256` signatures and historical wrappers);
+`graph_completeness`, `family_graph_outcome` moved to `relate.family.outcome`;
+`relate.family.store` gained `put`/`get_component_memberships`,
+`put`/`get`/`list_phase_commitments`, and deterministic list readers for
+allocation repositories, evidence candidates, and resolved edges. No schema
+change, no protocol payload or SHA change. See migration-status.md Stage 2D
+and capability-continuity.md.
+
+Previous immediate-next note (completed as Stage 2C): a domain-neutral
 workflow kernel (`relate.workflows`) was created — explicit steps, immutable
 context, deterministic commitments, injected tracing, blocked/failure/resume
 semantics — without importing `relate.experiments` or `relate.family` and

@@ -12,6 +12,12 @@ from typing import Any, Final
 
 from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
 from relate.evidence.hashing import sha256_file, sha256_text
+from relate.family.commitments import (
+    component_commitment as _clean_component_commitment,
+)
+from relate.family.commitments import (
+    edge_commitment as _clean_edge_commitment,
+)
 from relate.family.edges import (
     PROTOCOL_VERSION,
     REVIEW_DISPOSITIONS,
@@ -30,6 +36,7 @@ from relate.family.edges import (
     validate_rule_semantics,
     validate_source_payload_binding,
 )
+from relate.family.graph import UnionFind, build_components, component_id
 
 # --- Compatibility re-exports from relate.family ---
 # These names are imported explicitly so that callers using the historical
@@ -45,6 +52,7 @@ from relate.family.models import (
     ManualReviewDisposition,
     SourceEvidenceRecord,
 )
+from relate.family.outcome import family_graph_outcome, graph_completeness
 from relate.family.repositories import (
     ALLOCATION_REPOSITORY_COMMITMENT_SHA256,
     ALLOCATION_REPOSITORY_COUNT,
@@ -255,101 +263,29 @@ def validate_firewall_booleans(d1_data: Mapping[str, Any], d11_data: Mapping[str
             raise ValueError(f"D1 hidden-row firewall field is not exactly false: {key}")
 
 
-class UnionFind:
-    def __init__(self, nodes: Sequence[str]) -> None:
-        self.parent = {node: node for node in sorted(set(nodes))}
+# --- UnionFind / build_components / component_id ---
+# Moved to relate.family.graph in Stage 2D (family graph and outcome
+# capability extraction) and re-exported above. Nothing kept here: every
+# caller in this module used only the required protocol_sha256 keyword
+# argument, so no compatibility wrapper is needed.
 
-    def find(self, node: str) -> str:
-        parent = self.parent[node]
-        if parent != node:
-            self.parent[node] = self.find(parent)
-        return self.parent[node]
+# --- family_graph_outcome / graph_completeness ---
+# Moved to relate.family.outcome in Stage 2D and re-exported above. Neither
+# function ever read protocol_contract() internally, so no wrapper is
+# needed.
 
-    def union(self, left: str, right: str) -> None:
-        left_root = self.find(left)
-        right_root = self.find(right)
-        if left_root != right_root:
-            first, second = sorted((left_root, right_root))
-            self.parent[second] = first
-
-
-def component_id(members: Sequence[str], protocol_sha256: str) -> str:
-    return sha256_text(
-        canonical_json({"members": sorted(members), "protocol_sha256": protocol_sha256})
-    )
-
-
-def _reject_duplicate_edges(edges: Sequence[EvidenceEdge]) -> None:
-    seen: set[str] = set()
-    for edge in edges:
-        if edge.edge_id in seen:
-            raise ValueError("duplicate edge ID")
-        seen.add(edge.edge_id)
-
-
-def build_components(
-    repositories: Sequence[str],
-    edges: Sequence[EvidenceEdge],
-    *,
-    protocol_sha256: str,
-    candidates: Mapping[str, EvidenceCandidate] | None = None,
-    dispositions: Mapping[str, ManualReviewDisposition] | None = None,
-    source_records: Mapping[tuple[str, str], SourceEvidenceRecord] | None = None,
-) -> list[dict[str, Any]]:
-    normalized = sorted({normalize_repository(repository) for repository in repositories})
-    allocation_set = set(normalized)
-    _reject_duplicate_edges(edges)
-    uf = UnionFind(normalized)
-    for edge in sorted(edges, key=lambda item: item.edge_id):
-        candidate = candidates.get(edge.candidate_id) if candidates is not None else None
-        disposition = (
-            dispositions.get(edge.disposition_id)
-            if dispositions is not None and edge.disposition_id is not None
-            else None
-        )
-        validate_resolved_edge(
-            edge,
-            candidate,
-            disposition,
-            protocol_sha256=protocol_sha256,
-            allocation_repositories=allocation_set,
-            source_records=source_records,
-        )
-        if edge.connecting:
-            uf.union(edge.left_repository, edge.right_repository)
-    by_root: dict[str, list[str]] = {}
-    for repository in normalized:
-        by_root.setdefault(uf.find(repository), []).append(repository)
-    components = [
-        {
-            "component_id": component_id(members, protocol_sha256),
-            "repositories": sorted(members),
-            "repository_count": len(members),
-        }
-        for members in by_root.values()
-    ]
-    return sorted(components, key=lambda item: item["component_id"])
+# --- component_commitment / edge_commitment compatibility wrappers ---
+# The clean relate.family.commitments versions require protocol_sha256
+# explicitly (see that module's docstring for why). The historical
+# versions read it from protocol_contract() when the caller omits it;
+# these wrappers preserve that exact historical calling behaviour.
 
 
 def component_commitment(components: Sequence[Mapping[str, Any]]) -> str:
-    protocol_sha256 = protocol_contract()["protocol_sha256"]
-    normalized = []
-    for component in components:
-        repositories = sorted(normalize_repository(item) for item in component["repositories"])
-        if int(component["repository_count"]) != len(repositories):
-            raise ValueError("component repository_count is malformed")
-        expected_id = component_id(repositories, protocol_sha256)
-        if component["component_id"] != expected_id:
-            raise ValueError("component_id does not match members")
-        normalized.append(
-            {
-                "component_id": expected_id,
-                "repositories": repositories,
-                "repository_count": len(repositories),
-            }
-        )
-    normalized = sorted(normalized, key=canonical_json)
-    return sha256_text(canonical_json({"components": normalized}))
+    return _clean_component_commitment(
+        components,
+        protocol_sha256=protocol_contract()["protocol_sha256"],
+    )
 
 
 def edge_commitment(
@@ -360,56 +296,13 @@ def edge_commitment(
     dispositions: Mapping[str, ManualReviewDisposition] | None = None,
     source_records: Mapping[tuple[str, str], SourceEvidenceRecord] | None = None,
 ) -> str:
-    _reject_duplicate_edges(edges)
-    active_protocol = protocol_sha256 or protocol_contract()["protocol_sha256"]
-    for edge in edges:
-        candidate = candidates.get(edge.candidate_id) if candidates is not None else None
-        disposition = (
-            dispositions.get(edge.disposition_id)
-            if dispositions is not None and edge.disposition_id is not None
-            else None
-        )
-        validate_resolved_edge(
-            edge,
-            candidate,
-            disposition,
-            protocol_sha256=active_protocol,
-            source_records=source_records,
-        )
-    records = [edge.as_record() for edge in sorted(edges, key=lambda item: item.edge_id)]
-    return sha256_text(canonical_json({"edges": records}))
-
-
-def family_graph_outcome(summary: Mapping[str, Any]) -> dict[str, Any]:
-    incomplete_metadata = int(summary.get("incomplete_metadata_records", 0))
-    unresolved = int(summary.get("unresolved_connecting_candidate_edges", 0))
-    approved = int(summary.get("approved_connecting_edges", 0))
-    cross_role_components = int(summary.get("cross_role_connecting_components", 0))
-    hard_or_exact = bool(summary.get("hard_or_exact_fit_iteration_crossing_observed", False))
-    if incomplete_metadata:
-        outcome = "FAMILY_GRAPH_INCOMPLETE_METADATA"
-    elif unresolved:
-        outcome = "FAMILY_GRAPH_INCOMPLETE_REVIEW_REQUIRED"
-    elif cross_role_components:
-        outcome = "FAMILY_GRAPH_COMPLETE_CROSS_ROLE_COMPONENTS_OBSERVED"
-    else:
-        outcome = "FAMILY_GRAPH_COMPLETE_NO_CROSS_ROLE_COMPONENTS"
-    return {
-        "family_graph_outcome": outcome,
-        "family_crossing_observed": cross_role_components > 0,
-        "allocation_family_disjointness_violated": cross_role_components > 0,
-        "hard_or_exact_fit_iteration_crossing_observed": hard_or_exact,
-        "approved_connecting_edges": approved,
-        "unresolved_connecting_candidate_edges": unresolved,
-        "rejected_connecting_candidates": int(summary.get("rejected_connecting_candidates", 0)),
-        "nonconnecting_review_evidence_edges": int(
-            summary.get("nonconnecting_review_evidence_edges", 0)
-        ),
-        "incomplete_metadata_records": incomplete_metadata,
-        "material_contamination_established": False,
-        "reallocation_required": None,
-        "automatic_reallocation_decision_permitted": False,
-    }
+    return _clean_edge_commitment(
+        edges,
+        protocol_sha256=protocol_sha256 or protocol_contract()["protocol_sha256"],
+        candidates=candidates,
+        dispositions=dispositions,
+        source_records=source_records,
+    )
 
 
 def protocol_contract() -> dict[str, Any]:
@@ -600,69 +493,6 @@ def write_protocol_contract(path: Path, *, overwrite: bool = False) -> dict[str,
         os.fsync(handle.fileno())
     os.replace(tmp_path, path)
     return contract
-
-
-def graph_completeness(
-    items: Sequence[EvidenceEdge | EvidenceCandidate],
-    *,
-    protocol_sha256: str,
-    candidates: Mapping[str, EvidenceCandidate],
-    dispositions: Mapping[str, ManualReviewDisposition],
-    source_records: Mapping[tuple[str, str], SourceEvidenceRecord],
-    incomplete_metadata_records: int = 0,
-) -> dict[str, int]:
-    unresolved = 0
-    approved = 0
-    review_only = 0
-    rejected = 0
-    for item in items:
-        if isinstance(item, EvidenceCandidate):
-            validate_evidence_candidate(item)
-            validate_source_registry(
-                EDGE_RULES[item.edge_type],
-                item.left_repository,
-                item.right_repository,
-                item.evidence_payload,
-                item.evidence_sources,
-                source_records,
-            )
-            rule = EDGE_RULES[item.edge_type]
-            if rule.is_connecting_candidate and rule.review_requirement == "APPROVED_REQUIRED":
-                unresolved += 1
-            elif not rule.is_connecting_candidate:
-                review_only += 1
-            continue
-        candidate = candidates.get(item.candidate_id)
-        if candidate is None:
-            raise ValueError("graph completeness missing candidate")
-        disposition = (
-            dispositions.get(item.disposition_id)
-            if item.disposition_id is not None
-            else None
-        )
-        validate_resolved_edge(
-            item,
-            candidate,
-            disposition,
-            protocol_sha256=protocol_sha256,
-            source_records=source_records,
-        )
-        rule = EDGE_RULES[item.edge_type]
-        if rule.is_connecting_candidate and item.review_status == "UNRESOLVED":
-            unresolved += 1
-        elif item.connecting:
-            approved += 1
-        elif rule.is_connecting_candidate and item.review_status == "REJECTED":
-            rejected += 1
-        elif not rule.is_connecting_candidate:
-            review_only += 1
-    return {
-        "unresolved_connecting_candidate_edges": unresolved,
-        "approved_connecting_edges": approved,
-        "rejected_connecting_candidates": rejected,
-        "nonconnecting_review_evidence_edges": review_only,
-        "incomplete_metadata_records": incomplete_metadata_records,
-    }
 
 
 def main(argv: Sequence[str] | None = None) -> int:

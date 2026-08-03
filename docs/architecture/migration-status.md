@@ -705,6 +705,279 @@ graph, or start D2.
 
 ---
 
+## Stage 2C — Minimal Workflow Contracts and Execution Model
+
+**Branch:** `architecture/minimal-workflow-kernel`
+
+**New package:** `src/relate/workflows/`
+
+**PR classification:** `WORKFLOW_INFRASTRUCTURE`
+
+### Summary
+
+Created a small, deterministic workflow kernel: explicit ordered steps, an
+immutable run context, a deterministic step-commitment chain, an injected
+trace sink, honest blocked outcomes, fail-closed failures, and validated
+completed-prefix resume. This is orchestration infrastructure only — no
+family-specific step, no canonical-graph execution, and no persistence
+change of any kind.
+
+| Field | Value |
+|---|---|
+| new module | `src/relate/workflows/` (`__init__.py`, `errors.py`, `models.py`, `step.py`, `commitments.py`, `trace.py`, `runner.py`) |
+| responsibility | Ordering, commitment chaining, trace recording, stop behaviour, and resume-prefix validation for explicit, already-constructed step objects |
+| domain neutral | yes |
+| imports experiments | no |
+| imports family | no |
+| scientific behaviour changed | no |
+| canonical identity changed | no |
+| persistence added | no |
+| family workflow implemented | no |
+| resume contract added | yes — `WorkflowCheckpoint` + `WorkflowRunner._validate_resume`; in-memory/serializable object contract only, no SQLite or file persistence |
+| trace contract added | yes — `WorkflowTraceEvent` / `WorkflowTraceSink` protocol + `InMemoryTraceSink` / `NullTraceSink`; no SQLite tables, logging integrations, or network publication |
+| known uncertainty | none found; see "Stop-condition checks" below |
+| future consumer | a Stage 2D+ family workflow module composing `relate.family.store` operations as `WorkflowStep` objects |
+
+### Existing concepts searched for and found (recorded per the extraction brief)
+
+A repository-wide search for `workflow`, `runner`, `step`, `phase`,
+`checkpoint`, `commitment`, `trace`, `resume`, and `stage_results` found **no
+existing generic workflow/orchestration kernel**. The only overlapping
+implementations are domain-specific and predate this stage:
+
+- `IntegrityAuditCache` in `option_c0_d1_integrity_audit.py` implements its
+  own `phases` / `phase_checkpoints` SQLite tables with
+  `mark_phase_complete` / `load_phase_checkpoint` / `save_phase_checkpoint`
+  methods. This is a persistence-backed, D1-audit-specific resume mechanism.
+  It is unrelated to and not touched by the new in-memory
+  `WorkflowCheckpoint` contract — the two solve the same general problem
+  (resuming partial work) at different layers for different capabilities,
+  and this PR does not attempt to unify them.
+- `FamilyGraphCache.phase_commitments` (`relate/family/store.py`, Stage 2B)
+  is a single implicit write (`"initial_allocation"` phase only), not a
+  generic phase/checkpoint mechanism. See capability-continuity.md items 9–10.
+- `option_c0_d1_integrity_audit.py`'s `ProgressReporter` and
+  `option_c0_recovery_entrypoint.py`'s `ProgressReporter` /
+  `install_phase_progress` are one-off console progress loggers, unrelated
+  to workflow orchestration or resume.
+- `option_c0_family_connected_protocol.py`'s `protocol_contract()` embeds a
+  `progress_contract` dict (`phase_status_enum`, `checkpoint_cadence`,
+  `phase_commitment_requirements`) as **documentation of intent**, not
+  executable code. It reads as an aspirational spec for something like this
+  workflow kernel, but was never implemented. This PR does not change that
+  dict or wire it to `relate.workflows` in any way.
+
+No existing abstraction conflicts with this design; nothing needed to be
+reconciled or replaced.
+
+### Public API
+
+```text
+relate.workflows
+  JsonScalar, JsonValue, validate_json_value, tuple_to_json_list
+  WorkflowContext, WorkflowDefinition
+  StepStatus, StepResult, StepExecutionRecord
+  WorkflowRunStatus, WorkflowRunResult, WorkflowCheckpoint, generate_run_id
+  WorkflowStep
+  RUN_IDENTITY_SCHEMA_ID, STEP_INPUT_SCHEMA_ID, STEP_OUTPUT_SCHEMA_ID
+  run_identity_commitment, step_input_commitment, step_output_commitment
+  WorkflowTraceEvent, WorkflowTraceEventType, WorkflowTraceSink,
+  InMemoryTraceSink, NullTraceSink
+  WorkflowRunner
+  WorkflowError, WorkflowDefinitionError, WorkflowCommitmentError,
+  WorkflowExecutionError, WorkflowResumeError
+```
+
+### Commitment design
+
+Uses `relate.evidence.canonical_json.canonical_json_compact_unicode`
+(`sort_keys=True`, `ensure_ascii=False`) and `relate.evidence.hashing.sha256_text`,
+referenced under their real names rather than an ambiguous `as canonical_json`
+alias, because this is a new contract with no historical caller — see the
+module docstring in `relate/workflows/commitments.py` for the full reasoning.
+Three versioned, workflow-specific schema identifiers were introduced —
+`relate-workflow-run-identity-v1`, `relate-workflow-step-input-v1`,
+`relate-workflow-step-output-v1` — distinct from any historical scientific
+schema ID (e.g. `EDGE_SCHEMA_ID`, `CACHE_SCHEMA_ID`).
+
+```text
+run_identity_commitment  = sha256(canonical_json({
+    schema_id, workflow_name, workflow_version, run_id, identity
+}))
+# repo_root, work_dir, and allowed_roles are excluded: paths are not
+# scientific inputs, and allowed_roles is a visibility policy.
+
+step_input_commitment  = sha256(canonical_json({
+    schema_id, workflow_name, workflow_version,
+    run_identity_commitment, step_name, step_version,
+    prior_step_commitments (ordered list, not sorted)
+}))
+
+step_output_commitment = sha256(canonical_json({
+    schema_id, step_name, step_version, input_commitment,
+    status, commitment_payload, blocked_reason
+}))
+```
+
+Timestamps and latency are never part of any commitment; they live only in
+`WorkflowTraceEvent` (see `relate/workflows/trace.py`). `commitment_payload`
+is explicitly re-validated inside `step_output_commitment` (not merely
+trusted from a prior `StepResult` construction) so that resume validation,
+which recomputes commitments directly from stored records, gets the same
+non-finite-float and non-JSON-value rejection as fresh execution.
+
+### Bug caught and fixed during self-review
+
+The first draft of `step_output_commitment` passed `commitment_payload`
+straight into `canonical_json_compact_unicode(...)` without calling
+`validate_json_value` on it first. Because Python's `json.dumps` allows
+`Infinity`/`NaN`/`-Infinity` by default (non-standard JSON, but not
+rejected), a non-finite float would have silently produced a commitment
+instead of raising `WorkflowCommitmentError`, and an arbitrary object would
+have raised a raw `TypeError` instead of the kernel's own error type. Fixed
+by validating `commitment_payload` explicitly inside `step_output_commitment`
+itself, so the guarantee holds for every call path, not only calls that go
+through `StepResult`.
+
+### Execution, blocked, and failure semantics
+
+- `WorkflowRunner.run` executes `WorkflowDefinition.steps` in declared
+  order, threading a growing list of prior output commitments into each
+  step's input commitment.
+- A step returning `StepResult.blocked(...)` stops the run immediately;
+  the runner returns `WorkflowRunResult(status=BLOCKED, ...)` with every
+  record collected so far, including the blocked one. Later steps never run.
+- Any exception raised by `step.execute(...)` (or a step returning something
+  other than a `StepResult`) is caught, a `STEP_FAILED` trace event is
+  recorded, and `WorkflowExecutionError` is raised with `.cause` (the
+  original exception, also set as `__cause__`), `.failed_step_name`, and
+  `.partial_records` (every record completed before the failure). The
+  failed step itself never produces a record. There is no automatic retry
+  and no swallowed exception.
+- `WorkflowRunResult.completed_checkpoint()` returns only `COMPLETED`
+  records — a blocked step is never part of a checkpoint. Constructing a
+  `WorkflowCheckpoint` directly with a non-`COMPLETED` record raises
+  `WorkflowDefinitionError` at the object's own `__post_init__`, independent
+  of any specific runner or context.
+
+### Resume validation
+
+`WorkflowRunner.run(context, resume_from=checkpoint)` validates, in order:
+workflow name match, workflow version match, run identity (`run_id`) match,
+checkpoint length not exceeding the declared step count, and then for every
+checkpointed record in position order: step name/version match against the
+declared step at that position, `COMPLETED` status, and exact recomputation
+of both the input and output commitments from the context and the record's
+own stored `StepResult`. Any mismatch raises `WorkflowResumeError`. A fully
+valid prefix is skipped without re-executing those steps; a fully complete
+checkpoint returns `COMPLETED` with zero step executions.
+
+This is deliberately **not** connected to `FamilyGraphCache.phase_commitments`
+in this PR — Stage 2C defines and tests the in-memory checkpoint contract
+only, per the extraction brief.
+
+### Trace design
+
+`WorkflowTraceSink.record(event)` receives a `STEP_STARTED` event before a
+step runs and exactly one of `STEP_COMPLETED` / `STEP_BLOCKED` /
+`STEP_FAILED` after. Events carry commitments and bounded metadata
+(`blocked_reason`, `failure_message`) but never the step's `output` payload,
+avoiding accidental leakage of protected data into traces by default.
+`timestamp` and `latency_seconds` are present for observability but are
+never fed back into any commitment. `InMemoryTraceSink.events` returns a
+defensive tuple copy; `NullTraceSink` discards everything.
+
+### Dependency-boundary verification
+
+- `tests_current/workflows/test_dependency_boundaries.py` parses every
+  `.py` file under `src/relate/workflows/` with `ast` and asserts no import
+  of `relate.experiments`, `relate.family`, or `relate.cli`.
+- Manual grep confirms the same; the only textual mentions of
+  `relate.experiments` inside the new package are in docstrings explaining
+  what must *not* be imported.
+- `relate.workflows` imports only the Python standard library and
+  `relate.evidence.canonical_json` / `relate.evidence.hashing`.
+
+### Tests added
+
+```text
+tests_current/workflows/
+  test_models.py                — immutable context, defensive copies, workflow/step
+                                   validation, JSON-value validation, result invariants
+  test_commitments.py           — determinism, mapping-order independence, prior-step
+                                   order/version/identity/payload/blocked-reason
+                                   sensitivity, Unicode stability, non-finite/unsupported
+                                   value rejection
+  test_runner.py                — ordered execution, single execution per step, prior
+                                   result visibility, commitment chaining, no mutable
+                                   context leakage, trace ordering
+  test_blocked_execution.py     — bounded reason requirement, blocked run status, blocked
+                                   record retention, later-step suppression, checkpoint
+                                   exclusion of blocked steps
+  test_failure_execution.py     — cause preservation, failed-step name, partial-record
+                                   retention, no completed record for the failed step,
+                                   later-step suppression, failure trace emission
+  test_resume.py                — valid prefix acceptance, next-step execution, full-
+                                   prefix no-op, and rejection of every invalid variant
+                                   (name/version/identity/version/order/gap/unknown
+                                   step/tampered commitments/blocked-as-completed)
+  test_trace.py                 — timestamp/latency independence from commitments,
+                                   start/finish delivery, commitment presence, payload
+                                   omission, defensive sink copies
+  test_dependency_boundaries.py — no forbidden imports anywhere in the package
+```
+
+### Compatibility and scientific verification
+
+- `git diff -- artifacts/canonical` empty (confirmed)
+- `historical.protocol_contract()["protocol_sha256"]` still equals
+  `a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08` (confirmed)
+- `relate.family.store` schema, cache identity keys, and allocation logic
+  untouched by this PR (no files under `src/relate/family/` were modified)
+- No canonical family graph executed; no C0 selection or C1 reserve row
+  content accessed; D2 not started
+
+### Stop-condition checks
+
+None of the listed stop conditions were triggered:
+
+- commitments never required serializing an arbitrary Python object (the
+  one near-miss — non-finite floats bypassing validation — was caught and
+  fixed before merge, see "Bug caught and fixed during self-review" above);
+- the workflow kernel never needed to import family or experiment code;
+- resume validation is fully deterministic (pure recomputation and
+  comparison, no I/O, no clock);
+- prior results are represented via a read-only `MappingProxyType` view
+  rebuilt per step, not mutable shared state;
+- no commitment includes a timestamp or latency;
+- no persistence change was required or made;
+- no family-store schema change was required or made;
+- no hidden-row access was needed anywhere in this PR;
+- no canonical artifact changed; no protocol SHA changed;
+- no scientific code changed to make the kernel work;
+- the one existing "workflow-shaped" prior implementation
+  (`IntegrityAuditCache`'s phase/checkpoint tables) is domain-specific and
+  does not materially conflict with this generic, non-persistent design —
+  see "Existing concepts searched for and found" above.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2C)
+
+**Stage 2D — Family Graph and Outcome Capability Extraction**
+
+Extract `UnionFind`, component construction, component commitments, edge
+commitments, graph completeness checks, and bounded family outcome
+calculation from `option_c0_family_connected_protocol.py` into clean
+`relate.family` modules. Add only the minimal clean family-store interfaces
+required for component memberships and phase commitments (capability-
+continuity.md items 9 and 10) — no more than what the graph-extraction and
+persistence work actually needs. This stage must still not execute the
+canonical family graph, and should not yet compose these capabilities into
+a `relate.workflows`-based family workflow (that remains a later stage).
+
+---
+
 ## Longer-Term Follow-On (not the immediate next stage)
 
 **Stage C — Domain decomposition of capability stores**

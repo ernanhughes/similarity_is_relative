@@ -55,9 +55,40 @@ src/relate/
 │   ├── atomic_io.py
 │   ├── immutable.py
 │   └── sqlite.py
+├── workflows/                 (Stage 2C — generic, domain-neutral workflow kernel)
+│   ├── __init__.py
+│   ├── errors.py              (WorkflowDefinitionError, WorkflowCommitmentError,
+│   │                           WorkflowExecutionError, WorkflowResumeError)
+│   ├── models.py               (JsonValue, WorkflowContext, WorkflowDefinition,
+│   │                           StepStatus, StepResult, StepExecutionRecord,
+│   │                           WorkflowRunResult, WorkflowCheckpoint)
+│   ├── step.py                 (WorkflowStep protocol)
+│   ├── commitments.py           (deterministic run/step commitment chain)
+│   ├── trace.py                 (WorkflowTraceEvent, WorkflowTraceSink, InMemoryTraceSink)
+│   └── runner.py                (WorkflowRunner: ordering, blocking, failure, resume)
 ├── verification/
 ├── publication/
 └── audits/
+```
+
+`relate.workflows` imports only the Python standard library and
+`relate.evidence`:
+
+```text
+relate.workflows
+    -> relate.evidence
+```
+
+It contains no family-graph workflow, no canonical-graph execution, and no
+persistence. It must never import `relate.experiments`, `relate.family`, or
+`relate.cli` (enforced by `tests_current/workflows/test_dependency_boundaries.py`).
+The future composition direction, once a family workflow exists, is:
+
+```text
+family workflow composition
+    -> relate.workflows
+    -> relate.family
+    -> relate.evidence
 ```
 
 Most console commands point directly into `relate.experiments`. Data reconstruction, identity validation, embeddings, model fitting, support logic, diagnostics, evidence writing, recovery and command-line parsing are therefore exposed as experiment implementation details.
@@ -280,14 +311,23 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2C — Minimal workflow contracts and execution model**
+**Stage 2D — Family graph and outcome capability extraction**
 
-Create only the small orchestration concepts RELATE needs — explicit steps, context,
-results, commitments and tracing — without importing a general-purpose workflow
-framework, so that the family capabilities in `relate.family.*` can be composed into
-an explicit workflow instead of the historical monkey-patched entrypoint chain.
+Extract `UnionFind`, component construction, component commitments, edge
+commitments, graph completeness checks, and bounded family outcome
+calculation from `option_c0_family_connected_protocol.py` into clean
+`relate.family` modules, plus the minimal clean family-store interfaces
+needed for component memberships and phase commitments. Still no canonical
+family graph execution.
 
-Previous immediate-next note (now completed as Stage 2B): `FamilyGraphCache`,
+Previous immediate-next note (now completed as Stage 2C): a domain-neutral
+workflow kernel (`relate.workflows`) was created — explicit steps, immutable
+context, deterministic commitments, injected tracing, blocked/failure/resume
+semantics — without importing `relate.experiments` or `relate.family` and
+without implementing any family-specific workflow step. See
+migration-status.md Stage 2C and capability-continuity.md.
+
+Previous immediate-next note (completed as Stage 2B): `FamilyGraphCache`,
 `FamilyGraphCacheIdentity`, and `default_cache_identity`'s explicit constructor
 (`make_cache_identity`) were extracted from `option_c0_family_connected_protocol` into
 `relate.family.store` without executing the canonical graph or changing the protocol

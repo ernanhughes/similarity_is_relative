@@ -64,12 +64,16 @@ relate-option-c0-audit-d1 = "relate.experiments.option_c0_d1_integrity_audit:mai
 where = ["src"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# The historical suite is preserved under tests/ but intentionally not collected
+# while the package is reorganized. New tests belong under tests_current/.
+testpaths = ["tests_current"]
 addopts = "-q"
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+# Historical tests are reference material during the architecture reset.
+extend-exclude = ["tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

@@ -102,6 +102,22 @@ class _ListTraceSink:
         self.events.append(event)
 
 
+class _TeeTraceSink:
+    def __init__(
+        self,
+        *,
+        internal_sink: _ListTraceSink,
+        caller_sink: WorkflowTraceSink | None,
+    ) -> None:
+        self._internal_sink = internal_sink
+        self._caller_sink = caller_sink
+
+    def record(self, event: WorkflowTraceEvent) -> None:
+        self._internal_sink.record(event)
+        if self._caller_sink is not None:
+            self._caller_sink.record(event)
+
+
 def _posix(path: Path) -> str:
     return path.as_posix()
 
@@ -400,67 +416,64 @@ def execute_authorized_canonical_family(
     )
     atomic_write_json(work_dir / "canonical-execution-claim.json", claim)
 
-    expected = FamilyProtocolExpectedIdentity(
-        allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
-        allocation_context_sha256=inputs["allocation_context_sha256"],
-        allocation_repository_commitment_sha256=inputs[
-            "allocation_repository_commitment_sha256"
-        ],
-        d1_result_sha256=inputs["d1_result_sha256"],
-        d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
-    )
-    workflow_source = compute_family_workflow_source_identity(root)
-    executor_source = compute_canonical_executor_source_identity(root)
-    run_identity = authorized_canonical_run_identity(
-        family_protocol_sha256=request_record["family_protocol_sha256"],
-        workflow_source_identity=workflow_source,
-        canonical_executor_source_identity=executor_source,
-        request_commitment=validation.request_commitment,
-        authorization_id=validation.authorization_id,
-        review_packet_commitment=request_record["review_packet_commitment"],
-        evidence_bundle_commitment=evidence_bundle_commitment(evidence_bundle),
-        requested_run_id=request_record["requested_run_id"],
-    )
-    runner_source = authorized_runner_source_identity(
-        workflow_source_identity=workflow_source,
-        canonical_executor_source_identity=executor_source,
-    )
-    plan = _build_family_workflow_plan_from_validated_inputs(
-        run_id=request_record["requested_run_id"],
-        workflow_name=FAMILY_GRAPH_WORKFLOW_NAME,
-        workflow_version=FAMILY_GRAPH_WORKFLOW_VERSION,
-        repo_root=root,
-        work_dir=work_dir,
-        store_path=store_path,
-        allowed_roles=frozenset(request_record["allowed_roles"]),
-        family_protocol_sha256=request_record["family_protocol_sha256"],
-        expected_identity=expected,
-        input_paths=FamilyProtocolInputPaths(
-            allocation_manifest=root / inputs["allocation_manifest_path"],
-            firewall_publication=root / inputs["firewall_publication_path"],
-            d1_result=root / inputs["d1_result_path"],
-            d1_1_classification=root / inputs["d1_1_classification_path"],
-        ),
-        allocation_manifest_path=root / inputs["allocation_manifest_path"],
-        workflow_source_identity=workflow_source,
-        evidence_bundle=evidence_bundle,
-        extra_identity={
-            "execution_scope": CANONICAL_EXECUTION_SCOPE,
-            "canonical_execution_request_commitment": validation.request_commitment,
-            "canonical_execution_authorization_id": validation.authorization_id,
-            "canonical_executor_source_identity": executor_source,
-            "authorized_canonical_run_identity": run_identity,
-        },
-        extra_inputs={"execution_scope": CANONICAL_EXECUTION_SCOPE},
-        family_runner_source_identity=runner_source,
-    )
-
     sink = _ListTraceSink()
-    runner_sink = trace_sink if trace_sink is not None else sink
+    runner_sink = _TeeTraceSink(internal_sink=sink, caller_sink=trace_sink)
     try:
+        expected = FamilyProtocolExpectedIdentity(
+            allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
+            allocation_context_sha256=inputs["allocation_context_sha256"],
+            allocation_repository_commitment_sha256=inputs[
+                "allocation_repository_commitment_sha256"
+            ],
+            d1_result_sha256=inputs["d1_result_sha256"],
+            d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
+        )
+        workflow_source = compute_family_workflow_source_identity(root)
+        executor_source = compute_canonical_executor_source_identity(root)
+        run_identity = authorized_canonical_run_identity(
+            family_protocol_sha256=request_record["family_protocol_sha256"],
+            workflow_source_identity=workflow_source,
+            canonical_executor_source_identity=executor_source,
+            request_commitment=validation.request_commitment,
+            authorization_id=validation.authorization_id,
+            review_packet_commitment=request_record["review_packet_commitment"],
+            evidence_bundle_commitment=evidence_bundle_commitment(evidence_bundle),
+            requested_run_id=request_record["requested_run_id"],
+        )
+        runner_source = authorized_runner_source_identity(
+            workflow_source_identity=workflow_source,
+            canonical_executor_source_identity=executor_source,
+        )
+        plan = _build_family_workflow_plan_from_validated_inputs(
+            run_id=request_record["requested_run_id"],
+            workflow_name=FAMILY_GRAPH_WORKFLOW_NAME,
+            workflow_version=FAMILY_GRAPH_WORKFLOW_VERSION,
+            repo_root=root,
+            work_dir=work_dir,
+            store_path=store_path,
+            allowed_roles=frozenset(request_record["allowed_roles"]),
+            family_protocol_sha256=request_record["family_protocol_sha256"],
+            expected_identity=expected,
+            input_paths=FamilyProtocolInputPaths(
+                allocation_manifest=root / inputs["allocation_manifest_path"],
+                firewall_publication=root / inputs["firewall_publication_path"],
+                d1_result=root / inputs["d1_result_path"],
+                d1_1_classification=root / inputs["d1_1_classification_path"],
+            ),
+            allocation_manifest_path=root / inputs["allocation_manifest_path"],
+            workflow_source_identity=workflow_source,
+            evidence_bundle=evidence_bundle,
+            extra_identity={
+                "execution_scope": CANONICAL_EXECUTION_SCOPE,
+                "canonical_execution_request_commitment": validation.request_commitment,
+                "canonical_execution_authorization_id": validation.authorization_id,
+                "canonical_executor_source_identity": executor_source,
+                "authorized_canonical_run_identity": run_identity,
+            },
+            extra_inputs={"execution_scope": CANONICAL_EXECUTION_SCOPE},
+            family_runner_source_identity=runner_source,
+        )
         result = WorkflowRunner(plan.definition, trace_sink=runner_sink).run(plan.context)
-        if trace_sink is not None:
-            sink.events.extend(getattr(trace_sink, "events", ()))
         if result.status is WorkflowRunStatus.BLOCKED:
             receipt = _receipt_record(
                 status=AuthorizedCanonicalExecutionStatus.BLOCKED,

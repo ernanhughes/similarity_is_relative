@@ -66,6 +66,12 @@ Once this directory exists, the authorization is consumed. A retry requires a
 new work directory, new store path, new request, and new authorization. There
 is no `--retry`, `--force`, or `--overwrite` option.
 
+After the claim is durable, every failure path is protected by the executor's
+terminal-record block. A failure during identity recomputation, workflow-plan
+construction, workflow execution, packet construction, or receipt writing must
+leave the claim in place and make a best effort to write
+`canonical-execution-failure.json` plus `canonical-execution-trace.json`.
+
 ## Staged Files
 
 Completed executions stage:

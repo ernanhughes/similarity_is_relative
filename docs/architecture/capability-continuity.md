@@ -91,6 +91,12 @@ an explicit human publication disposition, and written immutably to a
 noncanonical destination. Capability 14 remains gated: D2 authorization is not
 created by workflow completion, packet construction, or review publication.
 
+Stage 2G adds the supported `relate-family` CLI and exact canonical execution
+request/authorization records. This advances the operational boundary but does
+not mark canonical execution complete: the authorization can be created and
+verified, but no command or clean module consumes it to execute. Capability 14
+remains gated.
+
 The historical `write_protocol_contract` remains a protocol-contract writer,
 not a family-result publication boundary. The supported CLI and canonical
 authorization process remain later-stage work. The CLI and `main` remain

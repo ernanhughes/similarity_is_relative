@@ -156,6 +156,16 @@ def publication_disposition_commitment(disposition: FamilyPublicationDisposition
     return sha256_text(canonical_json(disposition.as_record()))
 
 
+def family_publication_disposition_from_record(
+    record: dict[str, Any],
+) -> FamilyPublicationDisposition:
+    if record.get("schema_id") != FAMILY_PUBLICATION_DISPOSITION_SCHEMA_ID:
+        raise ValueError("unsupported family publication disposition schema")
+    payload = dict(record)
+    payload.pop("schema_id")
+    return FamilyPublicationDisposition(**payload)
+
+
 @dataclass(frozen=True)
 class FamilyPublicationBundle:
     packet: FamilyReviewPacket

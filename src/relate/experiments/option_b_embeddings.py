@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_file
 from relate.experiments.option_b_cache import CACHE_MODES, OptionBCache
 from relate.experiments.option_b_embedding import (
     MAX_LENGTH,
@@ -32,14 +33,6 @@ DEFAULT_IDENTITY = Path("artifacts/canonical/option-b/option-b-embedding-identit
 DEFAULT_SELECTION = Path("artifacts/canonical/option-b/selection")
 DEFAULT_OUTPUT = Path("runs/option-b/embeddings")
 DEFAULT_CACHE = Path(".writer/option-b/cache/option-b.sqlite3")
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
 
 
 def array_hash(value: np.ndarray) -> str:

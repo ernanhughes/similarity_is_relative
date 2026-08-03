@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import platform
 from importlib import metadata
@@ -12,6 +11,8 @@ from typing import Any
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments.option_b_embedding import (
     canonical_embed_loaded,
     embedding_implementation_sha256,
@@ -31,14 +32,6 @@ DEFAULT_OUTPUT = Path("runs/option-b/identity/option-b-embedding-identity-v2.jso
 CANONICAL_DEVICE = "cpu"
 CANONICAL_BATCH_SIZE = 5
 BATCH_INVARIANCE_SIZES = (len(FIXTURE_CODES), CANONICAL_BATCH_SIZE, 1)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256_file(path: Path) -> str:
-    return _sha256_bytes(path.read_bytes())
 
 
 def _version(package: str) -> str | None:

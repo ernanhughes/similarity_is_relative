@@ -11,6 +11,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
 from relate.experiments.option_b_real_code import (
     MODEL_ID,
     FunctionRecord,
@@ -24,10 +25,6 @@ DATASET_ID = "code-search-net/code_search_net"
 REQUIRED_SPLITS = ("train", "validation", "test")
 DEFAULT_IDENTITY = Path("artifacts/canonical/option-b/option-b-external-identity-v1.json")
 DEFAULT_OUTPUT = Path("runs/option-b/selection")
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
 
 
 def _write_json(path: Path, value: Any) -> str:

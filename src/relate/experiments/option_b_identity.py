@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import inspect
 import json
 import platform
@@ -14,6 +13,8 @@ from typing import Any
 
 import numpy as np
 
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments.option_b_real_code import MODEL_ID, embed_code
 
 DATASET_ID = "code-search-net/code_search_net"
@@ -37,14 +38,6 @@ FIXTURE_CODES = (
     "def unique_calls(service, items):\n    service.open()\n    for item in items:\n        service.process(item)\n    service.close()\n",  # NOQA E501
     "async def collect(stream):\n    result = []\n    async for item in stream:\n        if item is not None:\n            result.append(item)\n    return result\n",  # NOQA E501
 )
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256_file(path: Path) -> str:
-    return _sha256_bytes(path.read_bytes())
 
 
 def _version(package: str) -> str | None:

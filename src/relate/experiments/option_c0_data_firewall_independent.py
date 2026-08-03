@@ -18,6 +18,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
 
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
+
 ROLE_NAMES: Final = ("c0_fit", "c0_iteration", "c0_selection", "c1_reserve")
 DATASET_SPLITS: Final = ("train", "validation", "test")
 ALLOCATION_SCHEMA: Final = "option-c0-repository-allocation-v1"
@@ -34,10 +36,6 @@ _HEX = re.compile(r"^[0-9a-f]+$")
 
 def _canonical_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
 
 
 def _sha256_json(value: Any) -> str:

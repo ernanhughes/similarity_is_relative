@@ -101,6 +101,12 @@ from relate.family.store import (
     FamilyGraphCacheIdentity,
     make_cache_identity,
 )
+from relate.family.verification import (
+    FamilyProtocolExpectedIdentity,
+    FamilyProtocolInputPaths,
+    validate_firewall_booleans,
+    verify_family_protocol_inputs,
+)
 
 # --- Historical-only schema constants ---
 # CACHE_SCHEMA_ID now originates in relate.family.store; re-exported above.
@@ -175,92 +181,48 @@ def default_cache_identity(family_protocol_sha256: str) -> FamilyGraphCacheIdent
     )
 
 
+# --- validate_frozen_protocol_inputs / validate_firewall_booleans ---
+# Moved to relate.family.verification in Stage 2E (family input verification
+# and explicit workflow composition). validate_firewall_booleans is
+# re-exported directly above: it never referenced anything historical-only.
+# validate_frozen_protocol_inputs remains here as a thin wrapper supplying
+# the historical canonical relative paths and frozen constants, since the
+# clean verify_family_protocol_inputs requires explicit paths/identity
+# rather than hard-coding them.
+
+
 def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
-    allocation = repo_root / (
-        "artifacts/canonical/option-c0/data-firewall-v1/"
-        "option-c0-repository-allocation-v1.jsonl"
+    paths = FamilyProtocolInputPaths(
+        allocation_manifest=repo_root
+        / "artifacts/canonical/option-c0/data-firewall-v1/"
+        "option-c0-repository-allocation-v1.jsonl",
+        firewall_publication=repo_root
+        / "artifacts/canonical/option-c0/data-firewall-v1/"
+        "option-c0-data-firewall-publication-v1.json",
+        d1_result=repo_root
+        / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
+        "option-c0-d1-integrity-audit-v1.json",
+        d1_1_classification=repo_root
+        / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
+        "option-c0-d1-overlap-classification-v1.json",
     )
-    firewall = repo_root / (
-        "artifacts/canonical/option-c0/data-firewall-v1/"
-        "option-c0-data-firewall-publication-v1.json"
+    expected_identity = FamilyProtocolExpectedIdentity(
+        allocation_manifest_sha256=ALLOCATION_MANIFEST_SHA256,
+        allocation_context_sha256=ALLOCATION_CONTEXT_SHA256,
+        allocation_repository_commitment_sha256=ALLOCATION_REPOSITORY_COMMITMENT_SHA256,
+        d1_result_sha256=D1_RESULT_SHA256,
+        d1_1_classification_sha256=D1_1_CLASSIFICATION_SHA256,
     )
-    d1 = repo_root / (
-        "artifacts/canonical/option-c0/review-v1/d1-integrity/"
-        "option-c0-d1-integrity-audit-v1.json"
-    )
-    d11 = repo_root / (
-        "artifacts/canonical/option-c0/review-v1/d1-integrity/"
-        "option-c0-d1-overlap-classification-v1.json"
-    )
-    if sha256_file(allocation) != ALLOCATION_MANIFEST_SHA256:
-        raise ValueError("canonical allocation manifest hash mismatch")
-    if sha256_file(d1) != D1_RESULT_SHA256:
-        raise ValueError("canonical D1 result hash mismatch")
-    if sha256_file(d11) != D1_1_CLASSIFICATION_SHA256:
-        raise ValueError("canonical D1.1 classification hash mismatch")
-    firewall_data = json.loads(firewall.read_text(encoding="utf-8"))
-    d1_data = json.loads(d1.read_text(encoding="utf-8"))
-    d11_data = json.loads(d11.read_text(encoding="utf-8"))
-    for artifact in (firewall_data, d1_data, d11_data):
-        if not isinstance(artifact, dict):
-            raise ValueError("canonical protocol input must be a JSON object")
-    if firewall_data.get("allocation_context_sha256") != ALLOCATION_CONTEXT_SHA256:
-        raise ValueError("allocation context SHA-256 mismatch")
-    classification = d11_data.get("classification", {})
-    if classification.get("overall_outcome") != "D1_CLASSIFICATION_INCONCLUSIVE":
-        raise ValueError("D1.1 outcome is not inconclusive")
-    if classification.get("family_identity_rule_status") != "NOT_FROZEN":
-        raise ValueError("D1.1 family identity rule status is not frozen as NOT_FROZEN")
-    common_firewall_keys = (
-        "scientific_result_observed",
-        "mechanism_result_observed",
-        "c0_selection_rows_accessed",
-        "c1_rows_accessed",
-        "hidden_row_content_accessed",
-    )
-    d11_firewall_keys = (
-        *common_firewall_keys,
-        "c0_selection_row_content_accessed",
-        "c1_row_content_accessed",
-    )
-    d11_firewall_booleans = d11_data.get("firewall_booleans", {})
-    for key in d11_firewall_keys:
-        if key not in d11_firewall_booleans or d11_firewall_booleans[key] is not False:
-            raise ValueError(f"hidden-row firewall field is true: {key}")
-    d1_firewall = d1_data.get("firewall_booleans", d1_data)
-    for key in common_firewall_keys:
-        if key not in d1_firewall or d1_firewall[key] is not False:
-            raise ValueError(f"D1 hidden-row firewall field is not exactly false: {key}")
+    verified = verify_family_protocol_inputs(paths, expected_identity)
     return {
-        "allocation_manifest_sha256": ALLOCATION_MANIFEST_SHA256,
-        "allocation_context_sha256": ALLOCATION_CONTEXT_SHA256,
-        "allocation_repository_commitment_sha256": ALLOCATION_REPOSITORY_COMMITMENT_SHA256,
-        "d1_audit_result_sha256": D1_RESULT_SHA256,
-        "d1_1_classification_sha256": D1_1_CLASSIFICATION_SHA256,
+        "allocation_manifest_sha256": verified.allocation_manifest_sha256,
+        "allocation_context_sha256": verified.allocation_context_sha256,
+        "allocation_repository_commitment_sha256": (
+            verified.allocation_repository_commitment_sha256
+        ),
+        "d1_audit_result_sha256": verified.d1_result_sha256,
+        "d1_1_classification_sha256": verified.d1_1_classification_sha256,
     }
-
-
-def validate_firewall_booleans(d1_data: Mapping[str, Any], d11_data: Mapping[str, Any]) -> None:
-    common_firewall_keys = (
-        "scientific_result_observed",
-        "mechanism_result_observed",
-        "c0_selection_rows_accessed",
-        "c1_rows_accessed",
-        "hidden_row_content_accessed",
-    )
-    d11_firewall_keys = (
-        *common_firewall_keys,
-        "c0_selection_row_content_accessed",
-        "c1_row_content_accessed",
-    )
-    d11_firewall_booleans = d11_data.get("firewall_booleans", {})
-    for key in d11_firewall_keys:
-        if key not in d11_firewall_booleans or d11_firewall_booleans[key] is not False:
-            raise ValueError(f"hidden-row firewall field is true: {key}")
-    d1_firewall = d1_data.get("firewall_booleans", d1_data)
-    for key in common_firewall_keys:
-        if key not in d1_firewall or d1_firewall[key] is not False:
-            raise ValueError(f"D1 hidden-row firewall field is not exactly false: {key}")
 
 
 # --- UnionFind / build_components / component_id ---

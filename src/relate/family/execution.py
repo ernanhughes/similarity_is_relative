@@ -408,17 +408,17 @@ def execute_authorized_canonical_family(
     work_dir = _repo_path(root, staging["work_dir"])
     store_path = _repo_path(root, staging["fresh_store_path"])
     work_dir.mkdir(parents=True, exist_ok=False)
-    claim = _claim_record(
-        request_record=request_record,
-        request_commitment=validation.request_commitment,
-        authorization_id=validation.authorization_id,
-        store_path=staging["fresh_store_path"],
-    )
-    atomic_write_json(work_dir / "canonical-execution-claim.json", claim)
-
     sink = _ListTraceSink()
     runner_sink = _TeeTraceSink(internal_sink=sink, caller_sink=trace_sink)
     try:
+        claim = _claim_record(
+            request_record=request_record,
+            request_commitment=validation.request_commitment,
+            authorization_id=validation.authorization_id,
+            store_path=staging["fresh_store_path"],
+        )
+        atomic_write_json(work_dir / "canonical-execution-claim.json", claim)
+
         expected = FamilyProtocolExpectedIdentity(
             allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
             allocation_context_sha256=inputs["allocation_context_sha256"],

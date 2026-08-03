@@ -396,6 +396,33 @@ def test_plan_construction_failure_after_claim_writes_failure_and_trace(
     assert (work_dir / "canonical-execution-trace.json").exists()
 
 
+def test_claim_construction_failure_after_directory_claim_writes_failure_and_trace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import relate.family.execution as execution
+
+    request, packet, bundle = _v2_request(tmp_path)
+    auth = _v2_authorization(request)
+
+    def fail_claim(**_kwargs):
+        raise RuntimeError("claim construction failed")
+
+    monkeypatch.setattr(execution, "_claim_record", fail_claim)
+    with pytest.raises(RuntimeError, match="claim construction failed"):
+        execute_authorized_canonical_family(
+            repo_root=Path.cwd(),
+            request=request,
+            authorization=auth,
+            review_packet=packet,
+            evidence_bundle=bundle,
+        )
+    work_dir = Path.cwd() / request.as_record()["intended_noncanonical_staging"]["work_dir"]
+    assert work_dir.exists()
+    assert not (work_dir / "canonical-execution-claim.json").exists()
+    assert (work_dir / "canonical-execution-failure.json").exists()
+    assert (work_dir / "canonical-execution-trace.json").exists()
+
+
 def test_second_attempt_with_same_authorization_is_rejected(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

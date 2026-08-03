@@ -1525,13 +1525,73 @@ completed evidence.
 
 ---
 
-## Recommended Next Architecture Stage (immediately after Stage 2I)
+## Stage 2J — Canonical Publication Request and Authorization
 
-**Stage 2J — Canonical Publication Authorization Boundary**
+Stage 2J adds a validation-only boundary for a future canonical publication
+operation. It consumes a strict Stage 2I execution-review bundle, requires the
+accepted disposition
+`ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW`, validates the
+exact bounded family review packet from the completed canonical-input execution,
+and binds one absent repository-relative destination beneath
+`artifacts/canonical/`.
 
-If justified by reviewed execution evidence, introduce a separate canonical
-publication authorization boundary. Do not combine it with materiality,
-allocation, reallocation, model refit, C0 replay, protected-row access, or D2.
+New module:
+
+- `relate.family.canonical_publication_authorization`.
+
+Extended Stage 2I parser:
+
+- `CanonicalExecutionReviewBundle`;
+- `canonical_execution_review_bundle_from_record`;
+- `canonical_execution_review_bundle_commitment`.
+
+New CLI commands:
+
+- `create-canonical-publication-candidate`;
+- `create-canonical-publication-request`;
+- `make-canonical-publication-authorization`;
+- `verify-canonical-publication-authorization`.
+
+New schemas:
+
+- candidate: `relate-family-canonical-publication-candidate-v1`;
+- request: `relate-family-canonical-publication-request-v1`;
+- authorization: `relate-family-canonical-publication-authorization-v1`;
+- validation: `relate-family-canonical-publication-authorization-validation-v1`;
+- source manifest:
+  `relate-family-canonical-publication-contract-source-manifest-v1`.
+
+The candidate binds the completed bounded family review packet, its logical
+commitment, its physical file SHA-256, the accepted Stage 2I review bundle, the
+bundle's logical commitment, and the bundle's physical file SHA-256. The
+request separately binds the candidate file SHA-256, bundle file SHA-256,
+current Stage 2J contract source identity, exact publication scope, exact
+destination and parent path. Logical commitments and physical file hashes are
+kept distinct.
+
+The authorization is a human record separate from prior execution and
+execution-review dispositions. It can authorize or withhold exactly one future
+canonical bounded-family-result publication. Withholding validates as
+`WITHHELD`; it is not a malformed authorization.
+
+The validation result explicitly records
+`executable_publication_authority: false`. Stage 2J does not create a claim,
+receipt, parent directory or canonical artifact, and it does not publish. It
+does not determine materiality, establish material contamination, alter
+allocation, authorize reallocation, refit models, replay C0, access protected
+rows or start D2.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2J)
+
+**Stage 2K — One-Shot Canonical Publication Executor Boundary**
+
+If Stage 2J authorization is accepted, introduce a separate executable
+publication contract that consumes the exact request, authorization, candidate,
+and accepted execution-review bundle. It must still be one-shot, destination
+specific, overwrite-refusing, and separate from materiality, allocation,
+reallocation, protected-row access and D2.
 
 ---
 

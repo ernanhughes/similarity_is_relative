@@ -28,10 +28,24 @@ from relate.family.authorization import (
     validate_canonical_execution_authorization,
     validate_executable_canonical_authorization_v2,
 )
+from relate.family.canonical_publication_authorization import (
+    AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+    WITHHOLD_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+    canonical_family_publication_authorization_from_record,
+    canonical_family_publication_candidate_commitment,
+    canonical_family_publication_candidate_from_record,
+    canonical_family_publication_request_commitment,
+    canonical_family_publication_request_from_record,
+    make_canonical_family_publication_authorization,
+    make_canonical_family_publication_candidate,
+    make_canonical_family_publication_request,
+    validate_canonical_family_publication_authorization,
+)
 from relate.family.execution import execute_authorized_canonical_family
 from relate.family.execution_review import (
     ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW,
     WITHHOLD_EXECUTION_EVIDENCE,
+    canonical_execution_review_bundle_from_record,
     canonical_execution_review_disposition_from_record,
     canonical_execution_review_report_from_record,
     inspect_authorized_canonical_execution,
@@ -49,6 +63,7 @@ from relate.family.review import (
     build_family_review_packet,
     family_review_packet_commitment,
     family_review_packet_from_record,
+    reject_canonical_path,
 )
 from relate.family.verification import FamilyProtocolExpectedIdentity, FamilyProtocolInputPaths
 from relate.family.workflow.composition import (
@@ -113,6 +128,15 @@ def _load_execution_review_report(path: Path):
 
 def _load_execution_review_disposition(path: Path):
     return canonical_execution_review_disposition_from_record(read_json_object(path))
+
+
+def _load_execution_review_bundle(path: Path):
+    return canonical_execution_review_bundle_from_record(read_json_object(path))
+
+
+def _reject_canonical_output(path: Path, repo_root: Path, label: str) -> None:
+    reject_canonical_path(path, repo_root=repo_root, label=label)
+    reject_canonical_path(path.parent, repo_root=repo_root, label=f"{label} parent")
 
 
 def _cmd_run_noncanonical(args: argparse.Namespace) -> int:
@@ -383,6 +407,117 @@ def _cmd_write_execution_review_bundle(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_create_canonical_publication_candidate(args: argparse.Namespace) -> int:
+    repo_root = Path.cwd()
+    _reject_canonical_output(args.output, repo_root, "canonical publication candidate")
+    bundle = _load_execution_review_bundle(args.execution_review_bundle)
+    packet = _load_packet(args.canonical_execution_review_packet)
+    candidate = make_canonical_family_publication_candidate(
+        execution_review_bundle=bundle,
+        execution_review_bundle_file_sha256=sha256_file(args.execution_review_bundle),
+        canonical_execution_review_packet=packet,
+        canonical_execution_review_packet_file_sha256=sha256_file(
+            args.canonical_execution_review_packet
+        ),
+    )
+    write_json_object_immutable(args.output, candidate.as_record())
+    _emit(
+        {
+            "status": "CREATED",
+            "candidate_commitment": canonical_family_publication_candidate_commitment(
+                candidate
+            ),
+            "candidate_file_sha256": sha256_file(args.output),
+        }
+    )
+    return EXIT_OK
+
+
+def _cmd_create_canonical_publication_request(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve(strict=False)
+    _reject_canonical_output(args.output, repo_root, "canonical publication request")
+    candidate = canonical_family_publication_candidate_from_record(
+        read_json_object(args.candidate)
+    )
+    bundle = _load_execution_review_bundle(args.execution_review_bundle)
+    request = make_canonical_family_publication_request(
+        repo_root=repo_root,
+        candidate=candidate,
+        candidate_file_sha256=sha256_file(args.candidate),
+        execution_review_bundle=bundle,
+        execution_review_bundle_file_sha256=sha256_file(args.execution_review_bundle),
+        intended_canonical_destination=args.intended_canonical_destination,
+    )
+    write_json_object_immutable(args.output, request.as_record())
+    _emit(
+        {
+            "status": "CREATED",
+            "request_commitment": canonical_family_publication_request_commitment(request),
+            "request_file_sha256": sha256_file(args.output),
+        }
+    )
+    return EXIT_OK
+
+
+def _cmd_make_canonical_publication_authorization(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve(strict=False)
+    _reject_canonical_output(args.output, repo_root, "canonical publication authorization")
+    reason = (
+        args.reason
+        if args.reason is not None
+        else args.reason_file.read_text(encoding="utf-8")
+    )
+    request_record = read_json_object(args.request)
+    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(
+        args.candidate
+    ):
+        raise ValueError("canonical publication candidate file SHA mismatch")
+    if request_record["accepted_execution_review_bundle_file_sha256"] != sha256_file(
+        args.execution_review_bundle
+    ):
+        raise ValueError("execution review bundle file SHA mismatch")
+    authorization = make_canonical_family_publication_authorization(
+        repo_root=repo_root,
+        request=canonical_family_publication_request_from_record(request_record),
+        candidate=canonical_family_publication_candidate_from_record(
+            read_json_object(args.candidate)
+        ),
+        execution_review_bundle=_load_execution_review_bundle(args.execution_review_bundle),
+        disposition=args.disposition,
+        reviewer_identity=args.reviewer,
+        review_timestamp=args.timestamp,
+        bounded_reason=reason,
+    )
+    write_json_object_immutable(args.output, authorization.as_record())
+    _emit({"status": "CREATED", "authorization_id": authorization.as_record()["authorization_id"]})
+    return EXIT_OK
+
+
+def _cmd_verify_canonical_publication_authorization(args: argparse.Namespace) -> int:
+    request_record = read_json_object(args.request)
+    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(
+        args.candidate
+    ):
+        raise ValueError("canonical publication candidate file SHA mismatch")
+    if request_record["accepted_execution_review_bundle_file_sha256"] != sha256_file(
+        args.execution_review_bundle
+    ):
+        raise ValueError("execution review bundle file SHA mismatch")
+    result = validate_canonical_family_publication_authorization(
+        repo_root=args.repo_root.resolve(strict=False),
+        request=canonical_family_publication_request_from_record(request_record),
+        authorization=canonical_family_publication_authorization_from_record(
+            read_json_object(args.authorization)
+        ),
+        candidate=canonical_family_publication_candidate_from_record(
+            read_json_object(args.candidate)
+        ),
+        execution_review_bundle=_load_execution_review_bundle(args.execution_review_bundle),
+    )
+    _emit(result.as_record())
+    return EXIT_OK if result.status == "AUTHORIZED" else EXIT_BLOCKED_OR_WITHHELD
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="relate-family")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -489,6 +624,49 @@ def build_parser() -> argparse.ArgumentParser:
     review_bundle.add_argument("--disposition", type=Path, required=True)
     review_bundle.add_argument("--output", type=Path, required=True)
     review_bundle.set_defaults(func=_cmd_write_execution_review_bundle)
+
+    pub_candidate = sub.add_parser("create-canonical-publication-candidate")
+    pub_candidate.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_candidate.add_argument("--canonical-execution-review-packet", type=Path, required=True)
+    pub_candidate.add_argument("--output", type=Path, required=True)
+    pub_candidate.set_defaults(func=_cmd_create_canonical_publication_candidate)
+
+    pub_request = sub.add_parser("create-canonical-publication-request")
+    pub_request.add_argument("--repo-root", type=Path, required=True)
+    pub_request.add_argument("--candidate", type=Path, required=True)
+    pub_request.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_request.add_argument("--intended-canonical-destination", type=Path, required=True)
+    pub_request.add_argument("--output", type=Path, required=True)
+    pub_request.set_defaults(func=_cmd_create_canonical_publication_request)
+
+    pub_auth = sub.add_parser("make-canonical-publication-authorization")
+    pub_auth.add_argument("--repo-root", type=Path, required=True)
+    pub_auth.add_argument("--request", type=Path, required=True)
+    pub_auth.add_argument("--candidate", type=Path, required=True)
+    pub_auth.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_auth.add_argument(
+        "--disposition",
+        choices=(
+            AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+            WITHHOLD_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+        ),
+        required=True,
+    )
+    pub_auth.add_argument("--reviewer", required=True)
+    pub_auth.add_argument("--timestamp", required=True)
+    pub_auth_reason = pub_auth.add_mutually_exclusive_group(required=True)
+    pub_auth_reason.add_argument("--reason")
+    pub_auth_reason.add_argument("--reason-file", type=Path)
+    pub_auth.add_argument("--output", type=Path, required=True)
+    pub_auth.set_defaults(func=_cmd_make_canonical_publication_authorization)
+
+    pub_verify = sub.add_parser("verify-canonical-publication-authorization")
+    pub_verify.add_argument("--repo-root", type=Path, required=True)
+    pub_verify.add_argument("--request", type=Path, required=True)
+    pub_verify.add_argument("--authorization", type=Path, required=True)
+    pub_verify.add_argument("--candidate", type=Path, required=True)
+    pub_verify.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_verify.set_defaults(func=_cmd_verify_canonical_publication_authorization)
     return parser
 
 

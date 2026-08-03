@@ -1426,6 +1426,22 @@ Capability 13 advances only to: canonical-input execution capability
 implemented; actual results remain noncanonical staged evidence and canonical
 publication remains gated. Capability 14 remains gated.
 
+### Stage 2H.1 corrective note
+
+Stage 2H.1 tightens the one-shot audit guarantee without changing the
+scientific protocol or authorization model. Once the work directory has been
+claimed and `canonical-execution-claim.json` is durable, identity
+recomputation, plan construction, workflow execution, packet construction, and
+receipt writing all run inside the protected terminal-record block. Any
+exception after claim makes a best effort to write
+`canonical-execution-failure.json` and `canonical-execution-trace.json` before
+reraising.
+
+The workflow runner trace sink is now a tee: the internal canonical trace
+collector always receives every workflow event, and an optional caller-provided
+sink receives the same events without being required to expose an `events`
+attribute.
+
 ---
 
 ## Recommended Next Architecture Stage (immediately after Stage 2H)

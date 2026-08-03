@@ -14,7 +14,6 @@ import importlib.metadata
 import io
 import json
 import keyword
-import os
 import platform
 import re
 import sqlite3
@@ -22,13 +21,16 @@ import subprocess
 import sys
 import time
 import tokenize
-import uuid
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final, TextIO
 
+from relate.evidence.atomic_io import atomic_write_json as _atomic_write_json
+from relate.evidence.canonical_json import canonical_json_compact_ascii as _canonical_json
+from relate.evidence.hashing import sha256_bytes as _sha256_bytes
+from relate.evidence.hashing import sha256_file as _sha256_file
 from relate.experiments import option_c0_discovery_runner as discovery_runner
 
 AUDIT_SCHEMA: Final = "option-c0-d1-integrity-audit-v1"
@@ -142,48 +144,6 @@ D1_CONTEXT_SOURCE_PATHS: Final = (
     "src/relate/experiments/option_c0_diagnostics.py",
     "src/relate/experiments/option_c0_selective_baselines.py",
 )
-
-
-def _canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-
-def _sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _fsync_directory(path: Path) -> None:
-    if os.name == "nt":
-        return
-    descriptor = os.open(path, os.O_RDONLY)
-    try:
-        os.fsync(descriptor)
-    finally:
-        os.close(descriptor)
-
-
-def _atomic_write_json(path: Path, value: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f".{path.name}.tmp-{uuid.uuid4().hex}")
-    try:
-        payload = (json.dumps(value, indent=2, sort_keys=True) + "\n").encode()
-        with temporary.open("wb") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        _fsync_directory(path.parent)
-    finally:
-        temporary.unlink(missing_ok=True)
-
 
 def _row_payload(row: VisibleAuditRow) -> dict[str, Any]:
     return {

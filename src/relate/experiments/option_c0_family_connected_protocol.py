@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import json
 import os
 import re
@@ -14,6 +13,9 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
+
+from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
+from relate.evidence.hashing import sha256_file, sha256_text
 
 SCHEMA_ID: Final = "option-c0-family-connected-allocation-contract-v1"
 EDGE_SCHEMA_ID: Final = "option-c0-family-evidence-edge-v1"
@@ -402,22 +404,6 @@ NONCONNECTING_EDGE_TYPES: Final = tuple(
 )
 CONNECTING_EDGE_TYPES: Final = HARD_CONNECTING_EDGE_TYPES + CONDITIONAL_CONNECTING_EDGE_TYPES
 ALL_EDGE_TYPES: Final = tuple(EDGE_RULES)
-
-
-def canonical_json(data: Mapping[str, Any]) -> str:
-    return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-
-
-def sha256_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def normalize_repository(repository: str) -> str:

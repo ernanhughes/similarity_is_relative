@@ -28,8 +28,7 @@ def completed_family_workflow(tmp_path: Path):
     source = tmp_path / "inputs"
     source.mkdir()
     allocation = _copy(
-        "artifacts/canonical/option-c0/data-firewall-v1/"
-        "option-c0-repository-allocation-v1.jsonl",
+        "artifacts/canonical/option-c0/data-firewall-v1/option-c0-repository-allocation-v1.jsonl",
         source,
     )
     firewall = _copy(
@@ -38,8 +37,7 @@ def completed_family_workflow(tmp_path: Path):
         source,
     )
     d1 = _copy(
-        "artifacts/canonical/option-c0/review-v1/d1-integrity/"
-        "option-c0-d1-integrity-audit-v1.json",
+        "artifacts/canonical/option-c0/review-v1/d1-integrity/option-c0-d1-integrity-audit-v1.json",
         source,
     )
     d11 = _copy(

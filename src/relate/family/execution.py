@@ -36,9 +36,7 @@ from relate.family.workflow.models import FamilyEvidenceBundle, evidence_bundle_
 from relate.workflows import WorkflowExecutionError, WorkflowRunner, WorkflowRunStatus
 from relate.workflows.trace import WorkflowTraceEvent, WorkflowTraceSink
 
-CANONICAL_EXECUTION_SCOPE: Final = (
-    "AUTHORIZED_CANONICAL_INPUT_EXECUTION_TO_NONCANONICAL_STAGING"
-)
+CANONICAL_EXECUTION_SCOPE: Final = "AUTHORIZED_CANONICAL_INPUT_EXECUTION_TO_NONCANONICAL_STAGING"
 CANONICAL_RUN_SCHEMA_ID: Final = "relate-family-authorized-canonical-run-v1"
 AUTHORIZED_RUNNER_SOURCE_SCHEMA_ID: Final = "relate-family-authorized-runner-source-v1"
 CANONICAL_EXECUTION_CLAIM_SCHEMA_ID: Final = "relate-family-canonical-execution-claim-v1"
@@ -195,9 +193,7 @@ def _claim_record(
         "requested_run_id": request_record["requested_run_id"],
         "family_protocol_sha256": request_record["family_protocol_sha256"],
         "workflow_source_identity": request_record["workflow_source_identity"],
-        "canonical_executor_source_identity": request_record[
-            "canonical_executor_source_identity"
-        ],
+        "canonical_executor_source_identity": request_record["canonical_executor_source_identity"],
         "intended_store_path": store_path,
         "prohibitions": list(request_record["prohibitions"]),
     }
@@ -269,9 +265,7 @@ def _receipt_record(
         "workflow_version": FAMILY_GRAPH_WORKFLOW_VERSION,
         "requested_run_id": request_record["requested_run_id"],
         "workflow_source_identity": request_record["workflow_source_identity"],
-        "canonical_executor_source_identity": request_record[
-            "canonical_executor_source_identity"
-        ],
+        "canonical_executor_source_identity": request_record["canonical_executor_source_identity"],
         "authorised_runner_source_identity": plan.store_spec.identity.family_runner_source_identity,
         "canonical_execution_request_commitment": request_commitment,
         "canonical_execution_authorization_id": authorization_id,
@@ -280,9 +274,7 @@ def _receipt_record(
         "staging_work_directory": _relative(repo_root, plan.context.work_dir),
         "staging_store_path": _relative(repo_root, plan.store_spec.path),
         "store_identity_mapping": plan.store_spec.identity.as_mapping(),
-        "workflow_run_identity_commitment": plan.context.identity[
-            "family_workflow_run_identity"
-        ],
+        "workflow_run_identity_commitment": plan.context.identity["family_workflow_run_identity"],
         "ordered_steps": step_records,
         "continuing_prohibitions": list(request_record["prohibitions"]),
         **(
@@ -389,6 +381,7 @@ def execute_authorized_canonical_family(
     authorization = canonical_execution_authorization_v2_from_record(authorization.as_record())
     request_record = request.as_record()
     auth_record = authorization.as_record()
+
     validation = validate_executable_canonical_authorization_v2(
         request=request,
         authorization=authorization,
@@ -396,6 +389,7 @@ def execute_authorized_canonical_family(
         review_packet=review_packet,
         evidence_bundle=evidence_bundle,
     )
+
     if auth_record["disposition"] != AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION:
         return AuthorizedCanonicalFamilyExecutionResult(
             status=AuthorizedCanonicalExecutionStatus.WITHHELD,
@@ -407,18 +401,57 @@ def execute_authorized_canonical_family(
     staging = request_record["intended_noncanonical_staging"]
     work_dir = _repo_path(root, staging["work_dir"])
     store_path = _repo_path(root, staging["fresh_store_path"])
+
+    # Directory creation is the one-shot claim boundary. If it already exists,
+    # the request has already been consumed and no existing records are touched.
     work_dir.mkdir(parents=True, exist_ok=False)
-    claim = _claim_record(
-        request_record=request_record,
-        request_commitment=validation.request_commitment,
-        authorization_id=validation.authorization_id,
-        store_path=staging["fresh_store_path"],
-    )
-    atomic_write_json(work_dir / "canonical-execution-claim.json", claim)
 
     sink = _ListTraceSink()
-    runner_sink = _TeeTraceSink(internal_sink=sink, caller_sink=trace_sink)
+    runner_sink = _TeeTraceSink(
+        internal_sink=sink,
+        caller_sink=trace_sink,
+    )
+
+    def write_terminal_failure(
+        *,
+        exc: BaseException,
+        failed_step: str | None,
+    ) -> None:
+        """Best-effort terminal recording without masking the original error."""
+
+        try:
+            _write_failure_record(
+                work_dir=work_dir,
+                request_commitment=validation.request_commitment,
+                authorization_id=validation.authorization_id,
+                failed_step=failed_step,
+                exc=exc,
+            )
+        except Exception:
+            # The authorization remains consumed even if the filesystem
+            # prevents the bounded failure record from being written.
+            pass
+
+        try:
+            _write_trace(work_dir, sink)
+        except Exception:
+            # Preserve and re-raise the original execution failure.
+            pass
+
     try:
+        # Claim construction and persistence are protected because successful
+        # creation of work_dir has already consumed the authorization.
+        claim = _claim_record(
+            request_record=request_record,
+            request_commitment=validation.request_commitment,
+            authorization_id=validation.authorization_id,
+            store_path=staging["fresh_store_path"],
+        )
+        atomic_write_json(
+            work_dir / "canonical-execution-claim.json",
+            claim,
+        )
+
         expected = FamilyProtocolExpectedIdentity(
             allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
             allocation_context_sha256=inputs["allocation_context_sha256"],
@@ -428,8 +461,10 @@ def execute_authorized_canonical_family(
             d1_result_sha256=inputs["d1_result_sha256"],
             d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
         )
+
         workflow_source = compute_family_workflow_source_identity(root)
         executor_source = compute_canonical_executor_source_identity(root)
+
         run_identity = authorized_canonical_run_identity(
             family_protocol_sha256=request_record["family_protocol_sha256"],
             workflow_source_identity=workflow_source,
@@ -440,10 +475,12 @@ def execute_authorized_canonical_family(
             evidence_bundle_commitment=evidence_bundle_commitment(evidence_bundle),
             requested_run_id=request_record["requested_run_id"],
         )
+
         runner_source = authorized_runner_source_identity(
             workflow_source_identity=workflow_source,
             canonical_executor_source_identity=executor_source,
         )
+
         plan = _build_family_workflow_plan_from_validated_inputs(
             run_id=request_record["requested_run_id"],
             workflow_name=FAMILY_GRAPH_WORKFLOW_NAME,
@@ -455,25 +492,32 @@ def execute_authorized_canonical_family(
             family_protocol_sha256=request_record["family_protocol_sha256"],
             expected_identity=expected,
             input_paths=FamilyProtocolInputPaths(
-                allocation_manifest=root / inputs["allocation_manifest_path"],
-                firewall_publication=root / inputs["firewall_publication_path"],
+                allocation_manifest=(root / inputs["allocation_manifest_path"]),
+                firewall_publication=(root / inputs["firewall_publication_path"]),
                 d1_result=root / inputs["d1_result_path"],
-                d1_1_classification=root / inputs["d1_1_classification_path"],
+                d1_1_classification=(root / inputs["d1_1_classification_path"]),
             ),
-            allocation_manifest_path=root / inputs["allocation_manifest_path"],
+            allocation_manifest_path=(root / inputs["allocation_manifest_path"]),
             workflow_source_identity=workflow_source,
             evidence_bundle=evidence_bundle,
             extra_identity={
                 "execution_scope": CANONICAL_EXECUTION_SCOPE,
-                "canonical_execution_request_commitment": validation.request_commitment,
-                "canonical_execution_authorization_id": validation.authorization_id,
+                "canonical_execution_request_commitment": (validation.request_commitment),
+                "canonical_execution_authorization_id": (validation.authorization_id),
                 "canonical_executor_source_identity": executor_source,
                 "authorized_canonical_run_identity": run_identity,
             },
-            extra_inputs={"execution_scope": CANONICAL_EXECUTION_SCOPE},
+            extra_inputs={
+                "execution_scope": CANONICAL_EXECUTION_SCOPE,
+            },
             family_runner_source_identity=runner_source,
         )
-        result = WorkflowRunner(plan.definition, trace_sink=runner_sink).run(plan.context)
+
+        result = WorkflowRunner(
+            plan.definition,
+            trace_sink=runner_sink,
+        ).run(plan.context)
+
         if result.status is WorkflowRunStatus.BLOCKED:
             receipt = _receipt_record(
                 status=AuthorizedCanonicalExecutionStatus.BLOCKED,
@@ -486,9 +530,11 @@ def execute_authorized_canonical_family(
                 result=result,
                 review_packet_commitment_value=None,
             )
+
             receipt_path = work_dir / "canonical-execution-receipt.json"
             atomic_write_json(receipt_path, receipt)
             _write_trace(work_dir, sink)
+
             return AuthorizedCanonicalFamilyExecutionResult(
                 status=AuthorizedCanonicalExecutionStatus.BLOCKED,
                 request_commitment=validation.request_commitment,
@@ -500,10 +546,15 @@ def execute_authorized_canonical_family(
                 blocked_step=result.blocked_step,
             )
 
-        packet = build_family_review_packet(plan=plan, result=result)
+        packet = build_family_review_packet(
+            plan=plan,
+            result=result,
+        )
         packet_path = work_dir / "canonical-execution-review-packet.json"
         atomic_write_json(packet_path, packet.as_record())
+
         packet_commitment = family_review_packet_commitment(packet)
+
         receipt = _receipt_record(
             status=AuthorizedCanonicalExecutionStatus.COMPLETED,
             repo_root=root,
@@ -515,9 +566,11 @@ def execute_authorized_canonical_family(
             result=result,
             review_packet_commitment_value=packet_commitment,
         )
+
         receipt_path = work_dir / "canonical-execution-receipt.json"
         atomic_write_json(receipt_path, receipt)
         _write_trace(work_dir, sink)
+
         return AuthorizedCanonicalFamilyExecutionResult(
             status=AuthorizedCanonicalExecutionStatus.COMPLETED,
             request_commitment=validation.request_commitment,
@@ -528,23 +581,17 @@ def execute_authorized_canonical_family(
             receipt_commitment=receipt["receipt_commitment"],
             receipt_file_sha256=sha256_file(receipt_path),
         )
+
     except WorkflowExecutionError as exc:
-        _write_failure_record(
-            work_dir=work_dir,
-            request_commitment=validation.request_commitment,
-            authorization_id=validation.authorization_id,
-            failed_step=exc.failed_step_name,
+        write_terminal_failure(
             exc=exc.__cause__ or exc,
+            failed_step=exc.failed_step_name,
         )
-        _write_trace(work_dir, sink)
         raise
+
     except Exception as exc:
-        _write_failure_record(
-            work_dir=work_dir,
-            request_commitment=validation.request_commitment,
-            authorization_id=validation.authorization_id,
-            failed_step=None,
+        write_terminal_failure(
             exc=exc,
+            failed_step=None,
         )
-        _write_trace(work_dir, sink)
         raise

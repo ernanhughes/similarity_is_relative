@@ -290,9 +290,10 @@ def test_v2_authorization_binds_executor_identity_and_validates(tmp_path: Path) 
         bounded_reason="authorize exact canonical input execution to staging",
     )
     assert auth.as_record()["schema_id"] == "relate-family-canonical-execution-authorization-v2"
-    assert auth.as_record()["canonical_executor_source_identity"] == request.as_record()[
-        "canonical_executor_source_identity"
-    ]
+    assert (
+        auth.as_record()["canonical_executor_source_identity"]
+        == request.as_record()["canonical_executor_source_identity"]
+    )
     assert (
         validate_executable_canonical_authorization_v2(
             request=request,

@@ -70,9 +70,7 @@ def _build_fixture(
     firewall = tmp_path / "firewall.json"
     firewall.write_text(
         json.dumps(
-            firewall_data
-            if firewall_data is not None
-            else {"allocation_context_sha256": "c" * 64}
+            firewall_data if firewall_data is not None else {"allocation_context_sha256": "c" * 64}
         ),
         encoding="utf-8",
     )
@@ -319,8 +317,7 @@ class TestHistoricalCompatibility:
             == clean_result.allocation_manifest_sha256
         )
         assert (
-            historical_result["allocation_context_sha256"]
-            == clean_result.allocation_context_sha256
+            historical_result["allocation_context_sha256"] == clean_result.allocation_context_sha256
         )
         assert (
             historical_result["allocation_repository_commitment_sha256"]

@@ -203,9 +203,10 @@ def build_family_review_packet(
     with FamilyGraphCache(plan.store_spec.path, identity=plan.store_spec.identity) as cache:
         if cache.identity.family_protocol_sha256 != protocol_sha:
             raise ValueError("store protocol identity mismatch")
-        if cache.identity.allocation_manifest_sha256 != plan.context.identity[
-            "allocation_manifest_sha256"
-        ]:
+        if (
+            cache.identity.allocation_manifest_sha256
+            != plan.context.identity["allocation_manifest_sha256"]
+        ):
             raise ValueError("store allocation identity mismatch")
         allocation_entries = cache.list_allocation_repositories()
         edges = cache.list_resolved_edges()
@@ -242,15 +243,18 @@ def build_family_review_packet(
     analysis_commitment = by_name["analyse_role_crossings"].result.output["analysis_commitment"]
     if phases.get("role_crossing_analysis") != analysis_commitment:
         raise ValueError("role analysis phase mismatch")
-    if sha256_text(
-        canonical_json(
-            {
-                "schema_id": "relate-family-role-crossing-analysis-v1",
-                "family_protocol_sha256": protocol_sha,
-                "analysis": analysis_record,
-            }
+    if (
+        sha256_text(
+            canonical_json(
+                {
+                    "schema_id": "relate-family-role-crossing-analysis-v1",
+                    "family_protocol_sha256": protocol_sha,
+                    "analysis": analysis_record,
+                }
+            )
         )
-    ) != analysis_commitment:
+        != analysis_commitment
+    ):
         raise ValueError("role analysis commitment mismatch")
 
     readiness = by_name["assess_graph_readiness"].result.output

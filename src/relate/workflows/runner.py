@@ -239,8 +239,7 @@ class WorkflowRunner:
             )
             if expected_input != record.input_commitment:
                 raise WorkflowResumeError(
-                    f"checkpoint step {record.step_name!r} has a tampered or stale "
-                    "input commitment"
+                    f"checkpoint step {record.step_name!r} has a tampered or stale input commitment"
                 )
 
             expected_output = step_output_commitment(

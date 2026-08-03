@@ -146,9 +146,7 @@ def _cmd_run_noncanonical(args: argparse.Namespace) -> int:
 def _cmd_make_publication_disposition(args: argparse.Namespace) -> int:
     packet = _load_packet(args.packet)
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     disposition = make_family_publication_disposition(
         packet=packet,
@@ -215,9 +213,7 @@ def _cmd_make_canonical_authorization(args: argparse.Namespace) -> int:
         else canonical_execution_request_from_record(raw)
     )
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     if request.as_record().get("schema_id") == CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID:
         authorization = make_canonical_execution_authorization_v2(

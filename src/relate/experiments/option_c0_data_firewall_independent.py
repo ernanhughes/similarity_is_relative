@@ -44,9 +44,7 @@ def _sha256_json(value: Any) -> str:
 
 def _require_hex(value: str, *, lengths: set[int], field: str) -> None:
     if len(value) not in lengths or _HEX.fullmatch(value) is None:
-        raise ValueError(
-            f"{field} must be lowercase hexadecimal with length {sorted(lengths)}"
-        )
+        raise ValueError(f"{field} must be lowercase hexadecimal with length {sorted(lengths)}")
 
 
 def _write_durable(path: Path, payload: bytes) -> None:
@@ -77,9 +75,7 @@ def _normalise_row(row: Mapping[str, Any]) -> dict[str, Any]:
     stable_key = str(row.get("stable_key", "")).strip()
     source_split = str(row.get("source_split", row.get("split", ""))).strip()
     if not repository or not stable_key or source_split not in DATASET_SPLITS:
-        raise ValueError(
-            "eligible rows require repository, stable_key, and a frozen source split"
-        )
+        raise ValueError("eligible rows require repository, stable_key, and a frozen source split")
     result = {
         "repository": repository,
         "stable_key": stable_key,
@@ -114,9 +110,7 @@ def _commit_string_set(values: Iterable[str]) -> str:
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
+        json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
     ]
 
 
@@ -160,8 +154,7 @@ def _role_quotas(repository_count: int, config: Mapping[str, Any]) -> dict[str, 
     minimum_total = sum(minimums)
     if repository_count < minimum_total:
         raise ValueError(
-            f"{repository_count} repositories cannot satisfy minimum total "
-            f"{minimum_total}"
+            f"{repository_count} repositories cannot satisfy minimum total {minimum_total}"
         )
     remaining = repository_count - minimum_total
     weight_total = sum(weights)
@@ -174,10 +167,7 @@ def _role_quotas(repository_count: int, config: Mapping[str, Any]) -> dict[str, 
     )
     for index in fractional_order[:unassigned]:
         extras[index] += 1
-    return {
-        role: minimums[index] + extras[index]
-        for index, role in enumerate(ROLE_NAMES)
-    }
+    return {role: minimums[index] + extras[index] for index, role in enumerate(ROLE_NAMES)}
 
 
 def _reconstruct_eligible_pool(
@@ -292,9 +282,7 @@ def _load_option_b_exclusions(
             repositories.add(repository)
             rows += 1
         if rows != int(metadata["rows"]):
-            raise ValueError(
-                f"Option B selected-manifest row-count mismatch: {split}"
-            )
+            raise ValueError(f"Option B selected-manifest row-count mismatch: {split}")
         artifacts[split] = {"rows": rows, "file_sha256": expected}
     return repositories, {
         "selection_id": report["selection_id"],
@@ -369,14 +357,9 @@ def _recompute_allocation(
                         f"{domain}\0{allocation_context}\0{repository}".encode()
                     ).hexdigest(),
                     "row_count": len(repository_rows),
-                    "source_splits": sorted(
-                        {row["source_split"] for row in repository_rows}
-                    ),
+                    "source_splits": sorted({row["source_split"] for row in repository_rows}),
                     "repository_rows_sha256": _sha256_bytes(
-                        b"".join(
-                            (_canonical_json(row) + "\n").encode()
-                            for row in repository_rows
-                        )
+                        b"".join((_canonical_json(row) + "\n").encode() for row in repository_rows)
                     ),
                 }
             )
@@ -453,9 +436,7 @@ def verify_c0_allocation(
         dataset_by_split=dataset_by_split,
         tokenizer=tokenizer,
     )
-    excluded, option_b_selection = _load_option_b_exclusions(
-        option_b_selection_dir
-    )
+    excluded, option_b_selection = _load_option_b_exclusions(option_b_selection_dir)
     recomputed = _recompute_allocation(
         rows,
         excluded,
@@ -557,12 +538,8 @@ def verify_c0_allocation(
         "commitments": {
             "identity_file_sha256": reconstruction["identity_sha256"],
             "eligible_pool_sha256": reconstruction["eligible_pool_commitment"],
-            "option_b_repository_set_sha256": option_b_selection[
-                "repository_commitment"
-            ],
-            "allocation_context_sha256": recomputed[
-                "allocation_context_sha256"
-            ],
+            "option_b_repository_set_sha256": option_b_selection["repository_commitment"],
+            "allocation_context_sha256": recomputed["allocation_context_sha256"],
             "config_sha256": recomputed["config_sha256"],
         },
         "artifacts": {
@@ -582,9 +559,7 @@ def verify_c0_allocation(
             },
             "allocation_config": {
                 "path": str(allocation_config_path).replace("\\", "/"),
-                "file_sha256": _sha256_bytes(
-                    allocation_config_path.read_bytes()
-                ),
+                "file_sha256": _sha256_bytes(allocation_config_path.read_bytes()),
             },
             "candidate_registry": {
                 "path": CANDIDATE_REGISTRY_NAME,

@@ -1654,12 +1654,72 @@ D2.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2K)
 
-**Stage 2L — Canonical Publication Evidence Review and Closure**
+## Stage 2L — Canonical Publication Evidence Review and Closure
 
-Review the Stage 2K request, authorization, claim, trace, receipt or failure,
-verify destination bytes and SHA, distinguish completed versus partial-failure
-terminal states, and create noncanonical publication-review records. Stage 2L
-must perform no further canonical mutation.
+Stage 2L adds read-only evidence review and closure for Stage 2K publication
+attempts. It validates the historical Stage 2J to Stage 2K record chain without
+using pre-execution absence checks, strictly parses publication claim, trace,
+receipt and failure records, classifies terminal state, verifies exact canonical
+destination bytes, and writes only noncanonical review and closure records.
+
+New module:
+
+- `relate.family.canonical_publication_review`.
+
+New CLI commands:
+
+- `review-canonical-publication-evidence`;
+- `make-canonical-publication-closure-disposition`;
+- `write-canonical-publication-closure-bundle`;
+- `verify-canonical-publication-closure-bundle`.
+
+New schemas:
+
+- review report:
+  `relate-family-canonical-publication-evidence-review-report-v1`;
+- closure disposition:
+  `relate-family-canonical-publication-closure-disposition-v1`;
+- closure bundle:
+  `relate-family-canonical-publication-closure-bundle-v1`.
+
+Recognized terminal states:
+
+- `VALID_COMPLETED`;
+- `VALID_FAILED_BEFORE_CANONICAL_CREATION`;
+- `VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED`;
+- `INCOMPLETE_TERMINAL_EVIDENCE`.
+
+Completed publication review requires claim, final trace, receipt and exact
+canonical destination bytes. The receipt's `trace_file_sha256` must equal the
+actual final trace file SHA-256, and the trace must follow the Stage 2K.1
+sequence without `RECEIPT_PERSISTED`.
+
+Failure review distinguishes attempts that ended before canonical creation from
+partial-success attempts where the canonical file exists and matches the exact
+authorized candidate bytes but audit finalization failed. Partial success is
+not relabelled as completed publication.
+
+Current checkout reproducibility is reported separately from historical record
+integrity by comparing the current publisher source identity with the identity
+bound by the executable request and authorization.
+
+Closure dispositions are human records for completed publication closure,
+failed-attempt closure, partial-success acknowledgement, or withholding. They
+do not authorize retry, overwrite, replacement, deletion, materiality,
+allocation changes, reallocation, model refit, C0 replay, protected-row access
+or D2.
+
+Stage 2L performs no canonical mutation and no publication execution. It closes
+the Stage 2 execution-and-publication architecture sequence.
+
+---
+
+## Recommended Longer-Term Software Follow-On
+
+**Stage C — Domain decomposition of capability stores**
+
+This remains separate from the completed publication chain and must not be used
+to advance materiality, allocation, reallocation, protected-row access or D2.
 
 ---
 

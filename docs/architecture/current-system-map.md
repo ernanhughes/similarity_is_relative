@@ -424,23 +424,30 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2L — Canonical publication evidence review and closure**
+**Stage C — Domain decomposition of capability stores**
 
-Stage 2K completed one-shot authorized canonical publication execution:
+Stage 2L completed read-only canonical publication evidence review and closure:
 
 ```text
 relate.cli.family
-    -> relate.family.canonical_publication
+    -> relate.family.canonical_publication_review
+        -> relate.family.canonical_publication
         -> relate.family.canonical_publication_authorization
         -> relate.family.execution_review
         -> relate.family.review
         -> relate.evidence
 ```
 
-The next boundary should review the publication evidence and close the
-publication audit without further canonical mutation. Materiality, allocation
-changes, reallocation, model refit, C0 replay, protected-row access, and D2
-remain separate gated acts.
+That direction is read-only: it inspects the Stage 2J and Stage 2K chain,
+publication audit evidence, and exact destination bytes, then writes
+noncanonical closure records. Materiality, allocation changes, reallocation,
+model refit, C0 replay, protected-row access, and D2 remain separate gated
+acts.
+
+Previous immediate-next note (completed as Stage 2L): canonical publication
+evidence review and closure were added with strict audit parsers,
+terminal-state classification, exact candidate-byte verification, source
+identity comparison, closure dispositions and noncanonical closure bundles.
 
 Previous immediate-next note (completed as Stage 2K): a distinct v2 executable
 publication request and human authorization were added, with publisher source

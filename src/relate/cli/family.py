@@ -54,6 +54,19 @@ from relate.family.canonical_publication_authorization import (
     make_canonical_family_publication_request,
     validate_canonical_family_publication_authorization,
 )
+from relate.family.canonical_publication_review import (
+    ACKNOWLEDGE_CANONICAL_ARTIFACT_WITH_INCOMPLETE_AUDIT_FINALIZATION,
+    CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+    CLOSE_FAILED_PUBLICATION_WITHOUT_CANONICAL_ARTIFACT,
+    WITHHOLD_CANONICAL_PUBLICATION_CLOSURE,
+    canonical_publication_closure_bundle_commitment,
+    canonical_publication_closure_bundle_from_record,
+    canonical_publication_closure_disposition_from_record,
+    canonical_publication_evidence_review_report_from_record,
+    inspect_canonical_publication_evidence,
+    make_canonical_publication_closure_disposition,
+    write_canonical_publication_closure_bundle,
+)
 from relate.family.execution import execute_authorized_canonical_family
 from relate.family.execution_review import (
     ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW,
@@ -653,6 +666,106 @@ def _cmd_execute_authorized_canonical_publication(args: argparse.Namespace) -> i
     return EXIT_OK if result.status.value == "COMPLETED" else EXIT_BLOCKED_OR_WITHHELD
 
 
+def _cmd_review_canonical_publication_evidence(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve(strict=False)
+    _reject_canonical_output(args.output, repo_root, "canonical publication review report")
+    report = inspect_canonical_publication_evidence(
+        repo_root=repo_root,
+        stage_2j_request=_load_stage_2j_publication_request(args.stage_2j_request),
+        stage_2j_request_file_sha256=sha256_file(args.stage_2j_request),
+        stage_2j_authorization=_load_stage_2j_publication_authorization(
+            args.stage_2j_authorization
+        ),
+        stage_2j_authorization_file_sha256=sha256_file(args.stage_2j_authorization),
+        executable_request=executable_canonical_publication_request_v2_from_record(
+            read_json_object(args.executable_request)
+        ),
+        executable_request_file_sha256=sha256_file(args.executable_request),
+        executable_authorization=executable_canonical_publication_authorization_v2_from_record(
+            read_json_object(args.executable_authorization)
+        ),
+        executable_authorization_file_sha256=sha256_file(args.executable_authorization),
+        candidate_file=args.candidate,
+        execution_review_bundle_file=args.execution_review_bundle,
+    )
+    write_json_object_immutable(args.output, report.as_record())
+    record = report.as_record()
+    _emit(
+        {
+            "status": record["terminal_status"],
+            "report_commitment": record["report_commitment"],
+            "canonical_destination": record["canonical_destination"],
+            "canonical_destination_file_sha256": record[
+                "canonical_destination_file_sha256"
+            ],
+        }
+    )
+    return (
+        EXIT_BLOCKED_OR_WITHHELD
+        if record["terminal_status"] == "INCOMPLETE_TERMINAL_EVIDENCE"
+        else EXIT_OK
+    )
+
+
+def _cmd_make_canonical_publication_closure_disposition(args: argparse.Namespace) -> int:
+    reason = (
+        args.reason
+        if args.reason is not None
+        else args.reason_file.read_text(encoding="utf-8")
+    )
+    disposition = make_canonical_publication_closure_disposition(
+        report=canonical_publication_evidence_review_report_from_record(
+            read_json_object(args.report)
+        ),
+        disposition=args.disposition,
+        reviewer_identity=args.reviewer,
+        review_timestamp=args.timestamp,
+        bounded_reason=reason,
+    )
+    write_json_object_immutable(args.output, disposition.as_record())
+    _emit({"status": "CREATED", "disposition_id": disposition.as_record()["disposition_id"]})
+    return EXIT_OK
+
+
+def _cmd_write_canonical_publication_closure_bundle(args: argparse.Namespace) -> int:
+    repo_root = args.repo_root.resolve(strict=False)
+    bundle = write_canonical_publication_closure_bundle(
+        report=canonical_publication_evidence_review_report_from_record(
+            read_json_object(args.report)
+        ),
+        disposition=canonical_publication_closure_disposition_from_record(
+            read_json_object(args.disposition)
+        ),
+        destination=args.output,
+        repo_root=repo_root,
+    )
+    _emit(
+        {
+            "status": "WRITTEN",
+            "bundle_commitment": canonical_publication_closure_bundle_commitment(bundle),
+            "terminal_status": bundle.as_record()["terminal_status"],
+        }
+    )
+    return EXIT_OK
+
+
+def _cmd_verify_canonical_publication_closure_bundle(args: argparse.Namespace) -> int:
+    bundle = canonical_publication_closure_bundle_from_record(read_json_object(args.bundle))
+    record = bundle.as_record()
+    _emit(
+        {
+            "status": "VERIFIED",
+            "bundle_commitment": record["bundle_commitment"],
+            "terminal_status": record["terminal_status"],
+            "canonical_destination": record["canonical_destination"],
+            "canonical_destination_file_sha256": record[
+                "canonical_destination_file_sha256"
+            ],
+        }
+    )
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="relate-family")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -852,6 +965,48 @@ def build_parser() -> argparse.ArgumentParser:
     pub_execute.add_argument("--candidate", type=Path, required=True)
     pub_execute.add_argument("--execution-review-bundle", type=Path, required=True)
     pub_execute.set_defaults(func=_cmd_execute_authorized_canonical_publication)
+
+    pub_review = sub.add_parser("review-canonical-publication-evidence")
+    pub_review.add_argument("--repo-root", type=Path, required=True)
+    pub_review.add_argument("--stage-2j-request", type=Path, required=True)
+    pub_review.add_argument("--stage-2j-authorization", type=Path, required=True)
+    pub_review.add_argument("--executable-request", type=Path, required=True)
+    pub_review.add_argument("--executable-authorization", type=Path, required=True)
+    pub_review.add_argument("--candidate", type=Path, required=True)
+    pub_review.add_argument("--execution-review-bundle", type=Path, required=True)
+    pub_review.add_argument("--output", type=Path, required=True)
+    pub_review.set_defaults(func=_cmd_review_canonical_publication_evidence)
+
+    closure = sub.add_parser("make-canonical-publication-closure-disposition")
+    closure.add_argument("--report", type=Path, required=True)
+    closure.add_argument(
+        "--disposition",
+        choices=(
+            CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+            CLOSE_FAILED_PUBLICATION_WITHOUT_CANONICAL_ARTIFACT,
+            ACKNOWLEDGE_CANONICAL_ARTIFACT_WITH_INCOMPLETE_AUDIT_FINALIZATION,
+            WITHHOLD_CANONICAL_PUBLICATION_CLOSURE,
+        ),
+        required=True,
+    )
+    closure.add_argument("--reviewer", required=True)
+    closure.add_argument("--timestamp", required=True)
+    closure_reason = closure.add_mutually_exclusive_group(required=True)
+    closure_reason.add_argument("--reason")
+    closure_reason.add_argument("--reason-file", type=Path)
+    closure.add_argument("--output", type=Path, required=True)
+    closure.set_defaults(func=_cmd_make_canonical_publication_closure_disposition)
+
+    closure_bundle = sub.add_parser("write-canonical-publication-closure-bundle")
+    closure_bundle.add_argument("--repo-root", type=Path, required=True)
+    closure_bundle.add_argument("--report", type=Path, required=True)
+    closure_bundle.add_argument("--disposition", type=Path, required=True)
+    closure_bundle.add_argument("--output", type=Path, required=True)
+    closure_bundle.set_defaults(func=_cmd_write_canonical_publication_closure_bundle)
+
+    closure_verify = sub.add_parser("verify-canonical-publication-closure-bundle")
+    closure_verify.add_argument("--bundle", type=Path, required=True)
+    closure_verify.set_defaults(func=_cmd_verify_canonical_publication_closure_bundle)
     return parser
 
 

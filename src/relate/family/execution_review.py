@@ -721,6 +721,14 @@ class CanonicalExecutionReviewDisposition:
         return dict(self.record)
 
 
+@dataclass(frozen=True)
+class CanonicalExecutionReviewBundle:
+    record: dict[str, Any]
+
+    def as_record(self) -> dict[str, Any]:
+        return dict(self.record)
+
+
 def make_canonical_execution_review_disposition(
     *,
     report: CanonicalExecutionReviewReport,
@@ -838,6 +846,55 @@ def make_canonical_execution_review_bundle(
         ),
     }
     return {**payload, "bundle_commitment": sha256_text(canonical_json(payload))}
+
+
+def canonical_execution_review_bundle_from_record(
+    record: dict[str, Any],
+) -> CanonicalExecutionReviewBundle:
+    data = _require_object(record, label="canonical execution review bundle")
+    required = {
+        "schema_id",
+        "execution_review_report",
+        "execution_review_report_commitment",
+        "execution_review_disposition",
+        "execution_review_disposition_commitment",
+        "bundle_commitment",
+    }
+    if set(data) != required:
+        raise ValueError("execution review bundle fields are malformed")
+    if data["schema_id"] != EXECUTION_REVIEW_BUNDLE_SCHEMA_ID:
+        raise ValueError("unsupported execution review bundle schema")
+    report = canonical_execution_review_report_from_record(data["execution_review_report"])
+    report_record = report.as_record()
+    if data["execution_review_report_commitment"] != report.report_commitment:
+        raise ValueError("execution review bundle report commitment mismatch")
+    disposition = canonical_execution_review_disposition_from_record(
+        data["execution_review_disposition"], report=report
+    )
+    disposition_record = disposition.as_record()
+    disposition_commitment = sha256_text(canonical_json(disposition_record))
+    if data["execution_review_disposition_commitment"] != disposition_commitment:
+        raise ValueError("execution review bundle disposition commitment mismatch")
+    payload = {
+        "schema_id": EXECUTION_REVIEW_BUNDLE_SCHEMA_ID,
+        "execution_review_report": report_record,
+        "execution_review_report_commitment": report.report_commitment,
+        "execution_review_disposition": disposition_record,
+        "execution_review_disposition_commitment": disposition_commitment,
+    }
+    if data["bundle_commitment"] != sha256_text(canonical_json(payload)):
+        raise ValueError("execution review bundle commitment is stale")
+    return CanonicalExecutionReviewBundle(
+        record={**payload, "bundle_commitment": data["bundle_commitment"]}
+    )
+
+
+def canonical_execution_review_bundle_commitment(
+    bundle: CanonicalExecutionReviewBundle,
+) -> str:
+    return canonical_execution_review_bundle_from_record(bundle.as_record()).as_record()[
+        "bundle_commitment"
+    ]
 
 
 def write_canonical_execution_review_bundle(

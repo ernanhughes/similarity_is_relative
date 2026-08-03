@@ -1244,12 +1244,67 @@ does not authorize reallocation, and does not start D2.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2E)
 
-**Stage 2F — Family Review and Publication Boundary**
+## Stage 2F — Family Review and Publication Boundary
 
-Extract or define the human-review/publication boundary around any completed
-noncanonical family workflow result. Publication, materiality review,
-reallocation, and D2 remain gated and must not be inferred from the Stage 2E
-bounded crossing facts alone.
+Stage 2F introduces the explicit boundary between a completed Stage 2E
+noncanonical workflow and any publication.
+
+New modules:
+
+- `relate.workflows.validation` — public non-executing validation for a
+  completed workflow result and commitment chain.
+- `relate.family.review` — deterministic `relate-family-review-packet-v1`
+  packets for bounded family facts only.
+- `relate.family.publication` — human publication dispositions
+  (`relate-family-publication-disposition-v1`) and immutable noncanonical
+  publication bundles (`relate-family-publication-bundle-v1`).
+
+The review packet validation chain checks the exact Stage 2E workflow name,
+version, step order and step versions; validates the completed workflow
+commitment chain; recomputes workflow source identity; reopens the bound
+family store; recomputes resolved-edge, component, role-analysis and bounded
+outcome commitments; checks durable phase commitments; and rejects canonical
+work/store paths.
+
+The packet is machine-readable about scope:
+
+- `publication_scope = BOUNDED_FAMILY_RESULT_ONLY`;
+- `packet_contains = BOUNDED_FAMILY_GRAPH_FACTS_ONLY`;
+- `not_concluded` includes material contamination, materiality threshold,
+  reallocation required, and D2 authorization.
+
+Mechanically derived materiality inputs now include affected role pairs,
+aggregate rows, largest crossing component, affected C0 fit/iteration row
+fractions, and hard/conditional cross-role edge counts. Allocation feasibility
+is explicitly `NOT_ASSESSED`; no solver or materiality threshold was added.
+
+Publication requires a human disposition of
+`AUTHORIZE_BOUNDED_REVIEW_PUBLICATION`. `WITHHOLD_BOUNDED_REVIEW_PUBLICATION`
+cannot publish. The disposition authorizes only immutable noncanonical bounded
+review publication. It does not authorize materiality, reallocation, canonical
+execution, canonical publication, or D2.
+
+Destination enforcement rejects any resolved target or parent under
+`artifacts/canonical`, refuses existing targets, writes through
+`atomic_write_json`, and returns a receipt with logical bundle commitment and
+published file SHA-256 as separate identities.
+
+Historical publication compatibility: `write_protocol_contract` remains the
+historical frozen-protocol writer. Stage 2F does not extract or alter it, so
+its output bytes and overwrite behavior remain unchanged.
+
+Canonical family graph execution, canonical family result publication,
+allocation changes, reallocation, materiality, and D2 remain gated.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2F)
+
+**Stage 2G — Supported Family CLI and Canonical Execution Authorization**
+
+Provide a thin supported entrypoint and explicit authorization gate. Canonical
+execution itself must remain a separately reviewed act rather than an
+automatic consequence of merging code.
 
 ---
 

@@ -35,7 +35,7 @@ per-symbol migration record.
 | 10 | Record deterministic phase commitments | Implicit `phase_commitments` write inside `put_allocation_repositories` (phase `"initial_allocation"` only, upsert semantics); no generic put/get phase-commitment method before Stage 2D | `relate.family.store.FamilyGraphCache.put_phase_commitment` / `get_phase_commitment` / `list_phase_commitments` (**Stage 2D, this PR**); the original `initial_allocation` upsert path is untouched | **Complete** | `tests_current/family/test_store_phase_commitments.py` | "record phase commitment" `WorkflowStep` (Stage 2E or later) | The new generic API uses reject-on-conflict semantics (consistent with every other `put_*` method), deliberately different from the untouched `initial_allocation` upsert path — this is a documented, intentional asymmetry, not an inconsistency to resolve |
 | 11 | Resume safely from completed phases | No family-specific resume validation existed before Stage 2E | `relate.family.workflow` composed with `WorkflowRunner` checkpoints and `FamilyGraphCache` phase readers (**Stage 2E**) | **Complete for in-memory workflow resume** | `tests_current/workflows/test_resume.py`; `tests_current/family_workflow/test_identity.py`; `tests_current/family_workflow/test_composition.py` | Completed-prefix resume through `WorkflowRunner.run(..., resume_from=...)` | Durable checkpoint storage is intentionally not added; changed evidence requires a fresh run and fresh store |
 | 12 | Reject conflicting or tampered state | Per-method conflict checks (`ValueError` on tampered/conflicting content) throughout `FamilyGraphCache` | `relate.family.store.FamilyGraphCache` (Stage 2B; extended to component memberships and phase commitments in Stage 2D) | **Complete for persistence** | `tests_current/family/test_store_records.py`, `test_store_components.py`, `test_store_phase_commitments.py` conflict-rejection tests; `tests_current/family/test_store_identity.py` identity-mismatch tests | Same conflict semantics available to any future workflow step; `relate.workflows` (Stage 2C) adds an analogous but generic guarantee — tampered or stale step commitments in a resume checkpoint are rejected (`WorkflowResumeError`), independent of any family-specific state | None |
-| 13 | Calculate and publish an auditable family result later | `build_components`, `component_commitment`, `edge_commitment`, `UnionFind`, `family_graph_outcome`, `graph_completeness`, `write_protocol_contract` | Calculation/workflow half: `relate.family.graph`, `relate.family.commitments`, `relate.family.outcome`, `relate.family.analysis`, `relate.family.workflow` (**Stage 2D/2E**). Publication half (`write_protocol_contract`) remains historical | **Partial** — calculation and noncanonical workflow complete; publication not extracted | `tests_current/family/test_graph.py`, `test_graph_commitments.py`, `test_outcome.py`, `test_role_crossing_analysis.py`, `test_family_analysis_commitments.py`; `tests_current/family_workflow/*`; protocol SHA unchanged | Publication boundary remains a later stage | Canonical execution not performed; materiality, reallocation, and D2 remain gated |
+| 13 | Calculate and publish an auditable family result later | `build_components`, `component_commitment`, `edge_commitment`, `UnionFind`, `family_graph_outcome`, `graph_completeness`, `write_protocol_contract` | Calculation/workflow half: `relate.family.graph`, `relate.family.commitments`, `relate.family.outcome`, `relate.family.analysis`, `relate.family.workflow` (**Stage 2D/2E**). Bounded review-publication boundary: `relate.family.review`, `relate.family.publication` (**Stage 2F**). Historical protocol writer remains historical | **Complete for bounded noncanonical review publication; canonical execution/publication remains gated** | `tests_current/family/test_graph.py`, `test_graph_commitments.py`, `test_outcome.py`, `test_role_crossing_analysis.py`, `test_family_analysis_commitments.py`; `tests_current/family_workflow/*`; `tests_current/family_review/*`; protocol SHA unchanged | Canonical authorization and supported CLI remain Stage 2G+ | Canonical family-result publication is not complete; materiality, reallocation, and D2 remain gated |
 | 14 | Continue into D2 only after family and allocation decisions are complete | `prohibited_actions` / `decision_rules` in `protocol_contract()`; D2 not started anywhere in the repository | N/A — policy statement enforced by protocol contract, not a persistence capability | Unchanged | Protocol SHA unchanged; D2 not started; C0 selection and C1 reserve row contents not accessed by Stage 2B, 2C, or 2D | A future family workflow can express this as an explicit `WorkflowStep` that returns `BLOCKED` until D2 is authorised, using the kernel's blocked-execution contract (Stage 2C) | None; Stage 2D does not touch this boundary and does not start D2 |
 
 ## Capability-count reconciliation
@@ -84,11 +84,17 @@ phases) is now **partial** rather than fully open: the persistence half
 checkpoint contract) both exist, but nothing yet composes them for the
 family capability specifically — that composition is Stage 2E's job.
 
-Capabilities 1, 3 (protocol-level half), and 13 (the publication half —
-`write_protocol_contract`) remain in the historical module, scheduled for
-Stage 2E (frozen-input verification and explicit workflow composition) and
-a later publication-extraction stage respectively. The CLI and `main`
-remain historical throughout.
+Stage 2F completed the bounded noncanonical review-publication boundary for
+capability 13 without advancing canonical publication. A completed Stage 2E
+workflow can now be validated into a deterministic review packet, reviewed by
+an explicit human publication disposition, and written immutably to a
+noncanonical destination. Capability 14 remains gated: D2 authorization is not
+created by workflow completion, packet construction, or review publication.
+
+The historical `write_protocol_contract` remains a protocol-contract writer,
+not a family-result publication boundary. The supported CLI and canonical
+authorization process remain later-stage work. The CLI and `main` remain
+historical throughout Stage 2F.
 
 The architecture reset therefore preserves a valid path forward for every
 capability required by the family-connected allocation protocol: completed

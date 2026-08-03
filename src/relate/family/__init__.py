@@ -9,6 +9,8 @@ rules        Frozen edge-rule taxonomy and rule-derived constants.
 repositories Repository identity, normalization and allocation-domain operations.
 sources      Source-evidence construction and validation.
 edges        Edge, candidate and review construction and validation.
+store        SQLite persistence: FamilyGraphCache, FamilyGraphCacheIdentity,
+             make_cache_identity (Stage 2B).
 
 Dependency direction
 --------------------
@@ -16,6 +18,7 @@ relate.family
     -> relate.evidence  (neutral helpers)
     internally: edges -> sources -> repositories -> models
                 rules -> models
+                store -> edges, repositories, sources, models
 
 The historical protocol module imports from relate.family; relate.family never
 imports from relate.experiments.

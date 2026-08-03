@@ -1362,12 +1362,79 @@ Materiality, reallocation, allocation changes, and D2 remain gated.
 
 ## Recommended Next Architecture Stage (immediately after Stage 2G)
 
-**Stage 2H — Authorized One-Shot Canonical Family Execution**
+## Stage 2H — Authorized One-Shot Canonical Family Execution
 
-Consume one exact, validated authorization to execute the bound family workflow
-against canonical inputs and write only to the authorized noncanonical staging
-store. Stage 2H must still not publish a canonical result, determine
-materiality, alter allocation, or start D2.
+Stage 2H adds executable v2 contracts and a one-shot canonical-input executor
+that writes only noncanonical staged evidence.
+
+New module:
+
+- `relate.family.execution`.
+
+New CLI command:
+
+- `relate-family execute-authorized-canonical`.
+
+New schemas and identities:
+
+- request: `relate-family-canonical-execution-request-v2`;
+- authorization: `relate-family-canonical-execution-authorization-v2`;
+- executor source manifest:
+  `relate-family-canonical-executor-source-manifest-v1`;
+- authorised runner source:
+  `relate-family-authorized-runner-source-v1`;
+- canonical run identity: `relate-family-authorized-canonical-run-v1`;
+- claim: `relate-family-canonical-execution-claim-v1`;
+- receipt: `relate-family-authorized-canonical-execution-receipt-v1`;
+- trace location: `<work_dir>/canonical-execution-trace.json`.
+
+Compatibility policy: Stage 2G v1 request and authorization records remain
+loadable and valid under the v1 non-executing validator, but are explicitly
+rejected by the executor. There is no silent upgrade from v1 to v2.
+
+The v2 request binds all v1 fields plus the firewall-publication file SHA and
+the canonical executor source identity. The v2 authorization binds the request
+commitment, workflow source identity, canonical executor source identity,
+review-packet commitment, requested run ID, protocol SHA, reviewer identity,
+timezone-aware review timestamp, disposition, and bounded reason.
+
+The executor validates v2 records, recomputes current source identities and
+canonical input hashes, verifies firewall booleans, checks that the work
+directory and store path are absent, requires the store path to be strictly
+beneath the work directory, and then consumes the authorization by atomically
+claiming the work directory. The authorization is consumed even if execution
+later blocks or fails.
+
+Execution reuses the same eight Stage 2E scientific workflow steps through
+`WorkflowRunner`; the public `FamilyWorkflowConfig` remains noncanonical and
+`FamilyWorkflowExecutionMode` still contains only `NONCANONICAL`.
+
+Status after Stage 2H:
+
+- canonical input read status: implemented only through exact v2
+  authorization;
+- canonical write status: unchanged, no writes under `artifacts/canonical`;
+- canonical publication status: not implemented and still gated;
+- materiality status: not determined;
+- allocation status: unchanged;
+- reallocation status: not authorized;
+- D2 status: not started;
+- known limitation: completed execution creates staged evidence for later
+  review only.
+
+Capability 13 advances only to: canonical-input execution capability
+implemented; actual results remain noncanonical staged evidence and canonical
+publication remains gated. Capability 14 remains gated.
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2H)
+
+**Stage 2I — Canonical Execution Review Boundary**
+
+Review the staged Stage 2H receipt and packet without promoting any artifact
+into `artifacts/canonical`, and keep canonical publication, materiality,
+allocation, reallocation, and D2 under separate future authorization.
 
 ---
 

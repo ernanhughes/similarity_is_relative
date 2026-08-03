@@ -39,14 +39,16 @@ src/relate/
 │   ├── e01*.py
 │   ├── option_b_*.py
 │   └── option_c0_*.py        (historical facades; re-export from relate.family.*)
-├── family/                   (Stage 2A — pure family domain)
+├── family/                   (Stage 2A domain + Stage 2B persistence)
 │   ├── __init__.py
 │   ├── models.py             (EDGE_SCHEMA_ID, EdgeRule, AllocationEntry, ManualReviewDisposition,
 │   │                          EvidenceCandidate, EvidenceEdge, SourceEvidenceRecord)
 │   ├── rules.py              (EDGE_RULES, taxonomy tuples, edge_rules_contract)
 │   ├── repositories.py       (normalize_repository, allocation operations, canonical constants)
 │   ├── sources.py            (source-evidence construction, payload firewall, public_metadata_snapshot)
-│   └── edges.py              (candidate, disposition, edge construction and validation)
+│   ├── edges.py              (candidate, disposition, edge construction and validation)
+│   └── store.py              (Stage 2B — FamilyGraphCache, FamilyGraphCacheIdentity,
+│                              make_cache_identity: SQLite schema and persistence)
 ├── evidence/
 │   ├── canonical_json.py
 │   ├── hashing.py
@@ -87,20 +89,23 @@ This preserved the reviewed historical run, but it is not an acceptable basis fo
 
 ### `option_c0_family_connected_protocol.py`
 
-As of Stage 2A this module re-exports pure family-domain symbols from `relate.family.*`
-and retains only historical-only responsibilities:
+As of Stage 2A this module re-exports pure family-domain symbols from `relate.family.*`.
+As of Stage 2B it additionally re-exports `CACHE_SCHEMA_ID`, `FamilyGraphCache`, and
+`FamilyGraphCacheIdentity` from `relate.family.store`. It retains only historical-only
+responsibilities:
 
-- frozen protocol constants (`SCHEMA_ID`, `CACHE_SCHEMA_ID`, D1 SHAs, allocation SHAs);
-- `FamilyGraphCacheIdentity` and `default_cache_identity` (source-hash-sensitive; deferred to Stage 2B);
-- `FamilyGraphCache` — SQLite schema and persistence;
+- frozen protocol constants (`SCHEMA_ID`, D1 SHAs, allocation SHAs — `CACHE_SCHEMA_ID` now
+  originates in `relate.family.store`);
+- `default_cache_identity` (source-hash-sensitive wrapper around `make_cache_identity`;
+  cannot move without changing its meaning — see migration-status.md Stage 2B);
 - `protocol_contract` — full protocol contract assembly;
-- frozen-input verification (`verify_protocol_contract`, `verify_firewall_artifact`);
-- graph construction and outcome calculation;
-- atomic protocol publication;
+- frozen-input verification (`validate_frozen_protocol_inputs`, `validate_firewall_booleans`);
+- graph construction and outcome calculation (`build_components`, `family_graph_outcome`, etc.);
+- atomic protocol publication (`write_protocol_contract`);
 - CLI entry point.
 
 These remaining responsibilities must be separated before the canonical family graph runner
-is implemented. See Stage 2B (family persistence extraction).
+is implemented. See Stage 2C (minimal workflow contracts and execution model).
 
 ### `option_c0_d1_integrity_audit.py`
 
@@ -275,12 +280,19 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2B — Family persistence extraction**
+**Stage 2C — Minimal workflow contracts and execution model**
 
-Move `FamilyGraphCache`, `FamilyGraphCacheIdentity` and `default_cache_identity` into a
-clean `relate.family.store` module without executing the canonical graph.  This will
-complete the clean family boundary before any family graph runner is written.
+Create only the small orchestration concepts RELATE needs — explicit steps, context,
+results, commitments and tracing — without importing a general-purpose workflow
+framework, so that the family capabilities in `relate.family.*` can be composed into
+an explicit workflow instead of the historical monkey-patched entrypoint chain.
 
-Previous immediate-next note (now completed as Stage 2A): the family domain extraction
+Previous immediate-next note (now completed as Stage 2B): `FamilyGraphCache`,
+`FamilyGraphCacheIdentity`, and `default_cache_identity`'s explicit constructor
+(`make_cache_identity`) were extracted from `option_c0_family_connected_protocol` into
+`relate.family.store` without executing the canonical graph or changing the protocol
+payload or SHA. See migration-status.md Stage 2B and capability-continuity.md.
+
+Previous immediate-next note (completed as Stage 2A): the family domain extraction
 PR extracted pure family-domain capabilities from `option_c0_family_connected_protocol`
 into `relate.family.*` without changing the protocol payload or SHA.

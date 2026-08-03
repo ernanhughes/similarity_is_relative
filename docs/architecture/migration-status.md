@@ -508,7 +508,204 @@ SQLite schema into a clean `relate.family.store` module without executing the ca
 
 ---
 
-## Recommended Next Architecture Stage (post-Stage 2B)
+## Stage 2B — Family Persistence Extraction
+
+**Branch:** `architecture/family-persistence-extraction`
+
+**New module:** `src/relate/family/store.py`
+
+**PR classification:** `PERSISTENCE_EXTRACTION`
+
+### Summary of what moved
+
+`FamilyGraphCacheIdentity`, `CACHE_SCHEMA_ID`, `FamilyGraphCache` (full SQLite
+schema, connection lifecycle, and every `put_*`/`get_*` method), and a new
+explicit identity constructor `make_cache_identity` were extracted from
+`relate.experiments.option_c0_family_connected_protocol` into
+`relate.family.store`. The historical module was rewritten to import and
+re-export these names, and to keep only `default_cache_identity` — the
+source-hash-sensitive wrapper that cannot move without changing its meaning.
+
+### Allowed dependency direction (achieved)
+
+```text
+historical protocol module
+    -> relate.family.store
+        -> relate.family.edges, relate.family.repositories, relate.family.sources
+            -> relate.family.models
+        -> relate.evidence.canonical_json, relate.evidence.sqlite
+```
+
+`relate.family.store` does not import `relate.experiments`, `relate.workflows`,
+or `relate.cli`.
+
+---
+
+### Moved symbols
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `CACHE_SCHEMA_ID`, `FamilyGraphCacheIdentity`, `FamilyGraphCache` (all methods) |
+| new module | `relate.family.store` |
+| new symbols | `CACHE_SCHEMA_ID`, `FamilyGraphCacheIdentity`, `FamilyGraphCache`, `make_cache_identity` (new) |
+| responsibility | Family-graph SQLite schema, connection lifecycle, identity binding, and record persistence/retrieval |
+| compatibility facade | `from relate.family.store import (CACHE_SCHEMA_ID, FamilyGraphCache, FamilyGraphCacheIdentity, make_cache_identity)` at top of historical module |
+| schema changed | no |
+| identity keys changed | no |
+| transaction semantics changed | no |
+| scientific behaviour changed | no |
+| canonical identity changed | no |
+| workflow capability supported | initialise store; register allocation; register source evidence; record candidate; record review; record resolved edge; inspect stored records; enforce identity binding |
+| remaining historical callers | `option_c0_family_connected_protocol` (`protocol_contract()`'s `cache_schema.identity_fields` reads `FamilyGraphCacheIdentity.__annotations__`; `default_cache_identity` calls `make_cache_identity`) |
+| future extraction | Stage 2C — minimal workflow contracts; a later stage may add `put_component_memberships` / `put_phase_commitment` (generic) once a workflow needs them — see capability-continuity.md items 9–10 |
+| known uncertainty | None found; see "Methods moved" and "Source-identity problem" below for full detail |
+
+#### Methods moved with the class
+
+Every method that was part of `FamilyGraphCache`'s responsibility moved, not
+just the ones named in the extraction brief:
+
+```text
+__init__, close, __enter__, __exit__
+_verify_pragmas, _create_schema, _bind_identity, _has_data_rows
+put_allocation_repositories, put_canonical_allocation_manifest
+put_evidence_candidate, get_evidence_candidate
+put_manual_review_disposition, get_manual_review_disposition,
+    get_final_disposition_for_candidate
+put_resolved_edge, get_resolved_edge
+put_source_record, get_source_record, get_source_registry
+```
+
+Nothing was left behind partially — the entire class body moved as one unit.
+
+---
+
+### Source-identity problem
+
+The historical `default_cache_identity(family_protocol_sha256)` derives
+`family_runner_source_identity = sha256_file(Path(__file__))`. `__file__` in
+the historical module resolves to
+`src/relate/experiments/option_c0_family_connected_protocol.py`. Moving this
+function's body unchanged into `relate.family.store` would silently change
+`__file__` to resolve to `store.py` instead, changing the resulting identity
+value and misattributing store.py as the source that produced historical
+runs.
+
+To avoid that:
+
+- `relate.family.store.make_cache_identity` takes every identity field,
+  including `family_runner_source_identity`, as an explicit required keyword
+  argument. It has no default and no opinion on how the caller derives its
+  value.
+- `default_cache_identity` remains in the historical module, unchanged in
+  behaviour: it still computes `sha256_file(Path(__file__))` of *that*
+  module and passes every field to `make_cache_identity` explicitly.
+- A future workflow step must supply its own explicit
+  `family_runner_source_identity` (e.g. the hash of the workflow module that
+  actually executes the run) rather than inheriting the historical
+  experiment module's identity. See capability-continuity.md item 2.
+
+Verified in `tests_current/family/test_store_identity.py::TestHistoricalDefaultWrapper`:
+`default_cache_identity`'s `family_runner_source_identity` equals
+`sha256_file(Path(historical.__file__))` and is different from
+`sha256_file(Path(relate.family.store.__file__))`.
+
+---
+
+### `ALLOCATION_MANIFEST_SHA256` — a second source-identity-shaped problem
+
+`FamilyGraphCache.put_canonical_allocation_manifest` historically read the
+module-global constant `ALLOCATION_MANIFEST_SHA256` (a frozen protocol
+constant, defined in the historical module alongside `D1_RESULT_SHA256` and
+`ALLOCATION_CONTEXT_SHA256`) as the expected manifest hash. That constant is
+protocol-specific, not a generic persistence concern, so it could not be
+imported into `relate.family.store` without creating a
+`store -> relate.experiments` import — one of the explicit stop conditions
+for this stage.
+
+Resolution: `put_canonical_allocation_manifest` now reads the expected hash
+from `self.identity.allocation_manifest_sha256` instead of the module
+global. This is behaviour-preserving, not a redesign, because:
+
+- `self.identity` is always bound during `__init__`, and `_bind_identity`
+  already enforces (via `bind_cache_identity`) that a cache's stored
+  identity exactly matches the identity it was opened with on every reopen;
+- for every historical caller, `identity.allocation_manifest_sha256` was
+  always set to `ALLOCATION_MANIFEST_SHA256` via `default_cache_identity`,
+  so the effective value checked is unchanged for all existing callers;
+- the method's public signature (`put_canonical_allocation_manifest(self,
+  canonical_path)`) is unchanged, so no caller needed to change.
+
+This mirrors the same design principle as the cache-identity source-identity
+fix: a clean store must not hold an implicit opinion about which frozen
+protocol produced its expected values — it reads that from the identity it
+was explicitly constructed with. Verified in
+`tests_current/family/test_store_records.py::TestAllocationRegistration`,
+which computes the expected SHA-256 directly from the canonical manifest
+file rather than importing the historical constant.
+
+---
+
+### Compatibility verification
+
+- `historical.FamilyGraphCache is relate.family.store.FamilyGraphCache` → confirmed
+- `historical.FamilyGraphCacheIdentity is relate.family.store.FamilyGraphCacheIdentity` → confirmed
+- `historical.CACHE_SCHEMA_ID == relate.family.store.CACHE_SCHEMA_ID` → confirmed (same string)
+- `historical.make_cache_identity is relate.family.store.make_cache_identity` → confirmed
+- Protocol SHA preserved exactly: `a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08`
+- `git diff -- artifacts/canonical` is empty (confirmed)
+- All 60 quarantined tests in `tests/test_option_c0_family_connected_protocol.py` were
+  run standalone (not re-enabled as an active suite) against the extracted code and
+  passed unchanged, as an additional compatibility check per the preservation contract's
+  "strongest applicable combination" guidance
+
+---
+
+### Tests added
+
+```text
+tests_current/family/
+  test_store_identity.py       — identity mapping, reopen accept/reject, explicit
+                                  constructor vs. historical source-sensitive wrapper
+  test_store_schema.py         — exact table set, columns, keys, WAL pragmas
+  test_store_records.py        — allocation, source record, candidate, disposition,
+                                  and resolved-edge persistence, replay, and conflict
+  test_store_resume.py         — close/reopen, identity enforcement across reopen,
+                                  phase-commitment durability, partial-state inspection
+  test_store_compatibility.py  — object identity, schema/record/exception equivalence
+                                  through both import paths, protocol SHA unaffected
+```
+
+### Known limitations carried forward (not fixed in this PR)
+
+- `component_memberships` and generic `phase_commitments` have no put/get API
+  anywhere in the codebase (historical or clean); only their table schema and
+  the one implicit allocation-phase write moved. See
+  capability-continuity.md items 9–10.
+- `build_components`, `component_commitment`, `edge_commitment`, `UnionFind`,
+  `family_graph_outcome`, and `write_protocol_contract` remain in the
+  historical module, unchanged, per "Do not move yet."
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2B)
+
+**Stage 2C — Minimal workflow contracts and execution model**
+
+Create only the small orchestration concepts RELATE needs — explicit steps, context,
+results, commitments and tracing — without importing a general-purpose workflow
+framework. This lets a future workflow compose the capabilities now available in
+`relate.family.store` (initialise store, register allocation, register source
+evidence, record candidate, record review, record resolved edge, inspect completed
+phases, resume from committed state) into an explicit sequence, replacing the
+historical monkey-patched `option_c0_*_entrypoint` chain for the family capability.
+This stage should not build the canonical family-graph runner itself, execute the
+graph, or start D2.
+
+---
+
+## Longer-Term Follow-On (not the immediate next stage)
 
 **Stage C — Domain decomposition of capability stores**
 

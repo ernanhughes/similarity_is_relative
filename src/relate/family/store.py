@@ -26,10 +26,11 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final
+from types import MappingProxyType
+from typing import Any, Final
 
 from relate.evidence.canonical_json import canonical_json_compact_unicode as canonical_json
 from relate.evidence.sqlite import bind_cache_identity, enforce_wal_pragmas, verify_wal_pragmas
@@ -54,9 +55,10 @@ from relate.family.repositories import (
     ALLOCATION_ROLE_REPOSITORY_COUNTS,
     ALLOCATION_ROLE_ROW_COUNTS,
     load_allocation_manifest,
+    normalize_repository,
     validate_canonical_allocation_entries,
 )
-from relate.family.sources import source_record_from_record, validate_source_record
+from relate.family.sources import HASH_PATTERN, source_record_from_record, validate_source_record
 
 CACHE_SCHEMA_ID: Final = "option-c0-family-graph-cache-v1"
 
@@ -110,6 +112,23 @@ def make_cache_identity(
         cache_schema_version=cache_schema_version,
         family_runner_source_identity=family_runner_source_identity,
     )
+
+
+@dataclass(frozen=True)
+class PhaseCommitmentRecord:
+    """A single row from the ``phase_commitments`` table.
+
+    ``metadata`` is defensively copied into a read-only mapping so callers
+    cannot mutate cached state through a returned record.
+    """
+
+    phase: str
+    status: str
+    commitment_sha256: str
+    metadata: Mapping[str, Any]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "metadata", MappingProxyType(dict(self.metadata)))
 
 
 class FamilyGraphCache:
@@ -535,3 +554,189 @@ class FamilyGraphCache:
             source_records=self.get_source_registry(),
         )
         return edge
+
+    # --- Component memberships ---
+    # component_memberships table exists since Stage 2B (schema only); these
+    # methods add the first public persistence API for it (Stage 2D).
+
+    def put_component_memberships(self, components: Sequence[Mapping[str, Any]]) -> None:
+        """Persist a complete connected-component membership snapshot.
+
+        *components* must be the shape produced by
+        ``relate.family.graph.build_components``: each item a mapping with
+        ``component_id``, ``repositories`` (an iterable of repository
+        names), and ``repository_count``.
+
+        This is a whole-graph operation: it compares the complete existing
+        membership set against the complete incoming set before writing
+        anything. An empty or byte-identical existing set is accepted
+        (idempotent replay); any other existing set is rejected outright,
+        never partially overwritten, so a mixed old/new graph can never be
+        observed.
+        """
+        normalized: list[tuple[str, str]] = []
+        seen_repositories: set[str] = set()
+        for component in components:
+            component_id = str(component.get("component_id", ""))
+            if not component_id.strip():
+                raise ValueError("component_id must be a nonempty string")
+            repositories = list(component.get("repositories") or [])
+            if not repositories:
+                raise ValueError(f"component has no repositories: {component_id!r}")
+            for repository in repositories:
+                repo = normalize_repository(str(repository))
+                if repo in seen_repositories:
+                    raise ValueError(f"repository appears in multiple components: {repo}")
+                seen_repositories.add(repo)
+                normalized.append((component_id, repo))
+        normalized.sort()
+
+        known_repositories = {
+            str(row[0])
+            for row in self.connection.execute("SELECT repository FROM allocation_repositories")
+        }
+        unknown = seen_repositories - known_repositories
+        if unknown:
+            raise ValueError(
+                f"component membership references unknown repositories: {sorted(unknown)}"
+            )
+
+        existing = sorted(
+            (str(row[0]), str(row[1]))
+            for row in self.connection.execute(
+                "SELECT component_id, repository FROM component_memberships"
+            )
+        )
+        if existing:
+            if existing != normalized:
+                raise ValueError("component memberships differ from the existing stored graph")
+            return
+        if not normalized:
+            return
+        self.connection.executemany(
+            "INSERT INTO component_memberships(component_id, repository) VALUES (?, ?)",
+            normalized,
+        )
+        self.connection.commit()
+
+    def get_component_memberships(self) -> tuple[dict[str, Any], ...]:
+        """Return stored components in the same shape as
+        ``relate.family.graph.build_components``' output, ordered
+        deterministically by ``component_id``."""
+        rows = self.connection.execute(
+            "SELECT component_id, repository FROM component_memberships "
+            "ORDER BY component_id, repository"
+        ).fetchall()
+        grouped: dict[str, list[str]] = {}
+        for component_id, repository in rows:
+            grouped.setdefault(str(component_id), []).append(str(repository))
+        return tuple(
+            {
+                "component_id": component_id,
+                "repositories": tuple(repositories),
+                "repository_count": len(repositories),
+            }
+            for component_id, repositories in sorted(grouped.items())
+        )
+
+    # --- Phase commitments ---
+    # phase_commitments table exists since Stage 2B; put_allocation_repositories
+    # already writes one implicit row ("initial_allocation") using
+    # INSERT ... ON CONFLICT DO UPDATE. That transaction path is left exactly
+    # as-is. The methods below add a *separate*, general-purpose API for any
+    # other phase, using reject-on-conflict semantics consistent with every
+    # other put_* method in this store. This is not a generic workflow
+    # checkpoint store — relate.workflows.WorkflowCheckpoint is a distinct,
+    # unrelated concept and is never persisted here.
+
+    def put_phase_commitment(
+        self,
+        phase: str,
+        *,
+        status: str,
+        commitment_sha256: str,
+        metadata: Mapping[str, Any],
+    ) -> None:
+        if not phase.strip():
+            raise ValueError("phase must be a nonempty string")
+        if not status.strip():
+            raise ValueError("status must be a nonempty string")
+        if not HASH_PATTERN.fullmatch(commitment_sha256):
+            raise ValueError("commitment_sha256 must be a SHA-256 hex digest")
+        metadata_json = canonical_json(dict(metadata))
+        existing = self.connection.execute(
+            "SELECT status, commitment_sha256, metadata_json FROM phase_commitments "
+            "WHERE phase = ?",
+            (phase,),
+        ).fetchone()
+        if existing is not None:
+            if (str(existing[0]), str(existing[1]), str(existing[2])) != (
+                status,
+                commitment_sha256,
+                metadata_json,
+            ):
+                raise ValueError(f"conflicting phase commitment for phase: {phase}")
+            return
+        self.connection.execute(
+            """
+            INSERT INTO phase_commitments(phase, status, commitment_sha256, metadata_json)
+            VALUES (?, ?, ?, ?)
+            """,
+            (phase, status, commitment_sha256, metadata_json),
+        )
+        self.connection.commit()
+
+    def get_phase_commitment(self, phase: str) -> PhaseCommitmentRecord | None:
+        row = self.connection.execute(
+            "SELECT phase, status, commitment_sha256, metadata_json FROM phase_commitments "
+            "WHERE phase = ?",
+            (phase,),
+        ).fetchone()
+        if row is None:
+            return None
+        return PhaseCommitmentRecord(
+            phase=str(row[0]),
+            status=str(row[1]),
+            commitment_sha256=str(row[2]),
+            metadata=json.loads(str(row[3])),
+        )
+
+    def list_phase_commitments(self) -> tuple[PhaseCommitmentRecord, ...]:
+        rows = self.connection.execute(
+            "SELECT phase, status, commitment_sha256, metadata_json FROM phase_commitments "
+            "ORDER BY phase"
+        ).fetchall()
+        return tuple(
+            PhaseCommitmentRecord(
+                phase=str(row[0]),
+                status=str(row[1]),
+                commitment_sha256=str(row[2]),
+                metadata=json.loads(str(row[3])),
+            )
+            for row in rows
+        )
+
+    # --- Deterministic readers for graph/outcome inputs ---
+    # These expose already-persisted data so a future graph or outcome
+    # workflow step never needs store.connection.execute(...) directly.
+
+    def list_allocation_repositories(self) -> tuple[AllocationEntry, ...]:
+        rows = self.connection.execute(
+            "SELECT repository, role, row_count FROM allocation_repositories ORDER BY repository"
+        ).fetchall()
+        return tuple(
+            AllocationEntry(repository=str(row[0]), role=str(row[1]), row_count=int(row[2]))
+            for row in rows
+        )
+
+    def list_evidence_candidates(self) -> tuple[EvidenceCandidate, ...]:
+        rows = self.connection.execute(
+            "SELECT candidate_id FROM evidence_candidates ORDER BY candidate_id"
+        ).fetchall()
+        return tuple(self.get_evidence_candidate(str(row[0])) for row in rows)
+
+    def list_resolved_edges(self) -> tuple[EvidenceEdge, ...]:
+        rows = self.connection.execute(
+            "SELECT edge_id FROM typed_evidence_edges ORDER BY edge_id"
+        ).fetchall()
+        return tuple(self.get_resolved_edge(str(row[0])) for row in rows)

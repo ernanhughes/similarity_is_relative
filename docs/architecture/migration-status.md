@@ -978,6 +978,225 @@ a `relate.workflows`-based family workflow (that remains a later stage).
 
 ---
 
+## Stage 2D — Family Graph and Outcome Capability Extraction
+
+**Branch:** `architecture/family-graph-outcome-extraction`
+
+**New modules:** `src/relate/family/graph.py`, `src/relate/family/commitments.py`,
+`src/relate/family/outcome.py`
+
+**PR classification:** `GRAPH_CAPABILITY_EXTRACTION`
+
+### Summary
+
+Extracted the remaining pure graph-construction, graph-specific commitment,
+and bounded-outcome logic from `option_c0_family_connected_protocol.py` into
+three clean modules, and added the first public persistence API for
+`component_memberships` and a general-purpose `phase_commitments` API to
+`relate.family.store`. This completes the clean destination for every
+graph/outcome capability named in the continuity ledger; no canonical
+family graph was implemented, executed, or published.
+
+### Moved symbols
+
+#### `relate.family.graph`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `UnionFind`, `component_id`, `_reject_duplicate_edges`, `build_components` |
+| new module | `relate.family.graph` |
+| responsibility | Pure connected-component construction over resolved family edges; no database access, file I/O, or CLI |
+| compatibility facade | `from relate.family.graph import UnionFind, build_components, component_id` at top of historical module; no wrapper needed |
+| scientific behaviour changed | no |
+| graph semantics changed | no |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| store schema changed | no |
+| new store interfaces | n/a (this module) |
+| remaining historical responsibility | none for these symbols |
+| future workflow consumer | a "build family components" `WorkflowStep` (Stage 2E or later) |
+| known uncertainty | `_reject_duplicate_edges` has no external callers (grep-confirmed) and is not re-exported from the historical module; it is used internally by `relate.family.commitments.edge_commitment` via a direct intra-package import |
+
+#### `relate.family.commitments`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `component_commitment`, `edge_commitment` |
+| new module | `relate.family.commitments` |
+| responsibility | Deterministic SHA-256 commitments over resolved edges and connected components |
+| compatibility facade | Historical module keeps thin wrappers (`component_commitment`, `edge_commitment`) that supply `protocol_contract()["protocol_sha256"]` as the default, exactly as `make_evidence_edge` was wrapped in Stage 2A |
+| scientific behaviour changed | no |
+| graph semantics changed | no |
+| edge/component commitment changed | no — same serializer (`canonical_json_compact_unicode`), same field order, same sorting, same SHA-256 construction |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| store schema changed | no |
+| new store interfaces | n/a (this module) |
+| remaining historical responsibility | the two wrapper functions only (protocol_contract() lookup) |
+| future workflow consumer | "calculate family outcome" / commitment-recording steps (Stage 2E or later) |
+| known uncertainty | Both clean functions require `protocol_sha256` explicitly (no default) to avoid importing `relate.experiments.protocol_contract`. This is a signature change from the historical module's own `component_commitment` (which had no `protocol_sha256` parameter at all) and `edge_commitment` (which had `protocol_sha256: str \| None = None`). The **historical module's own call signature is unchanged** — this only affects direct callers of the new `relate.family.commitments` functions, which did not exist before this PR. See "Source-identity note" in `commitments.py`'s docstring. |
+
+#### `relate.family.outcome`
+
+| Field | Value |
+|---|---|
+| old module | `relate.experiments.option_c0_family_connected_protocol` |
+| old symbols | `graph_completeness`, `family_graph_outcome` |
+| new module | `relate.family.outcome` |
+| responsibility | Bounded graph-completeness checks and the frozen family-outcome decision; never concludes contamination, materiality, reallocation, or D2 authorization |
+| compatibility facade | `from relate.family.outcome import family_graph_outcome, graph_completeness` at top of historical module; no wrapper needed (neither function ever read `protocol_contract()`) |
+| scientific behaviour changed | no |
+| outcome semantics changed | no — all four frozen outcome strings, and every payload field, are byte-for-byte identical |
+| protocol payload changed | no |
+| protocol SHA changed | no |
+| store schema changed | no |
+| new store interfaces | n/a (this module) |
+| remaining historical responsibility | none for these symbols |
+| future workflow consumer | "analyse role crossings" / "calculate bounded outcome" steps (Stage 2E or later) |
+| known uncertainty | There is no current implementation anywhere in the repository of "cross-role component detection" or "role-pair summaries" that computes `cross_role_connecting_components` from components and allocation roles. `family_graph_outcome` has always only consumed an already-computed integer. This module does not invent that missing computation — see capability-continuity.md for this recorded gap |
+
+### Repository-wide search for overlapping concepts
+
+Searched for `UnionFind`, `build_components`, `component_commitment`,
+`edge_commitment`, `family_graph_outcome`, `graph completeness`,
+`cross-role`, `component_memberships`, `phase_commitments`, `connecting
+edges`, `unresolved candidates`, `metadata completeness`. Findings:
+
+- All symbol definitions and callers existed only in
+  `option_c0_family_connected_protocol.py` and the quarantined
+  `tests/test_option_c0_family_connected_protocol.py`. No other production
+  module defines or calls any of them.
+- `component_id` also appears as a SQLite **column name** in the
+  `component_memberships` table (`relate/family/store.py`) and in one test
+  assertion (`tests_current/family/test_store_schema.py:94`) — unrelated to
+  the Python function of the same name; not a caller.
+- "cross_role" appears extensively in `option_c0_d1_integrity_audit.py` and
+  `option_c0_d1_overlap_classification.py`, but those are D1 duplicate/
+  overlap-detection diagnostics with their own unrelated `cross_role_*`
+  dict keys (hash/row/repository counts for the D1 audit) — not the family
+  graph's `cross_role_connecting_components` concept, and not touched by
+  this PR.
+
+No capability was found with an implementation this PR failed to account
+for.
+
+### Store: new persistence interfaces (`relate/family/store.py`)
+
+Stage 2B recorded two gaps: `component_memberships` had schema only, and
+`phase_commitments` had only one implicit write. This PR adds:
+
+| Method | Behaviour |
+|---|---|
+| `put_component_memberships(components)` | Whole-graph replace: compares the *complete* existing membership set to the *complete* incoming set before writing anything. Identical replay accepted; any other existing set rejected outright (never partially overwritten). Validates every repository already exists in `allocation_repositories`, rejects empty/malformed component IDs, rejects a repository appearing in two components. Input shape matches `relate.family.graph.build_components`'s output exactly. |
+| `get_component_memberships()` | Returns the same shape as `build_components`' output, grouped and ordered deterministically by `component_id` then `repository`. |
+| `put_phase_commitment(phase, *, status, commitment_sha256, metadata)` | **New, general-purpose, reject-on-conflict** API for phases other than `initial_allocation`. Validates non-empty phase/status and a well-formed SHA-256. Identical replay accepted; conflicting replay rejected. |
+| `get_phase_commitment(phase)` / `list_phase_commitments()` | Return `PhaseCommitmentRecord` (new frozen dataclass with a defensively-copied `metadata` mapping), ordered deterministically by `phase` for the list form. |
+| `list_allocation_repositories()`, `list_evidence_candidates()`, `list_resolved_edges()` | Deterministic readers (sorted by natural key) exposing already-persisted data, so a future graph/outcome workflow step never needs `store.connection.execute(...)` directly. |
+
+**The existing implicit `"initial_allocation"` write inside
+`put_allocation_repositories` is completely unchanged** — it still uses its
+original `INSERT ... ON CONFLICT DO UPDATE` (upsert) path. `put_phase_commitment`
+is a deliberately separate method with reject-on-conflict semantics
+(consistent with every other `put_*` method in the store), added *alongside*
+the existing behaviour rather than replacing it, per the extraction brief's
+explicit instruction not to silently change that historical transaction
+path.
+
+`PhaseCommitmentRecord` is **not** the Stage 2C `WorkflowCheckpoint` and is
+never used to persist one — the two remain distinct concepts (see
+`commitments.py`'s and `store.py`'s docstrings).
+
+No `CREATE TABLE` statement changed. `git diff` on `_create_schema()` is empty.
+
+### Compatibility verification
+
+- `historical.UnionFind is clean.UnionFind` → confirmed
+- `historical.build_components is clean.build_components` → confirmed
+- `historical.component_id is clean.component_id` → confirmed
+- `historical.family_graph_outcome is clean.family_graph_outcome` → confirmed
+- `historical.graph_completeness is clean.graph_completeness` → confirmed
+- `historical.component_commitment(...)` and `historical.edge_commitment(...)`
+  (using the implicit `protocol_contract()` fallback) produce byte-identical
+  output to the clean functions called with the explicit protocol SHA
+- Protocol SHA preserved exactly: `a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08`
+- `git diff -- artifacts/canonical` is empty (confirmed)
+- All 60 quarantined tests in `tests/test_option_c0_family_connected_protocol.py`
+  were run standalone (not re-enabled) against the extracted code and passed
+  unchanged
+
+### Tests added
+
+```text
+tests_current/family/
+  test_graph.py               — UnionFind, component_id, build_components: isolated
+                                 repos, connecting/nonconnecting/rejected edges,
+                                 transitive closure, ordering, duplicates, unknown
+                                 endpoints, full allocation coverage
+  test_graph_commitments.py   — edge/component commitment determinism, order
+                                 independence, content/membership sensitivity,
+                                 Unicode stability, rejection, historical-wrapper
+                                 equivalence
+  test_outcome.py             — every frozen outcome string, fail-closed priority
+                                 ordering, the never-concludes-contamination
+                                 invariant across parametrized inputs, graph_completeness
+  test_store_components.py    — component-membership insertion, replay, conflict,
+                                 unknown-repository rejection, no partial state,
+                                 close/reopen persistence
+  test_store_phase_commitments.py — phase-commitment insertion, replay, conflict,
+                                 malformed-hash rejection, deterministic metadata
+                                 serialization, list ordering, initial_allocation
+                                 compatibility
+  test_graph_compatibility.py — object identity, behavioural equivalence, exception
+                                 equivalence, protocol SHA unaffected, dependency
+                                 boundary checks
+```
+
+### Stop-condition checks
+
+None of the listed stop conditions were triggered:
+
+- graph output, component ordering, and component IDs are unchanged for
+  identical synthetic inputs (verified via `test_graph_compatibility.py` and
+  direct comparison in `test_graph.py`);
+- edge and component commitments are unchanged (verified in
+  `test_graph_commitments.py`);
+- no frozen outcome string or payload field changed;
+- completeness checks agree between the old and new code paths (same
+  function objects);
+- no graph logic required reading protected row contents;
+- no clean family module needed to import an experiment module — resolved
+  the one near-miss (`component_commitment`/`edge_commitment`'s implicit
+  `protocol_contract()` lookup) with the explicit-parameter + historical-wrapper
+  pattern, exactly as done for `make_evidence_edge` in Stage 2A;
+- no store schema change occurred;
+- `initial_allocation` phase semantics are unchanged (still the original
+  upsert path; the new `put_phase_commitment` is additive, not a replacement);
+- no idempotent replay became conflicting, and no conflicting replay was
+  accepted, for any of the new or existing store methods;
+- protocol payload and SHA are unchanged;
+- no canonical files changed;
+- graph extraction was cleanly separable from publication and CLI behaviour
+  (`protocol_contract`, `write_protocol_contract`, `main`, and the argument
+  parser all remain untouched in the historical module).
+
+---
+
+## Recommended Next Architecture Stage (immediately after Stage 2D)
+
+**Stage 2E — Family Input Verification and Explicit Workflow Composition**
+
+Extract frozen-input and protocol-level firewall verification from the
+historical module; create explicit family workflow steps; compose those
+steps using `relate.workflows`; use the clean family domain, store, graph,
+and outcome capabilities built so far; support blocked review or metadata
+states via the Stage 2C blocked-execution contract; remain noncanonical
+until separately authorized. Must still not execute or publish the
+canonical family graph.
+
+---
+
 ## Longer-Term Follow-On (not the immediate next stage)
 
 **Stage C — Domain decomposition of capability stores**

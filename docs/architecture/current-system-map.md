@@ -19,7 +19,7 @@ C0 v1                     preserved, exploratory and descriptive only
 C0-D1                     completed
 C0-D1.1                   completed; family classification inconclusive
 family protocol           frozen
-canonical family graph    not implemented or executed
+canonical family graph    execution capability implemented to noncanonical staging only
 allocation                unchanged
 C0 selection              blocked and not accessed
 C1 reserve                blocked and not accessed
@@ -59,6 +59,10 @@ src/relate/
 │   │                          and materiality-input presentation)
 │   ├── publication.py        (Stage 2F — human publication disposition and
 │   │                          immutable noncanonical review bundle writer)
+│   ├── authorization.py      (Stage 2G/2H — v1 validation-only and v2
+│   │                          executable request/authorization records)
+│   ├── execution.py          (Stage 2H — one-shot authorized canonical-input
+│   │                          execution to noncanonical staging)
 │   ├── workflow/             (Stage 2E — explicit noncanonical family workflow)
 │   │   ├── identity.py        (source manifest identity)
 │   │   ├── models.py          (config, evidence bundle, noncanonical path guard)
@@ -143,7 +147,28 @@ relate.cli.family
 
 The CLI exposes no command that consumes authorization to execute the canonical
 graph. `FamilyWorkflowExecutionMode` still contains only `NONCANONICAL`.
-The future composition direction, once a family workflow exists, is:
+
+Stage 2H adds a narrow execution consumer:
+
+```text
+relate.cli.family
+    -> relate.family.execution
+        -> relate.family.authorization
+        -> relate.family.workflow
+        -> relate.workflows
+        -> relate.family capabilities
+        -> relate.evidence
+```
+
+The executor accepts only v2 request and authorization records, consumes the
+authorization by claiming the exact noncanonical work directory, and writes
+claim, receipt, trace, failure, and completed review-packet artifacts only
+under that authorized staging directory. It does not publish canonical results,
+does not change allocation, does not decide materiality or reallocation, and
+does not start D2. `FamilyWorkflowExecutionMode` still contains only
+`NONCANONICAL`.
+
+The future composition direction remains:
 
 ```text
 family workflow composition
@@ -380,14 +405,24 @@ This map is directional, not a requirement to create empty packages immediately.
 
 ## Immediate next implementation stage
 
-**Stage 2E — Family input verification and explicit workflow composition**
+**Stage 2I — Canonical execution review boundary**
 
-Extract frozen-input and protocol-level firewall verification from the
-historical module; create explicit family workflow steps; compose those
-steps using `relate.workflows`; use the clean family domain, store, graph,
-and outcome capabilities; support blocked review or metadata states; remain
-noncanonical until separately authorized. Still no canonical family graph
-execution or publication.
+Review the noncanonical staged claim, receipt, trace, and review packet
+created by Stage 2H without promoting anything into `artifacts/canonical`.
+Canonical publication, materiality, allocation changes, reallocation, model
+refit, C0 replay, protected-row access, and D2 remain separate gated acts.
+
+Previous immediate-next note (completed as Stage 2H): executable v2
+canonical-execution request and authorization records were added; v1 remains
+validation-only; the executor binds firewall-file identity, executor source
+identity, authorised runner source identity, canonical run identity, and
+one-shot claim/receipt/trace records; it reads exact canonical inputs and
+writes only to authorised noncanonical staging.
+
+Previous immediate-next note (completed as Stage 2E): frozen-input and
+protocol-level firewall verification were extracted from the historical
+module; explicit family workflow steps were composed using
+`relate.workflows`; the workflow remains publicly noncanonical.
 
 Previous immediate-next note (now completed as Stage 2D): `UnionFind`,
 `build_components`, `component_id` moved to `relate.family.graph`;

@@ -12,14 +12,23 @@ from relate.cli.json_io import read_json_object, write_json_object_immutable
 from relate.evidence.hashing import sha256_file
 from relate.family.authorization import (
     AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION,
+    CANONICAL_EXECUTION_AUTHORIZATION_SCHEMA_ID,
+    CANONICAL_EXECUTION_AUTHORIZATION_V2_SCHEMA_ID,
+    CANONICAL_EXECUTION_REQUEST_SCHEMA_ID,
+    CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID,
     WITHHOLD_EXACT_CANONICAL_FAMILY_EXECUTION,
     canonical_execution_authorization_from_record,
+    canonical_execution_authorization_v2_from_record,
     canonical_execution_request_commitment,
     canonical_execution_request_from_record,
+    canonical_execution_request_v2_from_record,
     make_canonical_execution_authorization,
-    make_canonical_execution_request,
+    make_canonical_execution_authorization_v2,
+    make_canonical_execution_request_v2,
     validate_canonical_execution_authorization,
+    validate_executable_canonical_authorization_v2,
 )
+from relate.family.execution import execute_authorized_canonical_family
 from relate.family.publication import (
     AUTHORIZE_BOUNDED_REVIEW_PUBLICATION,
     WITHHOLD_BOUNDED_REVIEW_PUBLICATION,
@@ -171,7 +180,7 @@ def _cmd_create_canonical_request(args: argparse.Namespace) -> int:
     repo_root = Path(config["repo_root"]).resolve(strict=False)
     packet = _load_packet(Path(config["review_packet_path"]))
     evidence_bundle = _load_bundle(Path(config["evidence_bundle_path"]))
-    request = make_canonical_execution_request(
+    request = make_canonical_execution_request_v2(
         repo_root=repo_root,
         review_packet=packet,
         evidence_bundle=evidence_bundle,
@@ -181,6 +190,9 @@ def _cmd_create_canonical_request(args: argparse.Namespace) -> int:
         expected_identity=_expected(config),
         intended_work_dir=Path(config["intended_work_dir"]),
         intended_store_path=Path(config["intended_store_path"]),
+        rehearsal_work_dir=Path(config["rehearsal_work_dir"])
+        if config.get("rehearsal_work_dir")
+        else None,
         rehearsal_store_path=Path(config["rehearsal_store_path"])
         if config.get("rehearsal_store_path")
         else None,
@@ -196,38 +208,93 @@ def _cmd_create_canonical_request(args: argparse.Namespace) -> int:
 
 
 def _cmd_make_canonical_authorization(args: argparse.Namespace) -> int:
-    request = canonical_execution_request_from_record(read_json_object(args.request))
+    raw = read_json_object(args.request)
+    request = (
+        canonical_execution_request_v2_from_record(raw)
+        if raw.get("schema_id") == CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID
+        else canonical_execution_request_from_record(raw)
+    )
     reason = (
         args.reason
         if args.reason is not None
         else args.reason_file.read_text(encoding="utf-8")
     )
-    authorization = make_canonical_execution_authorization(
-        request=request,
-        disposition=args.disposition,
-        reviewer_identity=args.reviewer,
-        review_timestamp=args.timestamp,
-        bounded_reason=reason,
-    )
+    if request.as_record().get("schema_id") == CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID:
+        authorization = make_canonical_execution_authorization_v2(
+            request=request,
+            disposition=args.disposition,
+            reviewer_identity=args.reviewer,
+            review_timestamp=args.timestamp,
+            bounded_reason=reason,
+        )
+    else:
+        authorization = make_canonical_execution_authorization(
+            request=request,
+            disposition=args.disposition,
+            reviewer_identity=args.reviewer,
+            review_timestamp=args.timestamp,
+            bounded_reason=reason,
+        )
     write_json_object_immutable(args.output, authorization.as_record())
     _emit({"status": "CREATED", "authorization_id": authorization.as_record()["authorization_id"]})
     return EXIT_OK
 
 
 def _cmd_verify_canonical_authorization(args: argparse.Namespace) -> int:
-    request = canonical_execution_request_from_record(read_json_object(args.request))
-    authorization = canonical_execution_authorization_from_record(
-        read_json_object(args.authorization)
-    )
-    result = validate_canonical_execution_authorization(
-        request=request,
-        authorization=authorization,
-        repo_root=args.repo_root.resolve(strict=False),
-        review_packet=_load_packet(args.packet),
-        evidence_bundle=_load_bundle(args.evidence_bundle),
-    )
+    raw_request = read_json_object(args.request)
+    raw_auth = read_json_object(args.authorization)
+    if raw_request.get("schema_id") == CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID:
+        request = canonical_execution_request_v2_from_record(raw_request)
+        authorization = canonical_execution_authorization_v2_from_record(raw_auth)
+        result = validate_executable_canonical_authorization_v2(
+            request=request,
+            authorization=authorization,
+            repo_root=args.repo_root.resolve(strict=False),
+            review_packet=_load_packet(args.packet),
+            evidence_bundle=_load_bundle(args.evidence_bundle),
+        )
+    else:
+        request = canonical_execution_request_from_record(raw_request)
+        authorization = canonical_execution_authorization_from_record(raw_auth)
+        result = validate_canonical_execution_authorization(
+            request=request,
+            authorization=authorization,
+            repo_root=args.repo_root.resolve(strict=False),
+            review_packet=_load_packet(args.packet),
+            evidence_bundle=_load_bundle(args.evidence_bundle),
+        )
     _emit(result.as_record())
     return EXIT_OK if result.status == "AUTHORIZED" else EXIT_BLOCKED_OR_WITHHELD
+
+
+def _cmd_execute_authorized_canonical(args: argparse.Namespace) -> int:
+    raw_request = read_json_object(args.request)
+    raw_auth = read_json_object(args.authorization)
+    if raw_request.get("schema_id") == CANONICAL_EXECUTION_REQUEST_SCHEMA_ID:
+        raise ValueError(
+            "v1 canonical execution authorization is validation-only and is not executable"
+        )
+    if raw_auth.get("schema_id") == CANONICAL_EXECUTION_AUTHORIZATION_SCHEMA_ID:
+        raise ValueError(
+            "v1 canonical execution authorization is validation-only and is not executable"
+        )
+    if raw_request.get("schema_id") != CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID:
+        raise ValueError("unsupported executable canonical execution request schema")
+    if raw_auth.get("schema_id") != CANONICAL_EXECUTION_AUTHORIZATION_V2_SCHEMA_ID:
+        raise ValueError("unsupported executable canonical execution authorization schema")
+    result = execute_authorized_canonical_family(
+        repo_root=args.repo_root.resolve(strict=False),
+        request=canonical_execution_request_v2_from_record(raw_request),
+        authorization=canonical_execution_authorization_v2_from_record(raw_auth),
+        review_packet=_load_packet(args.review_packet),
+        evidence_bundle=_load_bundle(args.evidence_bundle),
+    )
+    _emit(result.as_summary())
+    if result.status.value == "COMPLETED":
+        return EXIT_OK
+    if result.status.value in {"WITHHELD", "BLOCKED"}:
+        return EXIT_BLOCKED_OR_WITHHELD
+    return EXIT_FAILURE
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -293,6 +360,14 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--packet", type=Path, required=True)
     verify.add_argument("--evidence-bundle", type=Path, required=True)
     verify.set_defaults(func=_cmd_verify_canonical_authorization)
+
+    execute = sub.add_parser("execute-authorized-canonical")
+    execute.add_argument("--repo-root", type=Path, required=True)
+    execute.add_argument("--request", type=Path, required=True)
+    execute.add_argument("--authorization", type=Path, required=True)
+    execute.add_argument("--review-packet", type=Path, required=True)
+    execute.add_argument("--evidence-bundle", type=Path, required=True)
+    execute.set_defaults(func=_cmd_execute_authorized_canonical)
     return parser
 
 

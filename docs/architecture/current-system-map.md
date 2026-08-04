@@ -111,7 +111,7 @@ relate.workflows
 
 It contains no family-graph workflow, no canonical-graph execution, and no
 persistence. It must never import `relate.experiments`, `relate.family`, or
-`relate.cli` (enforced by `tests/workflows/test_dependency_boundaries.py`).
+`relate.cli` (enforced by `tests_current/workflows/test_dependency_boundaries.py`).
 
 The Stage 2E family workflow composes the generic kernel from the family side:
 
@@ -331,7 +331,7 @@ tests/
 
 They may be indexed, referenced and verified, but must not be silently rewritten to fit the new architecture.
 
-The historical `tests/` directory is quarantined. It is not active validation during the reset. New tests belong under `tests/` and should target stable capability interfaces.
+The historical `tests/` directory is quarantined. It is not active validation during the reset. New tests belong under `tests_current/` and should target stable capability interfaces.
 
 ## Desired dependency direction
 

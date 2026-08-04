@@ -193,13 +193,17 @@ def default_cache_identity(family_protocol_sha256: str) -> FamilyGraphCacheIdent
 
 def validate_frozen_protocol_inputs(repo_root: Path) -> dict[str, Any]:
     paths = FamilyProtocolInputPaths(
-        allocation_manifest=repo_root / "artifacts/canonical/option-c0/data-firewall-v1/"
+        allocation_manifest=repo_root
+        / "artifacts/canonical/option-c0/data-firewall-v1/"
         "option-c0-repository-allocation-v1.jsonl",
-        firewall_publication=repo_root / "artifacts/canonical/option-c0/data-firewall-v1/"
+        firewall_publication=repo_root
+        / "artifacts/canonical/option-c0/data-firewall-v1/"
         "option-c0-data-firewall-publication-v1.json",
-        d1_result=repo_root / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
+        d1_result=repo_root
+        / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
         "option-c0-d1-integrity-audit-v1.json",
-        d1_1_classification=repo_root / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
+        d1_1_classification=repo_root
+        / "artifacts/canonical/option-c0/review-v1/d1-integrity/"
         "option-c0-d1-overlap-classification-v1.json",
     )
     expected_identity = FamilyProtocolExpectedIdentity(

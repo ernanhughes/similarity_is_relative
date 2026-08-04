@@ -119,7 +119,9 @@ class TestCacheIdentityBinding:
         with FamilyGraphCache(db, identity=identity):
             pass
         with sqlite3.connect(db) as connection:
-            connection.execute("INSERT INTO cache_identity(key, value) VALUES ('extra_key', 'x')")
+            connection.execute(
+                "INSERT INTO cache_identity(key, value) VALUES ('extra_key', 'x')"
+            )
             connection.commit()
         with pytest.raises(ValueError, match="identity key set"):
             FamilyGraphCache(db, identity=identity)

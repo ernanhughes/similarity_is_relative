@@ -30,7 +30,7 @@ from relate.family.execution_review import (
     make_canonical_execution_review_disposition,
     write_canonical_execution_review_bundle,
 )
-from tests.family_execution_review.test_execution_review import (
+from tests_current.family_execution_review.test_execution_review import (
     _packet_like,
     _v2_request,
     _write_completed,
@@ -173,10 +173,9 @@ def test_candidate_request_authorization_and_validation(tmp_path: Path) -> None:
         "intended_canonical_destination": destination.as_posix(),
         "executable_publication_authority": False,
     }
-    assert (
-        compute_canonical_publication_contract_source_identity(Path.cwd())
-        == request.as_record()["canonical_publication_contract_source_identity"]
-    )
+    assert compute_canonical_publication_contract_source_identity(
+        Path.cwd()
+    ) == request.as_record()["canonical_publication_contract_source_identity"]
 
 
 def test_withheld_authorization_validates_as_withheld(tmp_path: Path) -> None:
@@ -262,101 +261,86 @@ def test_cli_flow_and_withheld_exit_code(
 ) -> None:
     bundle, bundle_path, packet_path = _stage2i_inputs(tmp_path)
     candidate_path = tmp_path / "candidate.json"
-    assert (
-        main(
-            [
-                "create-canonical-publication-candidate",
-                "--execution-review-bundle",
-                str(bundle_path),
-                "--canonical-execution-review-packet",
-                str(packet_path),
-                "--output",
-                str(candidate_path),
-            ]
-        )
-        == EXIT_OK
-    )
+    assert main(
+        [
+            "create-canonical-publication-candidate",
+            "--execution-review-bundle",
+            str(bundle_path),
+            "--canonical-execution-review-packet",
+            str(packet_path),
+            "--output",
+            str(candidate_path),
+        ]
+    ) == EXIT_OK
     request_path = tmp_path / "request.json"
     destination = "artifacts/canonical/stage-2j-cli-temp/family-result-cli-v1.json"
-    assert (
-        main(
-            [
-                "create-canonical-publication-request",
-                "--repo-root",
-                str(Path.cwd()),
-                "--candidate",
-                str(candidate_path),
-                "--execution-review-bundle",
-                str(bundle_path),
-                "--intended-canonical-destination",
-                destination,
-                "--output",
-                str(request_path),
-            ]
-        )
-        == EXIT_OK
-    )
+    assert main(
+        [
+            "create-canonical-publication-request",
+            "--repo-root",
+            str(Path.cwd()),
+            "--candidate",
+            str(candidate_path),
+            "--execution-review-bundle",
+            str(bundle_path),
+            "--intended-canonical-destination",
+            destination,
+            "--output",
+            str(request_path),
+        ]
+    ) == EXIT_OK
     auth_path = tmp_path / "auth.json"
-    assert (
-        main(
-            [
-                "make-canonical-publication-authorization",
-                "--repo-root",
-                str(Path.cwd()),
-                "--request",
-                str(request_path),
-                "--candidate",
-                str(candidate_path),
-                "--execution-review-bundle",
-                str(bundle_path),
-                "--disposition",
-                WITHHOLD_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
-                "--reviewer",
-                "reviewer:2j",
-                "--timestamp",
-                "2026-08-03T12:00:00+00:00",
-                "--reason",
-                "withhold exact publication",
-                "--output",
-                str(auth_path),
-            ]
-        )
-        == EXIT_OK
-    )
-    assert (
-        main(
-            [
-                "verify-canonical-publication-authorization",
-                "--repo-root",
-                str(Path.cwd()),
-                "--request",
-                str(request_path),
-                "--authorization",
-                str(auth_path),
-                "--candidate",
-                str(candidate_path),
-                "--execution-review-bundle",
-                str(bundle_path),
-            ]
-        )
-        == EXIT_BLOCKED_OR_WITHHELD
-    )
+    assert main(
+        [
+            "make-canonical-publication-authorization",
+            "--repo-root",
+            str(Path.cwd()),
+            "--request",
+            str(request_path),
+            "--candidate",
+            str(candidate_path),
+            "--execution-review-bundle",
+            str(bundle_path),
+            "--disposition",
+            WITHHOLD_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION,
+            "--reviewer",
+            "reviewer:2j",
+            "--timestamp",
+            "2026-08-03T12:00:00+00:00",
+            "--reason",
+            "withhold exact publication",
+            "--output",
+            str(auth_path),
+        ]
+    ) == EXIT_OK
+    assert main(
+        [
+            "verify-canonical-publication-authorization",
+            "--repo-root",
+            str(Path.cwd()),
+            "--request",
+            str(request_path),
+            "--authorization",
+            str(auth_path),
+            "--candidate",
+            str(candidate_path),
+            "--execution-review-bundle",
+            str(bundle_path),
+        ]
+    ) == EXIT_BLOCKED_OR_WITHHELD
     assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["status"] == "WITHHELD"
     assert not (Path.cwd() / destination).exists()
-    assert (
-        main(
-            [
-                "create-canonical-publication-candidate",
-                "--execution-review-bundle",
-                str(bundle_path),
-                "--canonical-execution-review-packet",
-                str(packet_path),
-                "--output",
-                str(candidate_path),
-            ]
-        )
-        == EXIT_FAILURE
-    )
+    assert main(
+        [
+            "create-canonical-publication-candidate",
+            "--execution-review-bundle",
+            str(bundle_path),
+            "--canonical-execution-review-packet",
+            str(packet_path),
+            "--output",
+            str(candidate_path),
+        ]
+    ) == EXIT_FAILURE
 
 
 def test_stage_2j_module_static_boundaries() -> None:
@@ -369,7 +353,11 @@ def test_stage_2j_module_static_boundaries() -> None:
         if isinstance(node, ast.Import)
         for alias in node.names
     }
-    imports |= {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+    imports |= {
+        node.module or ""
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom)
+    }
     assert "relate.experiments" not in imports
     forbidden_names = {
         "execute_authorized_canonical_family",

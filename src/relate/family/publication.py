@@ -19,7 +19,9 @@ from relate.family.review import (
 from relate.family.sources import parse_timestamp, validate_source_identity
 from relate.family.workflow.models import validate_sha256_identity
 
-FAMILY_PUBLICATION_DISPOSITION_SCHEMA_ID: Final = "relate-family-publication-disposition-v1"
+FAMILY_PUBLICATION_DISPOSITION_SCHEMA_ID: Final = (
+    "relate-family-publication-disposition-v1"
+)
 FAMILY_PUBLICATION_BUNDLE_SCHEMA_ID: Final = "relate-family-publication-bundle-v1"
 AUTHORIZE_BOUNDED_REVIEW_PUBLICATION: Final = "AUTHORIZE_BOUNDED_REVIEW_PUBLICATION"
 WITHHOLD_BOUNDED_REVIEW_PUBLICATION: Final = "WITHHOLD_BOUNDED_REVIEW_PUBLICATION"
@@ -53,7 +55,9 @@ class FamilyPublicationDisposition:
 
     def __post_init__(self) -> None:
         validate_sha256_identity(self.family_protocol_sha256, label="family_protocol_sha256")
-        validate_sha256_identity(self.review_packet_commitment, label="review_packet_commitment")
+        validate_sha256_identity(
+            self.review_packet_commitment, label="review_packet_commitment"
+        )
         if self.publication_scope != PUBLICATION_SCOPE_BOUNDED_FAMILY_RESULT_ONLY:
             raise ValueError("publication disposition scope is not permitted")
         if self.disposition not in ALLOWED_PUBLICATION_DISPOSITIONS:

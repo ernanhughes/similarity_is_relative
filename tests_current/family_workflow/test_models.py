@@ -93,4 +93,4 @@ def test_unresolved_review_required_candidate_is_valid_bundle_state() -> None:
 
 
 def test_import_path_kept_for_pytest_collection() -> None:
-    assert Path("tests/family_workflow/test_models.py").suffix == ".py"
+    assert Path("tests_current/family_workflow/test_models.py").suffix == ".py"

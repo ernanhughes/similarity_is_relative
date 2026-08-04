@@ -35,14 +35,18 @@ EXPECTED_AUDIT_CONTEXT_SHA256: Final = (
 EXPECTED_D1_RESULT_SHA256: Final = (
     "a19c042f725fb20a0a87fa902d2071f30c66d5ee8f96bfde1cd056cba5123420"
 )
-EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT: Final = "ddb5c8de28d4e6502f5511152018eb1aafd0cd44"
+EXPECTED_D1_AUDIT_EXECUTION_GIT_COMMIT: Final = (
+    "ddb5c8de28d4e6502f5511152018eb1aafd0cd44"
+)
 GENERATOR_SOURCE_PATHS: Final = (
     "src/relate/experiments/option_c0_d1_overlap_classification.py",
     "src/relate/experiments/option_c0_d1_integrity_audit.py",
     "artifacts/canonical/option-c0/review-v1/option-c0-d1-audit-contract-v1.json",
     "pyproject.toml",
 )
-EXACT_AST_SHA256: Final = "3d8afe0e5cb68aa8f1d8c1a16c3395c61e3b85bbe4deb3c69e0923944442850d"
+EXACT_AST_SHA256: Final = (
+    "3d8afe0e5cb68aa8f1d8c1a16c3395c61e3b85bbe4deb3c69e0923944442850d"
+)
 EXACT_STABLE_KEYS: Final = frozenset(
     {
         "6486639c1e9e2119724efe0028ae78a1e4d4cbf7088ee22cdbbb331c9c4e6060",
@@ -255,9 +259,9 @@ def publish_d1_result(
         "review_status": "D1_1_CLASSIFICATION_PENDING",
         "next_allowed_action": "RUN_D1_1_OVERLAP_CLASSIFICATION",
     }
-    publication["generator_source_manifest_sha256"] = publication["generator_source_manifest"][
-        "manifest_sha256"
-    ]
+    publication["generator_source_manifest_sha256"] = publication[
+        "generator_source_manifest"
+    ]["manifest_sha256"]
     publication_output.write_text(canonical_json(publication) + "\n", encoding="utf-8")
     return publication
 
@@ -403,13 +407,17 @@ def owner_role_analysis(
         if len(roles) < 2:
             continue
         repositories = sorted(
-            str(item["repository"]) for role in roles for item in role_items[role]
+            str(item["repository"])
+            for role in roles
+            for item in role_items[role]
         )
         groups.append(
             {
                 "owner": owner,
                 "roles": list(roles),
-                "repository_count_by_role": {role: len(role_items.get(role, ())) for role in roles},
+                "repository_count_by_role": {
+                    role: len(role_items.get(role, ())) for role in roles
+                },
                 "row_count_by_role": {
                     role: sum(int(item["row_count"]) for item in role_items.get(role, ()))
                     for role in roles
@@ -432,8 +440,12 @@ def owner_role_analysis(
         "owners_spanning_c0_fit_and_c0_iteration": pair_counts["c0_fit__c0_iteration"],
         "owners_spanning_c0_fit_and_c0_selection": pair_counts["c0_fit__c0_selection"],
         "owners_spanning_c0_fit_and_c1_reserve": pair_counts["c0_fit__c1_reserve"],
-        "owners_spanning_c0_iteration_and_c0_selection": pair_counts["c0_iteration__c0_selection"],
-        "owners_spanning_c0_iteration_and_c1_reserve": pair_counts["c0_iteration__c1_reserve"],
+        "owners_spanning_c0_iteration_and_c0_selection": pair_counts[
+            "c0_iteration__c0_selection"
+        ],
+        "owners_spanning_c0_iteration_and_c1_reserve": pair_counts[
+            "c0_iteration__c1_reserve"
+        ],
         "owners_spanning_three_or_four_roles": sum(
             1 for group in groups if len(group["roles"]) >= 3
         ),
@@ -530,7 +542,8 @@ def near_pair_analysis(
         same_owner += int(pair_same_owner)
         same_basename += int(repo_name(left.repository) == repo_name(right.repository))
         same_family += int(
-            suffix_stripped_family(left.repository) == suffix_stripped_family(right.repository)
+            suffix_stripped_family(left.repository)
+            == suffix_stripped_family(right.repository)
         )
         exact_pair = {left_key, right_key} == EXACT_STABLE_KEYS
         exact_pair_pairs += int(exact_pair)
@@ -627,7 +640,8 @@ def public_metadata_check(
         if len(repositories) >= max_repositories:
             break
     metadata = [
-        fetch_github_metadata(repository) for repository in sorted(repositories)[:max_repositories]
+        fetch_github_metadata(repository)
+        for repository in sorted(repositories)[:max_repositories]
     ]
     return {
         "scope": "exact sarugaku pair plus bounded same-owner near-match sample",

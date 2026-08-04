@@ -24,7 +24,9 @@ class QueryForm:
             raise ValueError("query_id must be non-empty")
         if self.operator not in QUERY_OPERATORS:
             raise ValueError(f"unsupported query operator: {self.operator}")
-        if not self.primitive_names or len(set(self.primitive_names)) != len(self.primitive_names):
+        if not self.primitive_names or len(set(self.primitive_names)) != len(
+            self.primitive_names
+        ):
             raise ValueError("primitive_names must be non-empty and unique")
         if self.operator == "k_of_n":
             if self.k is None or not 1 <= self.k <= len(self.primitive_names):
@@ -239,7 +241,9 @@ def fit_direct_compound_conformal(
         max_iter=2_000,
     ).fit(fit_x, fit_y.astype(np.int64))
     probabilities = estimator.predict_proba(calibration_x)
-    scores = 1.0 - probabilities[np.arange(len(calibration_y)), calibration_y.astype(np.int64)]
+    scores = 1.0 - probabilities[
+        np.arange(len(calibration_y)), calibration_y.astype(np.int64)
+    ]
     return DirectCompoundConformalModel(
         estimator,
         alpha,
@@ -288,14 +292,15 @@ def uncalibrated_confidence_decision(
     confidence = np.max(values, axis=1)
     predictions = (values[:, 1] > values[:, 0]).astype(np.bool_)
     accepted = np.zeros(len(values), dtype=np.bool_)
-    count = (
-        len(values) if target_coverage == 1.0 else int(math.floor(len(values) * target_coverage))
+    count = len(values) if target_coverage == 1.0 else int(
+        math.floor(len(values) * target_coverage)
     )
     if count:
         order = np.lexsort((np.arange(len(values)), -confidence))
         accepted[order[:count]] = True
     reasons = tuple(
-        "accepted_confidence_rank" if item else "refused_confidence_rank" for item in accepted
+        "accepted_confidence_rank" if item else "refused_confidence_rank"
+        for item in accepted
     )
     return SelectiveDecision(predictions, accepted, confidence, reasons)
 
@@ -313,6 +318,7 @@ def oracle_support_decision(
     scores = np.min(np.abs(values), axis=1)
     accepted = (scores > minimum_boundary_distance).astype(np.bool_)
     reasons = tuple(
-        "accepted_oracle_support" if item else "refused_oracle_boundary" for item in accepted
+        "accepted_oracle_support" if item else "refused_oracle_boundary"
+        for item in accepted
     )
     return SelectiveDecision(predictions, accepted, scores, reasons)

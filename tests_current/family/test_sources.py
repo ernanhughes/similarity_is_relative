@@ -128,12 +128,8 @@ class TestMakeSourceRecord:
             status="COMPLETE",
         )
         defaults.update(kwargs)
-        return make_source_record(
-            defaults["source_type"],
-            payload=defaults["payload"],
-            provenance=defaults["provenance"],
-            status=defaults["status"],
-        )
+        return make_source_record(defaults["source_type"], payload=defaults["payload"],
+                                  provenance=defaults["provenance"], status=defaults["status"])
 
     def test_creates_record(self) -> None:
         record = self._make()
@@ -185,7 +181,6 @@ class TestValidateSourceRecord:
     def test_tampered_source_identity_rejected(self) -> None:
         record = make_source_record("fixture", payload={"k": "v"}, provenance={})
         from dataclasses import replace
-
         tampered = replace(record, source_identity="0" * 64)
         with pytest.raises(ValueError, match="tampered"):
             validate_source_record(tampered)
@@ -193,7 +188,6 @@ class TestValidateSourceRecord:
     def test_tampered_record_sha256_rejected(self) -> None:
         record = make_source_record("fixture", payload={"k": "v"}, provenance={})
         from dataclasses import replace
-
         tampered = replace(record, record_sha256="0" * 64)
         with pytest.raises(ValueError, match="tampered"):
             validate_source_record(tampered)

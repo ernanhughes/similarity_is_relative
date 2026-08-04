@@ -34,11 +34,15 @@ from relate.family.workflow.models import (
     validate_sha256_identity,
 )
 
-CANONICAL_EXECUTION_REQUEST_SCHEMA_ID: Final = "relate-family-canonical-execution-request-v1"
+CANONICAL_EXECUTION_REQUEST_SCHEMA_ID: Final = (
+    "relate-family-canonical-execution-request-v1"
+)
 CANONICAL_EXECUTION_AUTHORIZATION_SCHEMA_ID: Final = (
     "relate-family-canonical-execution-authorization-v1"
 )
-CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID: Final = "relate-family-canonical-execution-request-v2"
+CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID: Final = (
+    "relate-family-canonical-execution-request-v2"
+)
 CANONICAL_EXECUTION_AUTHORIZATION_V2_SCHEMA_ID: Final = (
     "relate-family-canonical-execution-authorization-v2"
 )
@@ -46,7 +50,9 @@ CANONICAL_EXECUTION_REQUEST_SCOPE: Final = (
     "EXACT_CANONICAL_FAMILY_EXECUTION_TO_NONCANONICAL_STAGING_ONLY"
 )
 CANONICAL_EXECUTION_AUTHORIZATION_SCOPE: Final = "EXACT_CANONICAL_FAMILY_EXECUTION"
-AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION: Final = "AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION"
+AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION: Final = (
+    "AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION"
+)
 WITHHOLD_EXACT_CANONICAL_FAMILY_EXECUTION: Final = "WITHHOLD_EXACT_CANONICAL_FAMILY_EXECUTION"
 ALLOWED_CANONICAL_EXECUTION_DISPOSITIONS: Final = (
     AUTHORIZE_EXACT_CANONICAL_FAMILY_EXECUTION,
@@ -295,7 +301,9 @@ def make_canonical_execution_request_v2(
     _require_strictly_beneath(store, work_dir, label="fresh_store_path")
     if rehearsal_work_dir is not None:
         other = (
-            rehearsal_work_dir if rehearsal_work_dir.is_absolute() else root / rehearsal_work_dir
+            rehearsal_work_dir
+            if rehearsal_work_dir.is_absolute()
+            else root / rehearsal_work_dir
         )
         _require_not_same(work_dir, other, label="work directory")
     if rehearsal_store_path is not None:
@@ -513,7 +521,9 @@ def make_canonical_execution_authorization_v2(
         "canonical_execution_request_commitment": request_commitment,
         "family_protocol_sha256": request_record["family_protocol_sha256"],
         "workflow_source_identity": request_record["workflow_source_identity"],
-        "canonical_executor_source_identity": request_record["canonical_executor_source_identity"],
+        "canonical_executor_source_identity": request_record[
+            "canonical_executor_source_identity"
+        ],
         "review_packet_commitment": request_record["review_packet_commitment"],
         "requested_run_id": request_record["requested_run_id"],
         "disposition": disposition,
@@ -645,10 +655,9 @@ def validate_canonical_execution_authorization(
         raise ValueError("current workflow source identity differs from request")
     if family_review_packet_commitment(review_packet) != request_record["review_packet_commitment"]:
         raise ValueError("review packet commitment mismatch")
-    if (
-        evidence_bundle_commitment(evidence_bundle)
-        != request_record["prepared_evidence_bundle_commitment"]
-    ):
+    if evidence_bundle_commitment(evidence_bundle) != request_record[
+        "prepared_evidence_bundle_commitment"
+    ]:
         raise ValueError("evidence bundle commitment mismatch")
     inputs = request_record["canonical_inputs"]
     paths = FamilyProtocolInputPaths(
@@ -660,7 +669,9 @@ def validate_canonical_execution_authorization(
     expected = FamilyProtocolExpectedIdentity(
         allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
         allocation_context_sha256=inputs["allocation_context_sha256"],
-        allocation_repository_commitment_sha256=inputs["allocation_repository_commitment_sha256"],
+        allocation_repository_commitment_sha256=inputs[
+            "allocation_repository_commitment_sha256"
+        ],
         d1_result_sha256=inputs["d1_result_sha256"],
         d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
     )
@@ -719,17 +730,15 @@ def validate_executable_canonical_authorization_v2(
             raise ValueError(f"authorization {key} mismatch")
     if compute_family_workflow_source_identity(root) != request_record["workflow_source_identity"]:
         raise ValueError("current workflow source identity differs from request")
-    if (
-        compute_canonical_executor_source_identity(root)
-        != request_record["canonical_executor_source_identity"]
-    ):
+    if compute_canonical_executor_source_identity(root) != request_record[
+        "canonical_executor_source_identity"
+    ]:
         raise ValueError("current canonical executor source identity differs from request")
     if family_review_packet_commitment(review_packet) != request_record["review_packet_commitment"]:
         raise ValueError("review packet commitment mismatch")
-    if (
-        evidence_bundle_commitment(evidence_bundle)
-        != request_record["prepared_evidence_bundle_commitment"]
-    ):
+    if evidence_bundle_commitment(evidence_bundle) != request_record[
+        "prepared_evidence_bundle_commitment"
+    ]:
         raise ValueError("evidence bundle commitment mismatch")
 
     inputs = request_record["canonical_inputs"]
@@ -742,7 +751,9 @@ def validate_executable_canonical_authorization_v2(
     expected = FamilyProtocolExpectedIdentity(
         allocation_manifest_sha256=inputs["allocation_manifest_sha256"],
         allocation_context_sha256=inputs["allocation_context_sha256"],
-        allocation_repository_commitment_sha256=inputs["allocation_repository_commitment_sha256"],
+        allocation_repository_commitment_sha256=inputs[
+            "allocation_repository_commitment_sha256"
+        ],
         d1_result_sha256=inputs["d1_result_sha256"],
         d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
     )

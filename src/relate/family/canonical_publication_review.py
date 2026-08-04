@@ -843,7 +843,9 @@ def _validate_report_semantics(data: dict[str, Any]) -> None:
     failed_before = (
         status == CanonicalPublicationTerminalStatus.VALID_FAILED_BEFORE_CANONICAL_CREATION
     )
-    partial = status == CanonicalPublicationTerminalStatus.VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED
+    partial = (
+        status == CanonicalPublicationTerminalStatus.VALID_CANONICAL_FILE_CREATED_AUDIT_FAILED
+    )
     incomplete = status == CanonicalPublicationTerminalStatus.INCOMPLETE_TERMINAL_EVIDENCE
     if data["publication_completed"] is not completed:
         raise ValueError("publication completion flag does not match terminal status")
@@ -1081,7 +1083,9 @@ def canonical_publication_closure_disposition_from_record(
             "executable_authorization_id": report_record["executable_authorization_id"],
             "candidate_commitment": report_record["candidate_commitment"],
             "canonical_destination": report_record["canonical_destination"],
-            "canonical_destination_file_sha256": report_record["canonical_destination_file_sha256"],
+            "canonical_destination_file_sha256": report_record[
+                "canonical_destination_file_sha256"
+            ],
             "review_scope": PUBLICATION_REVIEW_SCOPE,
         }
         _validate_expected_fields(data, mirrored, label="closure disposition")

@@ -177,7 +177,8 @@ def family_evidence_bundle_from_record(record: dict[str, Any]) -> FamilyEvidence
             evidence_candidate_from_record(item) for item in record.get("candidates", ())
         ),
         dispositions=tuple(
-            manual_review_disposition_from_record(item) for item in record.get("dispositions", ())
+            manual_review_disposition_from_record(item)
+            for item in record.get("dispositions", ())
         ),
         incomplete_metadata_records=int(record.get("incomplete_metadata_records", 0)),
     )

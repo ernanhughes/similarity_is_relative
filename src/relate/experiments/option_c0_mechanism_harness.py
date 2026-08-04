@@ -86,7 +86,9 @@ class HarnessContract:
             not 0.0 < item < 1.0 for item in alpha_grid
         ):
             raise ValueError("development alpha grid must be unique, ascending, and in (0, 1)")
-        if tuple(sorted(set(anchors))) != anchors or any(not 0.0 < item <= 1.0 for item in anchors):
+        if tuple(sorted(set(anchors))) != anchors or any(
+            not 0.0 < item <= 1.0 for item in anchors
+        ):
             raise ValueError("coverage anchors must be unique, ascending, and in (0, 1]")
         if value.get("candidate_registration_required_before_iteration") is not True:
             raise ValueError("candidate registration must precede iteration evaluation")

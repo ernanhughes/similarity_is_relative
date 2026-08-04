@@ -174,16 +174,13 @@ def test_authorization_validation_authorized_and_withheld(tmp_path: Path) -> Non
         review_timestamp="2026-08-03T12:00:00+00:00",
         bounded_reason="withhold exact future execution",
     )
-    assert (
-        validate_canonical_execution_authorization(
-            request=request,
-            authorization=withheld,
-            repo_root=Path.cwd(),
-            review_packet=packet,
-            evidence_bundle=bundle,
-        ).status
-        == "WITHHELD"
-    )
+    assert validate_canonical_execution_authorization(
+        request=request,
+        authorization=withheld,
+        repo_root=Path.cwd(),
+        review_packet=packet,
+        evidence_bundle=bundle,
+    ).status == "WITHHELD"
 
 
 def test_publication_disposition_string_rejected(tmp_path: Path) -> None:

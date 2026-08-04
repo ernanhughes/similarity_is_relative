@@ -355,12 +355,10 @@ class AssessGraphReadinessStep:
         with FamilyGraphCache(self._store_path, identity=self._cache_identity) as cache:
             cache.put_phase_commitment(
                 "graph_readiness",
-                status="COMPLETE"
-                if not (
+                status="COMPLETE" if not (
                     completeness["incomplete_metadata_records"]
                     or completeness["unresolved_connecting_candidate_edges"]
-                )
-                else "INCOMPLETE",
+                ) else "INCOMPLETE",
                 commitment_sha256=readiness_commitment,
                 metadata={
                     "family_graph_outcome": outcome["family_graph_outcome"],

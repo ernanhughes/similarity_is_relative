@@ -241,7 +241,7 @@ The first implementation stage must stop before:
 - [Migration status](docs/architecture/migration-status.md)
 - [Capability continuity](docs/architecture/capability-continuity.md)
 - [Refactor preservation contract](docs/architecture/refactor-preservation-contract.md)
-- [Historical-test quarantine](tests/README.md)
+- [Historical-test quarantine](tests_current/README.md)
 
 ## Repository and conversation boundary
 
@@ -256,14 +256,14 @@ A chat-derived idea becomes a claim only through the claim ledger, a frozen cont
 
 ## Validation status
 
-The historical `tests/` suite is preserved but disabled during the reset. New tests are written under `tests/` as stable capability interfaces emerge.
+The historical `tests/` suite is preserved but disabled during the reset. New tests are written under `tests_current/` as stable capability interfaces emerge.
 
 A passing reset-era test suite establishes only that those active interfaces passed. It does not imply that every historical experiment has been behaviourally reverified.
 
 ```bash
 python -m pip install -e ".[dev,option-b]"
-python -m pytest tests -q
-python -m ruff check src/relate tests
+python -m pytest tests_current -q
+python -m ruff check src/relate tests_current
 ```
 
 ## Publication rule

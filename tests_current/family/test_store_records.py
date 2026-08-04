@@ -187,20 +187,26 @@ class TestAllocationRegistration:
 class TestSourceRecordPersistence:
     def test_insertion_and_retrieval(self, tmp_path: Path) -> None:
         with FamilyGraphCache(tmp_path / "family.sqlite3", identity=_identity()) as cache:
-            record = make_source_record("fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP})
+            record = make_source_record(
+                "fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP}
+            )
             cache.put_source_record(record)
             fetched = cache.get_source_record(record.source_type, record.source_identity)
             assert fetched == record
 
     def test_identical_replay_is_accepted(self, tmp_path: Path) -> None:
         with FamilyGraphCache(tmp_path / "family.sqlite3", identity=_identity()) as cache:
-            record = make_source_record("fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP})
+            record = make_source_record(
+                "fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP}
+            )
             cache.put_source_record(record)
             cache.put_source_record(record)
 
     def test_tampered_source_record_conflict_rejected(self, tmp_path: Path) -> None:
         with FamilyGraphCache(tmp_path / "family.sqlite3", identity=_identity()) as cache:
-            record = make_source_record("fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP})
+            record = make_source_record(
+                "fixture", payload={"k": "v"}, provenance={"t": TIMESTAMP}
+            )
             cache.put_source_record(record)
             cache.connection.execute(
                 "UPDATE source_records SET record_json = '{}' "

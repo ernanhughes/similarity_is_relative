@@ -147,7 +147,9 @@ def embedding_fingerprint(
         "model_id": embedding_identity["model"]["repo_id"],
         "model_revision": embedding_identity["model"]["revision"],
         "dataset_revision": embedding_identity["dataset"]["revision"],
-        "embedding_implementation_sha256": embedding_identity["embedding_implementation_sha256"],
+        "embedding_implementation_sha256": embedding_identity[
+            "embedding_implementation_sha256"
+        ],
         "tokenization_config_sha256": embedding_identity["tokenization_config_sha256"],
         "max_length": MAX_LENGTH,
         "output_dtype": OUTPUT_DTYPE,
@@ -361,7 +363,9 @@ def cached_embed_prepared_data(
         "fixture_preflight": preflight,
         "execution_erratum_checkpoint_id": erratum["checkpoint_id"],
         "execution_erratum_status": erratum["status"],
-        "execution_erratum_path": str(identity_entrypoint.EXECUTION_ERRATUM).replace("\\", "/"),
+        "execution_erratum_path": str(identity_entrypoint.EXECUTION_ERRATUM).replace(
+            "\\", "/"
+        ),
         "execution_erratum_sha256": identity_entrypoint._sha256_file(
             identity_entrypoint.EXECUTION_ERRATUM
         ),

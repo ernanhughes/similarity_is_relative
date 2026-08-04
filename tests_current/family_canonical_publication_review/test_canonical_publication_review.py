@@ -27,7 +27,7 @@ from relate.family.canonical_publication_review import (
     make_canonical_publication_closure_disposition,
     write_canonical_publication_closure_bundle,
 )
-from tests.family_canonical_publication.test_canonical_publication import _chain
+from tests_current.family_canonical_publication.test_canonical_publication import _chain
 
 
 def _read(path: Path) -> dict:
@@ -80,7 +80,9 @@ def test_completed_publication_review_and_closure_bundle(tmp_path: Path) -> None
     assert record["publication_completed"] is True
     assert record["canonical_artifact_exact_bytes_verified"] is True
     assert record["closure_eligibility"]["completed_publication_closure"] is True
-    assert record["file_sha256"]["trace"] == sha256_file(audit / "canonical-publication-trace.json")
+    assert record["file_sha256"]["trace"] == sha256_file(
+        audit / "canonical-publication-trace.json"
+    )
     receipt = _read(audit / "canonical-publication-receipt.json")
     assert receipt["trace_file_sha256"] == record["file_sha256"]["trace"]
     parsed = canonical_publication_evidence_review_report_from_record(record)
@@ -98,10 +100,9 @@ def test_completed_publication_review_and_closure_bundle(tmp_path: Path) -> None
         destination=out,
         repo_root=chain["repo"],
     )
-    assert (
-        canonical_publication_closure_bundle_from_record(_read(out)).as_record()
-        == bundle.as_record()
-    )
+    assert canonical_publication_closure_bundle_from_record(
+        _read(out)
+    ).as_record() == bundle.as_record()
 
 
 def test_receipt_trace_sha_mismatch_rejected(tmp_path: Path) -> None:
@@ -121,7 +122,9 @@ def test_receipt_and_failure_conflict_rejected(tmp_path: Path) -> None:
     audit = chain["repo"] / ".writer/stage-2k/audit"
     failure = {
         "schema_id": "relate-family-canonical-publication-failure-v1",
-        "executable_request_commitment": chain["exec_request"].as_record()["request_commitment"],
+        "executable_request_commitment": chain["exec_request"].as_record()[
+            "request_commitment"
+        ],
         "executable_authorization_id": chain["exec_auth"].as_record()["authorization_id"],
         "stage_2j_publication_request_commitment": chain["stage2j_request"].as_record()[
             "request_commitment"
@@ -133,7 +136,9 @@ def test_receipt_and_failure_conflict_rejected(tmp_path: Path) -> None:
         "canonical_publication_candidate_commitment": chain["candidate"].as_record()[
             "candidate_commitment"
         ],
-        "canonical_publication_candidate_file_sha256": sha256_file(chain["candidate_path"]),
+        "canonical_publication_candidate_file_sha256": sha256_file(
+            chain["candidate_path"]
+        ),
         "failed_phase": "PUBLICATION_EXECUTION",
         "bounded_exception_type": "RuntimeError",
         "bounded_message": "conflict",
@@ -192,12 +197,9 @@ def test_disposition_rules_reject_completed_closure_for_incomplete_report(tmp_pa
         review_timestamp="2026-08-03T12:00:00+00:00",
         bounded_reason="withhold incomplete evidence",
     )
-    assert (
-        canonical_publication_closure_disposition_from_record(
-            withheld.as_record(), report=report
-        ).as_record()
-        == withheld.as_record()
-    )
+    assert canonical_publication_closure_disposition_from_record(
+        withheld.as_record(), report=report
+    ).as_record() == withheld.as_record()
     assert claim
 
 
@@ -377,7 +379,9 @@ def test_failed_before_canonical_requires_trace(tmp_path: Path) -> None:
     atomic_write_json(audit / "canonical-publication-claim.json", claim)
     failure = {
         "schema_id": "relate-family-canonical-publication-failure-v1",
-        "executable_request_commitment": chain["exec_request"].as_record()["request_commitment"],
+        "executable_request_commitment": chain["exec_request"].as_record()[
+            "request_commitment"
+        ],
         "executable_authorization_id": chain["exec_auth"].as_record()["authorization_id"],
         "stage_2j_publication_request_commitment": chain["stage2j_request"].as_record()[
             "request_commitment"
@@ -416,68 +420,59 @@ def test_cli_review_disposition_bundle_and_verify(
     chain = _chain(tmp_path)
     _execute(chain)
     report_path = tmp_path / "publication-review.json"
-    assert (
-        main(
-            [
-                "review-canonical-publication-evidence",
-                "--repo-root",
-                str(chain["repo"]),
-                "--stage-2j-request",
-                str(chain["stage2j_request_path"]),
-                "--stage-2j-authorization",
-                str(chain["stage2j_auth_path"]),
-                "--executable-request",
-                str(chain["exec_request_path"]),
-                "--executable-authorization",
-                str(chain["exec_auth_path"]),
-                "--candidate",
-                str(chain["candidate_path"]),
-                "--execution-review-bundle",
-                str(chain["bundle_path"]),
-                "--output",
-                str(report_path),
-            ]
-        )
-        == EXIT_OK
-    )
+    assert main(
+        [
+            "review-canonical-publication-evidence",
+            "--repo-root",
+            str(chain["repo"]),
+            "--stage-2j-request",
+            str(chain["stage2j_request_path"]),
+            "--stage-2j-authorization",
+            str(chain["stage2j_auth_path"]),
+            "--executable-request",
+            str(chain["exec_request_path"]),
+            "--executable-authorization",
+            str(chain["exec_auth_path"]),
+            "--candidate",
+            str(chain["candidate_path"]),
+            "--execution-review-bundle",
+            str(chain["bundle_path"]),
+            "--output",
+            str(report_path),
+        ]
+    ) == EXIT_OK
     disposition_path = tmp_path / "closure-disposition.json"
-    assert (
-        main(
-            [
-                "make-canonical-publication-closure-disposition",
-                "--report",
-                str(report_path),
-                "--disposition",
-                CLOSE_COMPLETED_CANONICAL_PUBLICATION,
-                "--reviewer",
-                "reviewer:2l",
-                "--timestamp",
-                "2026-08-03T12:00:00+00:00",
-                "--reason",
-                "close completed publication evidence",
-                "--output",
-                str(disposition_path),
-            ]
-        )
-        == EXIT_OK
-    )
+    assert main(
+        [
+            "make-canonical-publication-closure-disposition",
+            "--report",
+            str(report_path),
+            "--disposition",
+            CLOSE_COMPLETED_CANONICAL_PUBLICATION,
+            "--reviewer",
+            "reviewer:2l",
+            "--timestamp",
+            "2026-08-03T12:00:00+00:00",
+            "--reason",
+            "close completed publication evidence",
+            "--output",
+            str(disposition_path),
+        ]
+    ) == EXIT_OK
     bundle_path = tmp_path / "closure-bundle.json"
-    assert (
-        main(
-            [
-                "write-canonical-publication-closure-bundle",
-                "--repo-root",
-                str(chain["repo"]),
-                "--report",
-                str(report_path),
-                "--disposition",
-                str(disposition_path),
-                "--output",
-                str(bundle_path),
-            ]
-        )
-        == EXIT_OK
-    )
+    assert main(
+        [
+            "write-canonical-publication-closure-bundle",
+            "--repo-root",
+            str(chain["repo"]),
+            "--report",
+            str(report_path),
+            "--disposition",
+            str(disposition_path),
+            "--output",
+            str(bundle_path),
+        ]
+    ) == EXIT_OK
     assert (
         main(["verify-canonical-publication-closure-bundle", "--bundle", str(bundle_path)])
         == EXIT_OK
@@ -489,7 +484,11 @@ def test_stage_2l_static_boundaries() -> None:
     path = Path("src/relate/family/canonical_publication_review.py")
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(path))
-    imports = {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
+    imports = {
+        node.module or ""
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom)
+    }
     assert "relate.experiments" not in imports
     forbidden = {
         "execute_authorized_canonical_publication",

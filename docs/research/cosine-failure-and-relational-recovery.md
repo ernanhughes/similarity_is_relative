@@ -500,10 +500,10 @@ src/relate/support/primitive.py
 src/relate/support/compound.py
 src/relate/support/refusal.py
 src/relate/workflows/option_e/
-tests/domain/
-tests/evaluation/
-tests/support/
-tests/workflows/option_e/
+tests_current/domain/
+tests_current/evaluation/
+tests_current/support/
+tests_current/workflows/option_e/
 ```
 
 These paths are directional. Empty packages should not be created before their first coherent capability exists.

@@ -54,7 +54,9 @@ def selective_diagnostics(
             sorted(
                 Counter(
                     reason
-                    for reason, accepted in zip(decision.reasons, decision.accepted, strict=True)
+                    for reason, accepted in zip(
+                        decision.reasons, decision.accepted, strict=True
+                    )
                     if not accepted
                 ).items()
             )
@@ -91,7 +93,10 @@ def ranked_risk_coverage_curve(
             predicted,
             accepted,
             confidence,
-            tuple("accepted_score_rank" if item else "refused_score_rank" for item in accepted),
+            tuple(
+                "accepted_score_rank" if item else "refused_score_rank"
+                for item in accepted
+            ),
         )
         point = selective_diagnostics(truth, decision, repositories)
         point["target_coverage"] = anchor

@@ -310,7 +310,9 @@ def recompute_primary_scores(
                 axis=1,
                 dtype=np.float64,
             )
-            norms = np.sqrt(np.sum(values * values, axis=1, dtype=np.float64))
+            norms = np.sqrt(
+                np.sum(values * values, axis=1, dtype=np.float64)
+            )
             return 1.0 - dots / np.maximum(
                 norms * _query_norm,
                 eps,
@@ -322,8 +324,10 @@ def recompute_primary_scores(
             _query_embedding: np.ndarray = query_embedding,
         ) -> np.ndarray:
             delta = values - _query_embedding
-            return np.sqrt(np.sum(delta * delta, axis=1, dtype=np.float64))
-
+            return np.sqrt(
+                np.sum(delta * delta, axis=1, dtype=np.float64)
+            )
+        
         left_distances = (
             cosine(left_embedding),
             euclidean(left_embedding),

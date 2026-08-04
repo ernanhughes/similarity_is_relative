@@ -28,7 +28,9 @@ from relate.experiments.option_b_identity import FIXTURE_CODES
 from relate.experiments.option_b_real_code import MODEL_ID
 from relate.experiments.option_b_selection import DATASET_ID, load_identity
 
-SOURCE_IDENTITY: Final = Path("artifacts/canonical/option-b/option-b-external-identity-v1.json")
+SOURCE_IDENTITY: Final = Path(
+    "artifacts/canonical/option-b/option-b-external-identity-v1.json"
+)
 CPU_EMBEDDING_IDENTITY: Final = Path(
     "artifacts/canonical/option-b/option-b-embedding-identity-v2.json"
 )
@@ -88,7 +90,8 @@ def verify_identity_pair(
     embedding_dataset = embedding.get("dataset", {})
     dataset_fields = ("repo_id", "revision", "subset")
     if source_dataset.get("repo_id") != DATASET_ID or any(
-        source_dataset.get(field) != embedding_dataset.get(field) for field in dataset_fields
+        source_dataset.get(field) != embedding_dataset.get(field)
+        for field in dataset_fields
     ):
         raise DiscoveryIdentityError("source and embedding dataset identities differ")
 
@@ -110,26 +113,22 @@ def verify_identity_pair(
     else:
         if embedding.get("environment", {}).get("canonical_device") != "cpu":
             raise DiscoveryIdentityError("CPU execution requires the canonical CPU identity")
-        invariant = (
-            embedding.get("fixture", {}).get("batch_invariance", {}).get(str(batch_size), {})
+        invariant = embedding.get("fixture", {}).get("batch_invariance", {}).get(
+            str(batch_size), {}
         )
         if invariant.get("exactly_equal_to_canonical") is not True:
             raise DiscoveryIdentityError("CPU batch size is not certified by identity v2")
 
-    return (
-        source,
-        embedding,
-        {
-            "source_identity_path": str(source_identity_path).replace("\\", "/"),
-            "source_identity_sha256": source_sha,
-            "embedding_identity_path": str(embedding_identity_path).replace("\\", "/"),
-            "embedding_identity_sha256": _sha256_file(embedding_identity_path),
-            "model_revision": str(embedding_model["revision"]),
-            "dataset_revision": str(embedding_dataset["revision"]),
-            "device": device,
-            "batch_size": batch_size,
-        },
-    )
+    return source, embedding, {
+        "source_identity_path": str(source_identity_path).replace("\\", "/"),
+        "source_identity_sha256": source_sha,
+        "embedding_identity_path": str(embedding_identity_path).replace("\\", "/"),
+        "embedding_identity_sha256": _sha256_file(embedding_identity_path),
+        "model_revision": str(embedding_model["revision"]),
+        "dataset_revision": str(embedding_dataset["revision"]),
+        "device": device,
+        "batch_size": batch_size,
+    }
 
 
 def verify_execution_erratum(path: Path = EXECUTION_ERRATUM) -> dict[str, Any]:

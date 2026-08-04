@@ -128,10 +128,8 @@ class TestLoadAllocationManifest:
     def test_parses_jsonl(self, tmp_path: Path) -> None:
         manifest = tmp_path / "alloc.jsonl"
         manifest.write_text(
-            json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 10})
-            + "\n"
-            + json.dumps({"repository": "Owner/B", "role": "c0_iteration", "row_count": 5})
-            + "\n",
+            json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 10}) + "\n"
+            + json.dumps({"repository": "Owner/B", "role": "c0_iteration", "row_count": 5}) + "\n",
             encoding="utf-8",
         )
         entries = load_allocation_manifest(manifest)
@@ -142,10 +140,8 @@ class TestLoadAllocationManifest:
     def test_sorted_by_repository(self, tmp_path: Path) -> None:
         manifest = tmp_path / "alloc.jsonl"
         manifest.write_text(
-            json.dumps({"repository": "owner/z", "role": "c0_fit", "row_count": 1})
-            + "\n"
-            + json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1})
-            + "\n",
+            json.dumps({"repository": "owner/z", "role": "c0_fit", "row_count": 1}) + "\n"
+            + json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1}) + "\n",
             encoding="utf-8",
         )
         entries = load_allocation_manifest(manifest)
@@ -155,10 +151,8 @@ class TestLoadAllocationManifest:
     def test_duplicate_repository_rejected(self, tmp_path: Path) -> None:
         manifest = tmp_path / "alloc.jsonl"
         manifest.write_text(
-            json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1})
-            + "\n"
-            + json.dumps({"repository": "owner/a", "role": "c0_iteration", "row_count": 2})
-            + "\n",
+            json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1}) + "\n"
+            + json.dumps({"repository": "owner/a", "role": "c0_iteration", "row_count": 2}) + "\n",
             encoding="utf-8",
         )
         with pytest.raises(ValueError, match="duplicate"):
@@ -195,8 +189,7 @@ class TestLoadAllocationManifest:
         manifest = tmp_path / "alloc.jsonl"
         manifest.write_text(
             "\n"
-            + json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1})
-            + "\n"
+            + json.dumps({"repository": "owner/a", "role": "c0_fit", "row_count": 1}) + "\n"
             + "\n",
             encoding="utf-8",
         )

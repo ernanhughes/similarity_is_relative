@@ -41,7 +41,9 @@ class TestFamilyGraphCacheWalPragmas:
         assert synchronous == 2  # FULL
         assert foreign_keys == 1
 
-    def test_verify_pragmas_raises_runtime_error_on_bad_connection(self, tmp_path: Path) -> None:
+    def test_verify_pragmas_raises_runtime_error_on_bad_connection(
+        self, tmp_path: Path
+    ) -> None:
         """_verify_pragmas must raise RuntimeError (not ValueError)."""
         identity = _make_identity()
         cache = FamilyGraphCache.__new__(FamilyGraphCache)
@@ -60,7 +62,9 @@ class TestFamilyGraphCacheIdentityBinding:
     def test_fresh_cache_inserts_identity(self, tmp_path: Path) -> None:
         identity = _make_identity()
         with FamilyGraphCache(tmp_path / "family.sqlite3", identity=identity) as cache:
-            rows = dict(cache.connection.execute("SELECT key, value FROM cache_identity"))
+            rows = dict(
+                cache.connection.execute("SELECT key, value FROM cache_identity")
+            )
         assert rows == identity.as_mapping()
 
     def test_identical_identity_accepted_on_reopen(self, tmp_path: Path) -> None:
@@ -99,7 +103,9 @@ class TestFamilyGraphCacheIdentityBinding:
         # Inject a bogus extra key directly to simulate key-set mismatch.
         conn = sqlite3.connect(db)
         try:
-            conn.execute("INSERT INTO cache_identity(key, value) VALUES ('extra_key', 'x')")
+            conn.execute(
+                "INSERT INTO cache_identity(key, value) VALUES ('extra_key', 'x')"
+            )
             conn.commit()
         finally:
             conn.close()

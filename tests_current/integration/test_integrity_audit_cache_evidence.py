@@ -29,7 +29,9 @@ class TestIntegrityAuditCacheWalPragmas:
         assert result["foreign_keys"] == 1
         assert result["synchronous_full"] is True
 
-    def test_verify_pragmas_raises_value_error_on_bad_connection(self, tmp_path: Path) -> None:
+    def test_verify_pragmas_raises_value_error_on_bad_connection(
+        self, tmp_path: Path
+    ) -> None:
         """verify_pragmas must raise ValueError (not RuntimeError)."""
         cache = IntegrityAuditCache.__new__(IntegrityAuditCache)
         cache.path = tmp_path / "bad.sqlite3"

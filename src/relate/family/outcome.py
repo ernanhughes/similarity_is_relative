@@ -75,7 +75,9 @@ def graph_completeness(
         if candidate is None:
             raise ValueError("graph completeness missing candidate")
         disposition = (
-            dispositions.get(item.disposition_id) if item.disposition_id is not None else None
+            dispositions.get(item.disposition_id)
+            if item.disposition_id is not None
+            else None
         )
         validate_resolved_edge(
             item,

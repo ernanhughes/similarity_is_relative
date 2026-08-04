@@ -1,32 +1,32 @@
 # RELATE Claim Ledger
 
-This ledger separates established prior art, implemented tests, point estimates, replicated results, independently verified real-domain findings, independently audited interpretations, unsupported hypotheses and blocked composite claims.
+This ledger separates established prior art, implemented tests, point estimates, replicated results, independently verified real-domain findings, independently audited interpretations, unsupported hypotheses and blocked or closed composite claims.
 
 ## Status vocabulary
 
 - **Prior art:** established by earlier work; not a RELATE contribution.
 - **Proposed:** falsifiable claim recorded before implementation.
-- **Proposed, authorised:** the preceding gate passed, but the confirmatory experiment has not yet produced a result.
+- **Proposed, authorised:** a preceding gate or explicit project decision permits bounded discovery, but no confirmatory result exists.
 - **Implemented:** executable test exists; canonical result not yet verified.
 - **Replay-verified point estimate:** one registered run passed its frozen rule and deterministic replay.
 - **Replicated synthetic:** a registered synthetic measurement reproduced across fresh dataset seeds.
 - **Independently verified real-domain:** a registered real-domain result passed its frozen rule and a separate substantive implementation exactly recomputed the primary evidence and decision.
 - **Independently audited:** a separate substantive implementation reproduced an interpretation-changing audit result.
 - **Refined:** later evidence supports a narrower interpretation than the original status implied.
-- **Closed:** the line has been evaluated and will not be advanced under its former thesis.
+- **Closed:** the line has been evaluated, superseded or deliberately ended and will not be advanced under its former thesis or identifier.
 - **Unsupported at threshold:** the declared operator family was not certified at the frozen threshold.
 - **Insufficient evidence:** the result did not cross the frozen support or rejection rule.
 - **Unstable under shift:** development performance did not survive the registered distribution shift.
 - **Blocked:** a composite publication claim cannot be promoted because one or more required decisions failed.
 
-Exploratory C0 measurements are not claim statuses. They may select a hypothesis for C1, but they cannot promote or revise a scientific claim without fresh confirmatory evidence.
+Exploratory measurements are not claim statuses. They may select a hypothesis for a later confirmatory contract, but they cannot promote or revise a scientific claim without fresh confirmatory evidence.
 
 ## Claims
 
 | ID | Claim | Status | Experiment | Required baseline | Falsification or revision condition |
 |---|---|---|---|---|---|
 | PA-001 | Context-specific masks and metrics over shared embeddings are established prior art. | Prior art | Historical / future baseline work | Conditional Similarity Networks and standard metric learning | Never present this as a RELATE invention. |
-| PA-CODE-001 | Pretrained code models, frozen probing, AST metrics and repository-separated code benchmarks are established prior art. | Prior art | Option B | CodeBERT, CodeSearchNet and code-model probing literature | Never present the representation, probes, AST extractors or split design as RELATE inventions. |
+| PA-CODE-001 | Pretrained code models, frozen probing, AST metrics and repository-separated code benchmarks are established prior art. | Prior art | Option B / future code work | CodeBERT, CodeSearchNet and code-model probing literature | Never present the representation, probes, AST extractors or split design as RELATE inventions. |
 | E00-LIN-001 | In the registered synthetic setting, a known linear relation weakly exposed by raw cosine and Euclidean distance is strongly recoverable through a supervised scalar direction. | Replicated synthetic | E00.2/E00.4 | Raw cosine, raw Euclidean, ridge predicted-value distance | Fresh registered seeds fail the rank-one recovery thresholds or raw geometry closes the declared gap. |
 | E00-ROT-001 | Recovery through the supervised scalar direction survives a common information-preserving orthogonal rotation. | Replicated synthetic | E00.4 | Native and rotated rank-one retrieval | Rotation retention fails the frozen multi-seed thresholds. |
 | E00-BASIS-001 | A raw-coordinate diagonal metric is basis dependent under the registered rotation test. | Replicated synthetic | E00.4 | Native and rotated diagonal retrieval | Diagonal retention no longer shows the preregistered degradation across fresh seeds. |
@@ -40,10 +40,11 @@ Exploratory C0 measurements are not claim statuses. They may select a hypothesis
 | E01-AUDIT-001 | E01.1 fails its original `0.10` control-margin rule for three of four compounds when the strongest of all five non-identity permutations is used. | Independently audited | E01 independent recomputation | Exhaustive permutation sweep and original frozen rule | A separate independent implementation does not reproduce margins near `0.0853`, `0.1464`, `0.0788`, and `0.0374`. |
 | E01-CEIL-001 | The E01.2a predicted-primitive executor operates at effectively the same triplet-accuracy ceiling as the true noiseless latent executor. | Independently audited | E01 independent recomputation | Latent oracle and ceiling fraction | Fresh non-saturated generator regimes produce a material and stable gap from the attainable ceiling. |
 | E01-PERM-001 | In the exchangeable E01 generator, the strongest wrong-permutation margin is primarily determined by weight separation and is zero for symmetric weights. | Independently audited | E01 independent recomputation | Frozen weight-separation sweep | A non-exchangeable semantic-identity experiment shows the same diagnostic has semantic validity. |
-| E01-LINE-001 | The E01 weighted-product-space line supports a general or novel relational-composition claim. | Closed | E01.0–E01.2a | Direct compound models, non-saturated primitives, semantic identity, support boundaries | This former thesis is closed. Any future support-aware query-runtime claim begins under a new experiment contract and does not inherit E01 success. |
+| E01-LINE-001 | The E01 weighted-product-space line supports a general or novel relational-composition claim. | Closed | E01.0–E01.2a | Direct compound models, non-saturated primitives, semantic identity, support boundaries | This former thesis is closed. Any future support-aware recovery claim begins under a new experiment contract and inherits no E01 success. |
 | H-005 | The cancelled broad E02–E07 synthetic roadmap can establish a support-aware relational query runtime through a large factorisation and supervision matrix. | Closed | Post-E01 decision | Real-premise test and bounded refusal test | This roadmap is cancelled. It may not be revived without a new explicit project decision. |
 | B-PREM-001 | In repository-separated real Python code, independently predicted AST primitives expose the frozen three-way structural relation materially better than the strongest default CodeBERT geometry. | Independently verified real-domain | Option B | Raw CodeBERT cosine, raw CodeBERT Euclidean, token-length diagnostic, true-primitive oracle | A separate substantive recomputation fails to reproduce the exact `4,000 × 5` query-score matrix or the registered `0.199537109375` gap, or a new preregistered external replication materially contradicts the bounded claim. |
-| C-REFUSE-001 | Propagated compound support can improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper. | Proposed, authorised | Option C1, conditional on C0 | Independent primitive conformal abstention, direct compound conformal model, uncalibrated confidence diagnostic and oracle-support headroom | C0 records `C1_NOT_JUSTIFIED`, `C0_DATA_FIREWALL_FAILED` or `C0_BUDGET_EXHAUSTED`, or C1 later fails its frozen material-margin decision. C0 exploratory measurements cannot support this row. |
+| C-REFUSE-001 | Propagated compound support can improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper. | Closed | Historical Option C0/C1 route | Independent primitive conformal abstention, direct compound conformal model, uncalibrated confidence diagnostic and oracle-support headroom | Closed by the explicit Option E programme decision before a C1 contract or C1 confirmation. Historical C records remain immutable and cannot be relabelled as Option E evidence. |
+| E-RECOVER-001 | In a preregistered cosine-failure stratum over a frozen representation, relation-specific recovery combined with calibrated support can identify externally verified relationships while refusing unsupported, out-of-family or shifted cases more effectively than the strongest registered calibrated baseline at matched coverage. | Proposed, authorised | Option E: E-DISCOVERY, conditional E-CONFIRM | Raw cosine, raw Euclidean, normalized geometry, independent primitive calibration, direct compound model with calibration, uncalibrated confidence, oracle relation and oracle support | E-DISCOVERY records `E_CONFIRMATION_NOT_JUSTIFIED`, `E_DATA_FIREWALL_FAILED` or `E_BUDGET_EXHAUSTED`; the cosine-failure stratum is non-viable; the direct calibrated baseline eliminates material headroom; or E-CONFIRM later fails its frozen primary rule. E-DISCOVERY measurements cannot support this row. |
 
 ## Interpretation notes
 
@@ -91,7 +92,7 @@ All 4,000 test queries contributed 128 frozen hard-negative pairs. A standalone 
 
 Secondary evidence was directionally consistent but did not determine the decision. The predicted executor's Spearman correlation with oracle distance was approximately `0.723`, versus approximately `0.112` for raw cosine and `0.110` for raw Euclidean. Its recall@10 improved to approximately `0.0091`, but remained low in absolute terms. The claim is therefore about material underexposure by default geometry, not solved nearest-neighbour retrieval.
 
-Option B does not establish novelty, a general composition algorithm, semantic binding, uncertainty propagation or calibrated refusal. It authorises the bounded Option C0/C1 sequence only.
+Option B does not establish novelty, a general composition algorithm, semantic binding, uncertainty propagation or calibrated refusal. It supplies the independently verified real-domain premise from which the later Option E programme decision begins.
 
 See:
 
@@ -100,75 +101,69 @@ See:
 - [`docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md`](docs/blog/option-b-the-embedding-knew-more-than-its-geometry-showed.md)
 - [`artifacts/canonical/option-b/method-evaluation-v1/`](artifacts/canonical/option-b/method-evaluation-v1/)
 
-### Option C0 discovery boundary
+### Historical Option C boundary
 
-Option C0 freezes how the project may explore the refusal mechanism; it does not freeze or validate the final mechanism itself.
+Option C0 froze a bounded discovery process for propagated refusal, but no C1 contract or C1 confirmatory result was produced. The route is now closed under `C-REFUSE-001` because the project adopted the materially sharper Option E cosine-failure formulation.
 
-C0 uses five repository-separated roles:
+The following remain historical and immutable:
 
-```text
-C0 fit
-C0 iteration
-C0 selection
-C1 calibration reserve
-C1 test reserve
-```
+- the Option C0 protocol;
+- the C0 v1 exploratory record;
+- the family-connected allocation protocol and audits;
+- blocked C0 selection and C1 reserve identities;
+- all execution, publication and closure evidence.
 
-C1 calibration and test rows are not selected during C0. A future C1 contract must freeze the selection procedure, and the final identities are derived only after that contract merges.
-
-C0 requires:
-
-- an append-only candidate registry;
-- an append-only discovery ledger;
-- independent primitive conformal abstention;
-- a direct compound conformal model;
-- propagated-support candidates;
-- attainable-headroom diagnostics;
-- complete retention of failed and superseded candidates;
-- one explicit C0 exit outcome.
-
-The permitted C0 outcomes are:
-
-```text
-C1_CONTRACT_JUSTIFIED
-C1_NOT_JUSTIFIED
-C0_DATA_FIREWALL_FAILED
-C0_BUDGET_EXHAUSTED
-```
-
-Only `C1_CONTRACT_JUSTIFIED` permits a later documentation-only C1 contract. It does not promote C-REFUSE-001.
+Those records may inform engineering and methodology, but they may not be renamed, reused or counted as Option E scientific evidence.
 
 See:
 
 - [`docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md`](docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md)
 - [`docs/research/option-c0-discovery-preservation-decision-2026-08-02.md`](docs/research/option-c0-discovery-preservation-decision-2026-08-02.md)
 
-### Discovery-preservation rule
+### Option E boundary
 
-An unexpected C0 observation may influence the future C1 contract when it is recorded before C1 freezes. It cannot be described as confirmed, inspect C1 evidence, rescue a failed C1 decision or inherit support from B-PREM-001.
+Option E studies the cosine-failure regime rather than generic score improvement.
 
-An unexpected observation first discovered on C1 test data requires a new experiment identifier and fresh data before it can become a promoted claim.
+It separates:
 
-### Option C1 boundary
+```text
+default cosine score
+relation-specific recovered score
+calibrated evidence supporting action on that score
+```
 
-Option C1 remains blocked until C0 publishes `C1_CONTRACT_JUSTIFIED`.
+Option E requires fresh roles:
 
-The future C1 contract must freeze:
+```text
+E fit
+E iteration
+E selection
+E confirmation calibration reserve
+E confirmation test reserve
+```
 
-- the selected propagation mechanism;
-- the exact query or bounded query set;
-- train and fitting roles;
-- the final calibration method;
-- independent primitive and direct compound baselines;
-- coverage and selective-risk definitions;
-- matched-coverage comparison procedure;
-- material margin;
-- refusal, tie and empty-support handling;
-- post-contract reserve selection;
-- independent recomputation requirements;
-- the claim-scoped novelty-line decision.
+E-DISCOVERY may compare mechanisms, define a viable stratum and estimate attainable headroom. It must end with exactly one outcome:
 
-No Option B threshold, outcome, model, language, canonical row or manifest may be changed to assist C0 or C1.
+```text
+E_CONFIRMATION_JUSTIFIED
+E_CONFIRMATION_NOT_JUSTIFIED
+E_DATA_FIREWALL_FAILED
+E_BUDGET_EXHAUSTED
+```
+
+Only `E_CONFIRMATION_JUSTIFIED` permits a later documentation-only E-CONFIRM contract. It does not promote `E-RECOVER-001`.
+
+E-CONFIRM must freeze one externally defined relation, one frozen representation, one cosine-failure rule, recovery and support mechanisms, strong calibrated baselines, matched-coverage comparison, material margin, final reserve selection and independent recomputation boundary.
+
+See [`docs/research/cosine-failure-and-relational-recovery.md`](docs/research/cosine-failure-and-relational-recovery.md).
+
+### Hallucination Energy relationship
+
+The relationship is conceptual, not a claim of mathematical equivalence:
+
+> Hallucination Energy measures semantic content unsupported by attached evidence; RELATE Option E measures relational evidence supported by a frozen representation but underexposed by its default geometry.
+
+Option E still requires external labels and calibration because a learned recovery operator may exploit shortcuts or produce unsupported scores.
 
 ### Verification classification
 
@@ -176,12 +171,12 @@ E00.4, E01.1 and E01.2a have deterministic replay verification. The E01 closure 
 
 Option B has independent real-domain primary recomputation over frozen embeddings, primitive values, predicted vectors and hard-negative manifests. The independent implementation did not import the experiment evaluator and exactly matched every primary query score and the final decision.
 
-C0 outputs are exploratory even when deterministically replayed. Verification of C0 artifacts establishes provenance and integrity, not C-REFUSE-001.
+E-DISCOVERY outputs remain exploratory even when deterministically replayed. Verification of E-DISCOVERY artifacts establishes provenance and integrity, not `E-RECOVER-001`.
 
 ## Publication rule
 
 A publication sentence beginning with “we found” must map to a **Replicated synthetic**, **Refined**, **Independently audited**, **Independently verified real-domain**, or explicitly qualified negative row. Replay-only point estimates must be described as point estimates or positive controls.
 
-C0 measurements must be described as exploratory observations, development diagnostics or mechanism-selection evidence. They may not be phrased as “we found” support for C-REFUSE-001.
+E-DISCOVERY measurements must be described as exploratory observations, development diagnostics, stratum diagnostics or mechanism-selection evidence. They may not be phrased as “we found” support for `E-RECOVER-001`.
 
 Closed rows must not be revived without a new experiment identifier, a new frozen contract and an explicit statement that no prior success is inherited.

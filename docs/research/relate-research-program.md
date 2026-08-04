@@ -7,17 +7,17 @@ Status: research orientation; does not promote a scientific claim
 
 This document states the durable RELATE research question, separates established evidence from proposed applications and gives future experiments a stable conceptual frame.
 
-It is not an experiment contract. When this document conflicts with a frozen contract, canonical artifact or the claim ledger, the frozen and canonical record governs.
+It is not an experiment contract. When it conflicts with a frozen contract, canonical artifact or the claim ledger, the frozen and canonical record governs.
 
 ## Core question
 
 RELATE asks:
 
-> Do frozen representations contain useful relational signals that their default similarity geometry underexposes, and can those signals be queried, verified and refused when unsupported?
+> Do frozen representations contain useful relational signals that their default similarity geometry underexposes, and can those signals be recovered, verified and refused when unsupported?
 
 The programme rejects the assumption that an embedding has one universally meaningful similarity geometry.
 
-For a representation `z(x)`, raw cosine supplies one global ordering. A relation-specific query instead asks whether another measurable structure can be recovered from `z(x)` and used to compare items according to a declared purpose.
+For a representation `z(x)`, raw cosine supplies one global ordering. A relation-specific query instead asks whether another externally defined structure can be recovered from `z(x)` and used to compare items according to a declared purpose.
 
 Examples include:
 
@@ -36,63 +36,109 @@ The general RELATE shape is:
 ```text
 artifact
   -> frozen representation
-  -> independently testable primitive relations
-  -> declared query-specific executor
+  -> default-geometry diagnosis
+  -> independently testable relational evidence
+  -> declared relation-specific recovery
   -> support and uncertainty checks
   -> ranking, qualification or refusal
 ```
 
-A future operator is scientifically interesting only when each step is independently testable.
+A future method is scientifically interesting only when every stage is independently testable.
 
 ### Frozen representation
 
-The underlying encoder is fixed for the experiment. RELATE does not alter it to make the target result easier.
+The encoder is fixed for the experiment. RELATE does not fine-tune it to make the target result easier unless a separately declared baseline explicitly permits that comparison.
 
-### Primitive relation
+### External relation
 
-A primitive is a named, externally defined and independently measurable property or relation. Examples in Option B were cyclomatic complexity, maximum control nesting depth and distinct call-site count.
+The target relation must be defined independently of the embedding and recovery model.
 
-A primitive predictor is not automatically evidence of model understanding. It establishes only that the declared signal is recoverable under the frozen procedure and evaluation.
+Examples include objective program behaviour, normalized specifications, AST properties, revision lineage or author-grounded conceptual judgments.
 
-### Query-specific executor
+### Default-geometry diagnosis
 
-The executor combines or constrains primitive outputs according to a declared query. The query may be additive, conjunctive, thresholded, exclusionary, lexicographic or partially ordered.
+Option E studies the regime where cosine is uninformative or misleading under a prospectively frozen rule. Low cosine is not itself evidence of a hidden relation. It identifies an opportunity stratum only after the target relation has been established externally.
 
-Standard score fusion is not automatically a novel RELATE contribution. The contribution must be established against relevant direct and learned baselines.
+### Relation-specific recovery
+
+A recovery model or executor attempts to expose the declared relationship from the frozen representation.
+
+A high score establishes nothing by itself. The method must be compared with direct learned alternatives, and its output must remain separate from calibrated support.
 
 ### Support and refusal
 
-An executor can always produce numbers. RELATE must distinguish producing a ranking from having evidence that the requested relation is supported.
+RELATE must distinguish producing a ranking from having evidence that the ranking is supportable.
 
 A support-aware system should identify at least:
 
-- supported primitives;
-- weakly supported primitives;
+- strongly supported relation evidence;
+- weak relation evidence;
 - absent signal under the tested representation;
 - signal present but outside the declared operator family;
-- support that breaks under distribution shift;
-- compound queries whose required evidence is incomplete.
+- support that fails under distribution shift;
+- compound requests whose required evidence is incomplete.
 
-Refusal is therefore part of the scientific question, not a user-interface accessory.
+Refusal is part of the scientific question, not a user-interface accessory.
+
+## The three quantities
+
+Option E keeps these quantities separate:
+
+```text
+C = default cosine or raw geometry
+R = relation-specific recovered score
+S = calibrated support for acting on R
+```
+
+A useful hidden-relation case requires:
+
+```text
+C weak or misleading
+R strong
+S strong and calibrated
+external label confirms the relation
+```
+
+A strong `R` with weak `S` is a refusal case, not a success.
+
+## Relationship to Hallucination Energy
+
+The relationship is conceptual:
+
+> Hallucination Energy measures semantic content unsupported by attached evidence; RELATE Option E measures relational evidence supported by a frozen representation but underexposed by its default geometry.
+
+The two projects address opposite evidence failures:
+
+```text
+Hallucination Energy
+  output exceeds evidence
+  -> detect unsupported semantic residual
+
+RELATE Option E
+  default geometry underuses evidence
+  -> detect supported relational residual
+```
+
+They are not exact mathematical inverses. Option E learns from external labels and therefore faces shortcut, misbinding and calibration risks that must be tested directly.
 
 ## Current evidence ladder
 
 ### E00 — synthetic recoverability and boundaries
 
-The E00 line established bounded synthetic results for recoverable linear relations, rotation retention, basis dependence, absent-relation controls, nonlinear-family limits and shortcut instability.
+E00 established bounded synthetic results for recoverable linear relations, rotation retention, basis dependence, absent-relation controls, nonlinear-family limits and shortcut instability.
 
 These results validate parts of the experimental harness. They do not establish real-domain utility.
 
 ### E01 — closed composition line
 
-E01 produced reproducible weighted product-space positive controls. Independent review showed that the line did not establish the intended general composition thesis:
+E01 produced reproducible weighted product-space positive controls. Independent review showed that the line did not establish the intended general-composition thesis:
 
 - much of the task reduced to predicting explicit scalar properties and applying standard score fusion;
-- the synthetic generator was non-discriminating in important regimes;
+- the generator was non-discriminating in important regimes;
 - semantic permutation controls exposed identity ambiguity;
-- support propagation and refusal were not tested.
+- support and refusal were not tested.
 
-The E01 line is closed. Its numerical records remain valid within their contracts, but future experiments inherit no general-composition success from them.
+The E01 line is closed. Its numerical records remain valid within their contracts, but later work inherits no general-composition success from them.
 
 ### Option B — supported real-domain premise
 
@@ -106,11 +152,38 @@ This supports one bounded premise:
 
 It does not establish general composition, semantic binding, calibrated refusal, solved retrieval or production utility.
 
-### Option C0/C1 — active support-and-refusal route
+### Historical Option C — closed before confirmation
 
-Option C0 is bounded exploratory mechanism discovery. It may compare propagation candidates and calibrated baselines using development-only roles, but it cannot promote `C-REFUSE-001`.
+Option C0/C1 framed the problem as propagated support under matched coverage. That protocol produced useful architecture and methodological records, but no C1 confirmatory contract or result.
 
-Option C1 remains blocked unless C0 publishes `C1_CONTRACT_JUSTIFIED`. A future C1 contract must freeze the selected mechanism, reserve selection, matched-coverage evaluation, material margin, baselines and independent recomputation boundary before confirmatory evidence is accessed.
+The route is closed under `C-REFUSE-001`. Its frozen records and protected roles remain historical and immutable.
+
+### Option E — active recovery-and-refusal programme
+
+Option E sharpens the operational problem:
+
+> In cases where cosine fails to expose an externally verified relation, can relation-specific recovery find supported evidence for that relation and refuse unsupported alternatives?
+
+Option E uses two named stages:
+
+```text
+E-DISCOVERY
+  bounded stratum, mechanism and discriminating-power discovery
+
+E-CONFIRM
+  separately frozen one-shot confirmation, only if justified
+```
+
+E-DISCOVERY must end with exactly one outcome:
+
+```text
+E_CONFIRMATION_JUSTIFIED
+E_CONFIRMATION_NOT_JUSTIFIED
+E_DATA_FIREWALL_FAILED
+E_BUDGET_EXHAUSTED
+```
+
+Only the first outcome permits a later documentation-only E-CONFIRM contract. No E-DISCOVERY measurement can promote `E-RECOVER-001`.
 
 ## Relationship to established approaches
 
@@ -118,23 +191,27 @@ RELATE overlaps with several established research families. Novelty must not be 
 
 ### Metric learning
 
-Learned similarity metrics and conditional subspaces already replace raw cosine with task-specific geometry. RELATE must compare against these approaches when the relevant experiment permits training a direct metric.
+Learned similarity metrics and conditional subspaces already replace raw cosine with task-specific geometry. Option E must compare against these approaches where direct metric training is permitted.
 
 ### Concept bottlenecks and probing
 
-Predicting named properties and reasoning over them is established. RELATE must demonstrate value beyond ordinary property prediction, such as reusable query execution, evidence lineage, support propagation or calibrated refusal.
+Predicting named properties and reasoning over them is established. RELATE must demonstrate value beyond ordinary property prediction, such as reusable relation execution, evidence lineage, support discrimination, calibrated refusal or transfer to new queries.
 
-### Direct compound prediction
+### Direct relation prediction
 
-A model trained directly for the target compound relation is a mandatory baseline for the support-and-refusal line. Modular primitive execution may trade some accuracy for reuse, interpretability or unseen-query flexibility; that trade must be measured rather than assumed.
+A model trained directly for the target relation is a mandatory baseline. Modular recovery may trade some accuracy for reuse, interpretability, unseen-query flexibility or better refusal, but those advantages must be measured rather than assumed.
 
 ### Selective prediction and conformal methods
 
-Abstention, risk-coverage evaluation and conformal calibration are established. RELATE's claim, if supported, must concern the propagation and verification of relation-specific evidence, not the invention of abstention itself.
+Abstention, risk–coverage evaluation and conformal calibration are established. Option E's possible contribution concerns support-aware recovery in a default-geometry failure regime, not the invention of abstention.
+
+### Retrieval and reranking
+
+Cross-encoders, lexical systems, graph methods and task-specific rerankers are strong alternatives. A RELATE application result must beat or complement relevant systems rather than compare only with raw cosine.
 
 ## Application programme: code
 
-Code is the first application because useful relations can often be defined independently of the embedding.
+Code remains the first application because useful relations can often be defined independently of the embedding.
 
 Candidate relations include:
 
@@ -149,25 +226,29 @@ Candidate relations include:
 - behaviour-preserving rewrites;
 - behaviour-changing edits hidden by textual resemblance.
 
+### First recommended Option E code relation
+
+The strongest first application is conceptual duplicate retrieval under externally checkable equivalence.
+
+The dataset should contain:
+
+- true relations with low cosine;
+- high-cosine surface false positives;
+- easy positives;
+- true negatives;
+- weak, absent, out-of-family and shifted cases.
+
+Ground truth may come from hidden behavioural tests, normalized specifications, refactoring lineage, accepted task solutions or adjudicated business-rule equivalence.
+
 ### What Option B supports
 
 Option B supports only the bounded structural premise recorded in `B-PREM-001`.
 
-### What remains to test
-
-Future code experiments must separately test whether relation-specific execution improves tasks such as:
-
-- conceptual duplicate retrieval across repositories;
-- finding alternative implementations of the same transformation;
-- locating functions with the same architectural role;
-- distinguishing textually similar functions with different effects;
-- retrieving behaviourally related code under repository and time shift.
-
-Each task requires objective labels, a frozen query definition, strong direct baselines and an explicit stop rule.
+It does not prove conceptual duplication, business-rule identity or useful nearest-neighbour retrieval.
 
 ## Application programme: writing
 
-Writing is a proposed second application. It is scientifically harder because the target relations are often author-relative and cannot be derived from syntax alone.
+Writing is a proposed later application. It is scientifically harder because target relations are often author-relative.
 
 Candidate relations include:
 
@@ -180,23 +261,17 @@ Candidate relations include:
 - character-motivation continuity;
 - concept evolution across drafts.
 
-### Required evidence sources
-
 A credible writing experiment should prefer:
 
 - explicit author annotations;
 - manuscript and sentence lineage;
 - selected and rejected rewrites;
-- declared chapter or scene functions;
+- declared scene or argument functions;
 - locked thematic and character decisions;
 - blinded human comparison judgments;
 - held-out documents or chapters.
 
-Model-generated labels may assist annotation, but they cannot serve as the sole ground truth for a claim that the model then appears to recover.
-
-### Minimum writing claim boundary
-
-The first writing experiment should not claim that RELATE understands themes or author intent. A defensible first claim would concern retrieval agreement with held-out author or human judgments on one narrowly defined conceptual relation.
+Model-generated labels may assist annotation but cannot serve as the sole ground truth.
 
 ## Research-source boundary
 
@@ -219,33 +294,38 @@ No chat summary may silently revise a canonical result, reopen a closed claim or
 
 Until new evidence is produced, RELATE must not claim that:
 
-- embeddings contain all relations relevant to a domain;
+- low cosine implies hidden useful information;
+- embeddings contain every relation relevant to a domain;
+- a high recovered score proves a relation exists;
 - primitive probes reveal how the encoder internally reasons;
-- relation-specific execution is always better than direct supervision;
+- relation-specific recovery is always better than direct supervision;
 - a support score is calibrated merely because it is interpretable;
-- one code result transfers to writing;
-- a model-generated concept taxonomy is author-grounded;
-- the architecture reset advances the scientific state machine.
+- Option B established conceptual retrieval;
+- the Hallucination Energy analogy establishes mathematical equivalence;
+- a code result transfers to writing;
+- architecture work advances the scientific state machine.
 
 ## Durable success criteria
 
 A strong RELATE result should satisfy all of the following:
 
 1. **External target:** the relation is defined independently of the embedding.
-2. **Frozen representation:** the encoder and input identities are fixed before confirmation.
-3. **Strong baselines:** raw geometry, learned metrics and direct compound alternatives are included where relevant.
-4. **Discriminating regime:** the task is not saturated and controls can fail meaningfully.
-5. **Support boundary:** weak, absent, nonlinear-out-of-family and shifted cases are distinguished.
-6. **Retrieval continuity:** ranking metrics, local-neighbour metrics and selective metrics match the publication language.
-7. **Provenance:** inputs, predictions, decisions and artifacts are committed and hashed.
-8. **Independent verification:** the primary result is recomputed without importing the decisive evaluator.
-9. **Stop rule:** failure closes or revises the exact claim rather than triggering an automatic rescue experiment.
-10. **Bounded interpretation:** the publication claim says no more than the evidence establishes.
+2. **Frozen representation:** encoder and input identities are fixed before confirmation.
+3. **Prospective opportunity stratum:** cosine failure is defined without final-test selection.
+4. **Strong baselines:** raw geometry, learned metrics and direct relation alternatives are included.
+5. **Discriminating regime:** the task is not saturated and controls can fail meaningfully.
+6. **Support boundary:** weak, absent, out-of-family and shifted cases are distinguished.
+7. **Metric continuity:** ranking, local retrieval and selective metrics match the publication language.
+8. **Provenance:** inputs, labels, predictions, decisions and artifacts are committed and hashed.
+9. **Independent verification:** the primary result is recomputed without importing the decisive evaluator.
+10. **Stop rule:** failure closes or revises the exact claim rather than triggering an automatic rescue stage.
+11. **Bounded interpretation:** publication language says no more than the evidence establishes.
 
 ## Governing records
 
 - [`CLAIMS.md`](../../CLAIMS.md)
-- [`docs/research/post-e01-publication-and-kill-test-decision-2026-08-01.md`](post-e01-publication-and-kill-test-decision-2026-08-01.md)
-- [`docs/experiments/08-option-b-real-code-premise-test.md`](../experiments/08-option-b-real-code-premise-test.md)
-- [`docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md`](../experiments/09-option-c0-discovery-and-confirmation-protocol.md)
+- [`docs/research/cosine-failure-and-relational-recovery.md`](cosine-failure-and-relational-recovery.md)
 - [`docs/research/next-scientific-program.md`](next-scientific-program.md)
+- [`docs/experiments/08-option-b-real-code-premise-test.md`](../experiments/08-option-b-real-code-premise-test.md)
+- [`docs/results/option-b-real-code-premise-checkpoint-v1.md`](../results/option-b-real-code-premise-checkpoint-v1.md)
+- [`docs/experiments/09-option-c0-discovery-and-confirmation-protocol.md`](../experiments/09-option-c0-discovery-and-confirmation-protocol.md) — historical

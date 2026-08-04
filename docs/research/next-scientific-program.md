@@ -1,442 +1,471 @@
 # Next Scientific Programme
 
 Date: 2026-08-04  
-Status: research roadmap; does not modify a frozen experiment contract
+Status: active Option E roadmap; does not itself freeze an E-CONFIRM contract
 
 ## Executive decision
 
-RELATE has enough architecture and enough positive-control evidence to return to scientific execution.
+RELATE has enough architecture and enough bounded evidence to return to scientific implementation.
 
-The next work must not be another broad search for interesting embeddings, another weighted-score-fusion confirmation or an unbounded expansion of infrastructure. It must answer a narrow question that can fail.
+The next work is not another weighted-score-fusion experiment and not a continuation under Option C, D2 or the historical E00/E01 identifiers.
 
-The authorised immediate route is:
+The active route is:
 
 ```text
-complete only the architecture needed to execute the frozen family protocol
-  -> publish one valid C0 outcome
-  -> write C1 contract only if C0 justifies it
-  -> execute C1 once
-  -> stop, revise or permit one bounded real-domain pilot
+Option E foundation
+  -> E-DISCOVERY contract and fresh allocation
+  -> bounded E-DISCOVERY execution
+  -> one explicit discovery outcome
+  -> E-CONFIRM contract only if justified
+  -> one-shot E-CONFIRM
+  -> stop, close, narrow or permit one bounded application pilot
 ```
 
-The larger code and writing programmes begin only as new claim-scoped experiments. They do not inherit support from Option B or C1 beyond the exact premises established there.
+The governing programme document is:
 
-## Programme A — finish the active support-and-refusal question
+- [`cosine-failure-and-relational-recovery.md`](cosine-failure-and-relational-recovery.md)
+
+## Programme A — Option E foundation
 
 ### Scientific question
 
-> Does compound-level propagation of calibrated primitive support improve selective risk at matched coverage beyond independent per-primitive conformal abstention and a directly trained compound model with its own conformal wrapper?
+> When raw cosine similarity is uninformative for an externally verified relationship, can RELATE recover evidence of that relationship from the frozen representation, and can calibrated support distinguish genuine hidden signal from weak, absent, out-of-family or shifted signal more effectively than strong calibrated alternatives?
 
-This is the current potentially distinctive RELATE contribution. Producing a compound score is easy; determining whether that score is evidentially supportable is the hard question.
+The first implementation stage builds the machinery required to ask that question without yet choosing a winning mechanism.
 
-## A0 — architecture completion boundary
+## A0 — records and identities
 
-Stage C may continue only to make existing capability stores explicit and to permit the already frozen family-connected protocol to run through the reviewed execution and publication boundaries.
+Implement typed, strictly validated records for:
 
-Stage C must not:
+- external relation labels;
+- query identity;
+- candidate identity;
+- relation identity and version;
+- frozen representation identity;
+- raw cosine and Euclidean score records;
+- cosine-failure membership and reason;
+- recovered relation scores;
+- primitive support;
+- compound support;
+- accepted, qualified and refused decisions;
+- stratum summaries;
+- retrieval and selective metrics.
 
-- inspect blocked C0 selection rows;
-- inspect C1 reserve rows;
-- alter allocation;
-- change the family protocol;
-- change Option B inputs, thresholds or outcomes;
-- introduce a preferred support mechanism through architecture code;
-- begin D2;
-- publish a scientific conclusion.
+Every record must support deterministic serialization, commitment and strict parsing.
 
-Exit criterion:
+### Required invariants
 
-> The frozen family protocol can be executed through explicit capabilities without historical monkey-patching, and the resulting evidence can pass the existing authorization, publication and closure chain.
+- a relation label cannot be generated solely from the tested embedding;
+- a query and candidate cannot silently change representation identity;
+- cosine-failure membership must record the exact rule and parameters;
+- a recovered score cannot be interpreted as support;
+- a refusal decision must retain the support evidence that caused it;
+- records from historical Option C cannot be parsed as Option E records merely by changing an identifier.
 
-## A1 — C0 bounded mechanism discovery
+## A1 — deterministic cosine-failure strata
 
-C0 remains exploratory. Its purpose is to discover whether a coherent, discriminating support mechanism exists—not to prove the final claim.
+Build the opportunity set before fitting a preferred recovery method.
 
-### Required candidates and controls
+The stratum builder must represent at least:
 
-At minimum, C0 must faithfully compare:
+1. hidden positives;
+2. high-cosine surface false positives;
+3. easy positives;
+4. true negatives.
 
-1. independent split-conformal primitive abstention;
-2. a directly trained compound predictor with its own conformal wrapper;
-3. one or more propagated-support candidates;
-4. an uncalibrated confidence diagnostic where meaningful;
-5. an oracle-support headroom diagnostic.
+Later E-DISCOVERY regimes must also represent:
 
-### Required regimes
+5. weak signal;
+6. absent signal;
+7. signal present but outside the declared operator family;
+8. distribution shift.
 
-C0 should contain development evidence for:
+### Membership rules
 
-- all primitives strongly supported;
-- one primitive weakly supported;
-- one primitive absent from the representation;
-- one primitive present but outside the declared linear family;
-- one primitive supported during fitting but shifted at evaluation;
-- empty or contradictory compound support.
+A positive may enter the cosine-failure stratum only through a versioned prospective rule such as:
 
-These regimes must distinguish:
+- cosine rank worse than frozen `K`;
+- cosine score below a frozen threshold;
+- failure of a frozen hard-negative ordering condition;
+- failure of a frozen local-retrieval condition.
 
-```text
-signal absent
-signal weak
-signal present but unsupported by this operator family
-signal unstable under shift
-compound request unsupported because one required primitive failed
-```
+The builder must record:
 
-They must not be collapsed into one generic low-confidence state.
+- raw score;
+- raw rank;
+- rule version;
+- membership reason;
+- relation-label provenance;
+- query and candidate commitments;
+- representation identity;
+- source-role identity.
 
-### Required metrics
+No final confirmation example may be selected because RELATE later performs well on it.
 
-C0 diagnostics should include:
+## A2 — baseline evaluator before recovery models
 
-- selective risk against coverage;
-- risk at frozen coverage points;
-- coverage at frozen risk limits;
-- calibration error appropriate to the support object;
-- false-support rate in absent and out-of-family regimes;
-- false-refusal rate in supported regimes;
-- compound retrieval or ranking performance among accepted cases;
-- oracle headroom;
-- direct-compound baseline fidelity;
-- primitive-level support quality.
+Implement the evaluator before implementing the proposed novel method.
+
+### Raw and retrieval baselines
+
+- raw cosine;
+- raw Euclidean;
+- normalized or whitened geometry where appropriate;
+- lexical retrieval for code or text applications;
+- AST-only or structural retrieval for code applications;
+- direct pair, triplet or compound model interface;
+- metric-learning baseline interface;
+- oracle relation diagnostic.
+
+### Retrieval metrics
+
+- hard-negative triplet or pairwise accuracy;
+- recall@1, recall@5 and recall@10;
+- mean reciprocal rank;
+- average precision or nDCG where multiple positives exist;
+- oracle-neighbour regret;
+- performance inside the cosine-failure stratum;
+- performance on high-cosine false positives;
+- repository, time or domain breakdown.
 
 Global triplet accuracy alone is not sufficient.
 
-### C0 decision
+## A3 — selective and support interfaces
 
-C0 must publish exactly one outcome:
+Implement capability boundaries for:
+
+- primitive calibration;
+- independent primitive abstention;
+- compound support propagation;
+- direct-model calibration;
+- accepted, qualified and refused outcomes;
+- false-support and false-refusal calculation;
+- risk–coverage curves;
+- risk at frozen coverage;
+- coverage at frozen risk;
+- calibration diagnostics;
+- out-of-family diagnostics;
+- shift diagnostics;
+- oracle-support headroom.
+
+These should be interfaces and neutral evaluators first. The first PR must not encode one preferred Option E mechanism as though it were already selected.
+
+## A4 — evidence and workflow boundaries
+
+Option E should reuse stable evidence and workflow capabilities while preserving scientific identity.
+
+Likely capability direction:
 
 ```text
-C1_CONTRACT_JUSTIFIED
-C1_NOT_JUSTIFIED
-C0_DATA_FIREWALL_FAILED
-C0_BUDGET_EXHAUSTED
+relate.domain.relational_recovery
+  -> relation labels, queries, candidates and decisions
+
+relate.evaluation.cosine_failure
+  -> raw geometry, stratum construction and summaries
+
+relate.evaluation.retrieval
+  -> local and global retrieval metrics
+
+relate.evaluation.selective
+  -> risk, coverage and calibration metrics
+
+relate.support
+  -> primitive, compound and refusal interfaces
+
+relate.workflows.option_e
+  -> Option E orchestration and evidence publication
 ```
 
-`C1_CONTRACT_JUSTIFIED` requires all of the following:
+The capability packages must not import historical experiment runners. Historical modules may later adapt to clean capabilities, never the reverse.
 
-- one propagation mechanism can be specified without unresolved ambiguity;
-- the evaluation regime is non-degenerate;
-- the direct compound baseline is credible;
+## First implementation PR boundary
+
+The first Option E implementation PR should contain only:
+
+1. domain records and parsers;
+2. deterministic commitments;
+3. cosine-failure rule models;
+4. stratum membership and summary logic;
+5. raw retrieval metrics;
+6. selective-evaluation interfaces;
+7. evidence schemas;
+8. unit and property tests.
+
+It must stop before:
+
+- fitting primitive recovery models;
+- fitting a direct compound model;
+- selecting a support propagation method;
+- accessing E selection evidence;
+- selecting E confirmation rows;
+- writing an E-CONFIRM contract;
+- publishing a scientific result.
+
+## Programme B — E-DISCOVERY
+
+E-DISCOVERY begins only after a prospective discovery contract and new data allocation are reviewed.
+
+### New data roles
+
+```text
+E fit
+E iteration
+E selection
+E confirmation calibration reserve
+E confirmation test reserve
+```
+
+### Firewall requirements
+
+- final confirmation roles remain unseen during discovery;
+- final confirmation rows are selected only after the E-CONFIRM contract merges;
+- Option B canonical repositories are excluded where the new contract requires independent repository evidence;
+- historical Option C roles and reserves are not renamed or reused;
+- repository, file and row overlap checks are committed before model fitting;
+- a non-viable cosine-failure stratum causes a stop rather than post-hoc relaxation.
+
+### Required candidate families
+
+At minimum, E-DISCOVERY must faithfully compare:
+
+1. independent calibrated support for primitive relations;
+2. at least one propagated or structured support candidate;
+3. a directly trained relation or compound model with its own calibrated selective wrapper;
+4. an uncalibrated confidence diagnostic;
+5. an oracle relation diagnostic;
+6. an oracle-support headroom diagnostic.
+
+Permitted support families may include:
+
+- coordinate-wise worst support;
+- interval or set propagation;
+- joint residual or nonconformity support;
+- sampling-based uncertainty propagation;
+- learned post-hoc support combination, separated from the direct relation baseline.
+
+Every candidate version must be registered before first evaluation and retained after rejection or supersession.
+
+### Required regimes
+
+- all required relations strongly supported;
+- one relation weakly supported;
+- one relation absent;
+- one relation present but out of family;
+- one relation shifted at evaluation;
+- contradictory or empty compound support;
+- high recovered score with weak support;
+- high cosine with externally false relation.
+
+### Required metrics
+
+- selective risk against coverage;
+- false-support rate;
+- false-refusal rate;
+- calibration error;
+- accepted-case retrieval quality;
+- cosine-failure recovery performance;
+- high-cosine false-positive rejection;
+- out-of-family false acceptance;
+- shift survival;
+- direct-model comparison;
+- oracle headroom.
+
+### E-DISCOVERY outcome
+
+Exactly one outcome is permitted:
+
+```text
+E_CONFIRMATION_JUSTIFIED
+E_CONFIRMATION_NOT_JUSTIFIED
+E_DATA_FIREWALL_FAILED
+E_BUDGET_EXHAUSTED
+```
+
+`E_CONFIRMATION_JUSTIFIED` requires:
+
+- one target relation and stratum can be defined precisely;
+- one recovery and support mechanism can be specified without unresolved ambiguity;
+- the regime is non-degenerate;
+- strong baselines are faithful;
 - attainable headroom exists;
-- reserve selection can remain deferred;
-- the proposed material margin is scientifically meaningful;
-- the mechanism does not depend on protected evidence.
+- final reserve selection can remain deferred;
+- a meaningful primary margin can be frozen;
+- independent recomputation is feasible.
 
-C0 results must be described as exploratory observations or mechanism-selection evidence, never as confirmation of `C-REFUSE-001`.
+E-DISCOVERY results are exploratory. They cannot support `E-RECOVER-001`.
 
-## A2 — C1 documentation-only preregistration
+## Programme C — E-CONFIRM
 
-C1 may begin only after a committed `C1_CONTRACT_JUSTIFIED` result.
+E-CONFIRM may begin only after `E_CONFIRMATION_JUSTIFIED` and a documentation-only contract PR.
 
-The contract must freeze before final reserve identities are derived:
+The contract must freeze:
 
-- the selected support representation;
-- the exact propagation rule;
-- the primitive and compound query set;
-- the direct compound architecture and training budget;
-- calibration procedure;
-- accepted and refused outcome definitions;
-- risk and coverage definitions;
-- matched-coverage comparison procedure;
-- tie and empty-support handling;
+- external relation definition and label source;
+- frozen representation;
+- cosine-failure rule;
+- query and candidate construction;
+- selected recovery method;
+- selected support representation;
+- calibration method;
+- direct and modular baselines;
+- accepted, qualified and refused semantics;
+- primary selective metric;
+- matched-coverage comparison;
 - material margin;
-- primary and secondary metrics;
-- repository and row-selection algorithm;
-- independent recomputation boundary;
-- failure and stop rules;
-- exact publication claim language permitted by each outcome.
+- secondary retrieval metrics;
+- tie and empty-support handling;
+- final reserve-selection algorithm;
+- independent recomputation implementation boundary;
+- permitted publication language for every outcome.
 
-No implementation changes should be bundled into the C1 contract PR.
+### Required failure capability
 
-## A3 — C1 one-shot confirmation
+E-CONFIRM must fail when:
 
-### Primary comparison
+- the recovery method does not outperform the strongest registered baseline under the frozen primary rule;
+- the gain appears only because coverage is lower;
+- the direct calibrated relation model matches or exceeds the method;
+- high relation scores receive false support in absent or out-of-family cases;
+- support fails under the registered shift;
+- local retrieval remains unusable despite pairwise improvement;
+- the primary result cannot be independently recomputed.
 
-At matched coverage, compare:
-
-```text
-propagated compound support
-vs independent primitive conformal abstention
-vs direct compound model plus conformal wrapper
-```
-
-The primary decision should be based on one frozen selective-risk quantity or a small, explicitly joint rule. Secondary retrieval and calibration metrics must not rescue a failed primary decision.
-
-### Required falsification cases
-
-C1 must be capable of returning failure when:
-
-- the propagated method does not beat the strongest calibrated baseline;
-- any apparent gain comes only from lower coverage;
-- the direct compound model matches or exceeds performance;
-- absent or out-of-family primitives receive false support;
-- support calibration fails under the frozen shift regime;
-- the selected mechanism cannot be independently recomputed.
-
-### Outcome consequences
+### Consequences
 
 ```text
-C1 FAILS
-  -> close the current propagated-refusal novelty route;
-  -> preserve Option B;
-  -> publish the negative result and methodological record.
+E-CONFIRM FAILS
+  -> close or narrow E-RECOVER-001;
+  -> preserve B-PREM-001;
+  -> publish the negative result and evidence record.
 
-C1 PASSES
-  -> permit one bounded real-domain refusal pilot;
-  -> do not claim generality across domains or query families.
+E-CONFIRM PASSES
+  -> permit one bounded real-domain application pilot;
+  -> do not claim generality across relations, models or domains.
 ```
 
-## Programme B — code as the first application domain
+## Programme D — first code application
 
-Option B shows that code is a viable real-representation testbed. The next code study should test an actual developer-facing relation rather than another abstract geometry alone.
+The preferred first Option E application is conceptual duplicate retrieval under externally checkable equivalence.
 
-### Recommended first application study: conceptual duplicate retrieval
+### Candidate question
 
-#### Research question
+> Among function pairs whose external behaviour or specification establishes equivalence but whose frozen code-embedding cosine is weak, can Option E recover the relationship and refuse unsupported alternatives better than strong direct and retrieval baselines?
 
-> Can relation-specific code coordinates retrieve implementations of the same externally defined transformation or business rule across repositories more accurately than raw embedding geometry and strong direct baselines?
+### Candidate ground truth
 
-#### Why this study
+- hidden behavioural tests;
+- normalized specifications;
+- accepted implementations of the same bounded task;
+- behaviour-preserving refactoring lineage;
+- independently adjudicated duplicate business rules.
 
-It is close to the practical value originally imagined for RELATE while retaining measurable ground truth.
+### Mandatory hard negatives
 
-The study should not begin with vague labels such as “same idea.” It should use one bounded source of independently checkable equivalence, for example:
+- same identifiers, different behaviour;
+- similar boilerplate, different side effects;
+- same API vocabulary, different role;
+- same control structure, different transformation;
+- copied code with a material behavioural change.
 
-- functions passing the same hidden behavioural tests;
-- implementations linked to the same normalized specification;
-- manually curated duplicate business rules with adjudication;
-- refactoring lineages that preserve declared behaviour;
-- benchmark tasks with multiple accepted implementations.
+This study should be designed during Option E foundation but not executed before E-DISCOVERY has a valid contract and firewall.
 
-#### Candidate relation coordinates
+## Programme E — writing after code
 
-A small frozen set may include:
+Writing should begin with dataset construction, not with a model claim.
 
-- control-flow profile;
-- data-flow or transformation class;
-- side-effect profile;
-- exception behaviour;
-- API interaction role;
-- normalized input/output contract.
+The first relation should be narrow, for example:
 
-The set must be chosen before confirmatory evaluation and must not grow until the result passes.
+> Two passages express the same author-defined concept despite differing topic, vocabulary or narrative setting.
 
-#### Baselines
+Required evidence includes author annotations, lineage, selected and rejected revisions, declared scene or argument functions and blinded judgments.
 
-At minimum:
+Hard negatives must include same-topic different-claim passages, similar vocabulary with opposing conclusions and model-retrieved pairs rejected by the author.
 
-1. raw cosine;
-2. raw Euclidean;
-3. whitened or normalized embedding distance;
-4. supervised metric-learning baseline;
-5. direct pair or triplet model for conceptual duplication;
-6. lexical and AST-structure baselines;
-7. RELATE primitive-coordinate executor;
-8. true-coordinate oracle where available.
+A writing experiment receives a new contract and does not inherit a code result.
 
-#### Metrics
+## Programme F — publication strategy
 
-Use both global and local retrieval measures:
+### Paper 1 — methodological case study
 
-- triplet accuracy on hard negatives;
-- recall@1, recall@5 and recall@10;
-- mean reciprocal rank;
-- nDCG or average precision when multiple positives exist;
-- oracle-neighbour regret;
-- constraint satisfaction;
-- repository-transfer breakdown;
-- abstention risk and coverage if support is included.
+The first draft already exists:
 
-A result must not be described as solved retrieval when recall remains low in absolute terms.
+- [`docs/papers/when-the-experiment-passes-but-the-claim-fails.md`](../papers/when-the-experiment-passes-but-the-claim-fails.md)
 
-#### Split design
+It combines E01 closure, Option B, independent recomputation and evidence-first claim governance.
 
-The confirmatory split should separate repositories and, where possible, time or organization. Near-duplicate source files, benchmark leakage and shared generated templates must be audited before model fitting.
+### Paper 2 — Option E recovery and refusal
 
-#### Strong failure outcome
+Only an E-CONFIRM result can support a paper centred on cosine-failure recovery and calibrated refusal. A negative result remains publishable when the protocol, baselines and evidence are strong.
 
-A useful negative result would show that structural coordinates improve synthetic or local hard-negative ordering but do not improve actual cross-repository conceptual duplicate retrieval over direct baselines.
+### Paper 3 — application study
 
-That would narrow the application honestly rather than invalidate Option B.
+A code or writing paper must stand on its own labels, contract and baselines. Option B may motivate the study but cannot prove the application claim.
 
-### Later code studies
+## Required artifacts for Option E
 
-Only after the first application study should RELATE consider:
-
-- same architectural role, different implementation;
-- behaviour-changing differences hidden by textual similarity;
-- alternative algorithm retrieval;
-- relation-specific code review;
-- concept preservation across generated patches.
-
-Each requires a new identifier and contract.
-
-## Programme C — writing as a second application domain
-
-Writing should begin with data construction, not with a claim that an embedding captures themes.
-
-### W0 — author-grounded relation dataset
-
-#### Objective
-
-Create a small, high-quality dataset of passage relationships grounded in author decisions and manuscript lineage.
-
-#### Candidate relation
-
-Choose exactly one first relation, such as:
-
-> Two passages express the same underlying concept despite differing topic, vocabulary or narrative setting.
-
-Do not combine concept, rhetoric, narrative function and emotional movement in the first study.
-
-#### Evidence sources
-
-Prefer records already available through Writer:
-
-- explicit author statements linking passages;
-- sentence and chapter lineage;
-- selected versus rejected revisions;
-- declared scene purpose;
-- locked conceptual or thematic decisions;
-- blinded author re-identification judgments;
-- independent reader adjudication for a subset.
-
-#### Negative examples
-
-Include difficult negatives:
-
-- same topic, different claim;
-- similar vocabulary, opposing conclusion;
-- same emotion, different concept;
-- same metaphor, different causal model;
-- passages the embedding ranks highly but the author rejects as equivalent.
-
-#### Data firewall
-
-Separate:
-
-```text
-annotation and taxonomy development
-model fitting
-query selection
-calibration
-final evaluation
-```
-
-The author should not repeatedly inspect final test errors while refining the concept definition.
-
-### W1 — first writing retrieval experiment
-
-#### Research question
-
-> On held-out passages, does a relation-specific concept executor agree with author-grounded conceptual-equivalence judgments better than raw semantic similarity and direct supervised alternatives?
-
-#### Baselines
-
-1. raw embedding cosine;
-2. a current strong general-purpose embedding baseline;
-3. keyword or topic-model similarity;
-4. direct pair classifier;
-5. cross-encoder reranker where permitted;
-6. RELATE concept-coordinate executor;
-7. human agreement ceiling.
-
-#### Metrics
-
-- pairwise accuracy;
-- average precision;
-- recall@k;
-- author acceptance rate among retrieved passages;
-- inter-annotator agreement;
-- performance on same-topic hard negatives;
-- performance on cross-topic conceptual positives;
-- calibration and refusal when the concept taxonomy does not apply.
-
-#### Claim boundary
-
-A first positive result may support only a statement such as:
-
-> For one frozen author-defined concept relation on held-out manuscript passages, the registered relation-specific method agreed with blinded judgments more accurately than the registered semantic-similarity baselines.
-
-It must not be generalized to universal theme understanding, author-intent reconstruction or arbitrary literary interpretation.
-
-## Programme D — publication and paper strategy
-
-The work can become real research before it becomes one sweeping algorithmic breakthrough.
-
-### Paper or report 1 — methodological case study
-
-A defensible first publication can combine:
-
-- the E01 closure and reinterpretation;
-- the Option B real-domain premise result;
-- the evidence-first claim ledger;
-- independent recomputation;
-- lessons about saturated synthetic generators, semantic controls and metric continuity.
-
-This is a research-methodology and bounded representation-analysis contribution. It should not claim a complete support-aware system.
-
-### Paper or report 2 — support and refusal
-
-Only a completed C1 can support a paper centred on propagated relational support. A negative C1 result is still publishable when the protocol, baselines and evidence are strong.
-
-### Paper or report 3 — application study
-
-A code or writing paper should stand on its own dataset, contract and baselines. It should cite Option B as motivation, not reuse its result as proof of the new application.
-
-## Required repository artifacts for every new study
-
-Before execution:
+### Before E-DISCOVERY
 
 ```text
 CLAIMS.md proposed row
-frozen experiment contract
-source and allocation identities
+Option E discovery contract
+external relation-label contract
+representation identity
+fresh allocation and overlap commitments
+cosine-failure rule
 baseline definitions
 metric definitions
-stop rule
-permitted publication language
+candidate-registry schema
+discovery-ledger schema
+exit outcomes
 ```
 
-During execution:
+### During E-DISCOVERY
 
 ```text
 append-only trace
-configuration commitment
-input and prediction hashes
+candidate versions
+configuration commitments
+input, label, prediction and manifest hashes
 environment and source identity
 failed and superseded candidate retention
 ```
 
-After execution:
+### After E-DISCOVERY
 
 ```text
-compact result record
+compact exploratory result
 human-readable checkpoint
-independent recomputation
+one explicit discovery outcome
 claim-ledger update
-explicit null, support or revision decision
+no confirmatory claim language
+```
+
+### After E-CONFIRM
+
+```text
+compact confirmatory result
+independent primary recomputation
+claim-ledger decision
+explicit support, null or closure conclusion
+bounded publication language
 ```
 
 ## Immediate next actions
 
-1. Complete Stage C only to the point required by the frozen family protocol.
-2. Run the reviewed execution/publication chain without accessing blocked scientific roles.
-3. Publish one C0 outcome.
-4. Stop and write the C1 contract only if the outcome is `C1_CONTRACT_JUSTIFIED`.
-5. In parallel, design—but do not execute—the first code application dataset and its external equivalence labels.
-6. Begin writing only with W0 annotation and lineage design; do not train against an undefined concept relation.
-7. Prepare the methodological paper outline from the already canonical E01 and Option B evidence.
+1. Review and merge the Option E documentation decision.
+2. Implement Option E records, commitments and strict parsers.
+3. Implement the deterministic cosine-failure stratum models and builder.
+4. Implement raw retrieval and selective-evaluation interfaces.
+5. Add identity, overlap, immutability and refusal-invariant tests.
+6. Stop before mechanism fitting.
+7. Draft the E-DISCOVERY contract only after the neutral foundation is reviewed.
 
 ## Final principle
 
-The project becomes real research when every attractive idea is converted into a test that can reject it.
-
 RELATE should not ask only:
 
-> Can we produce a better-looking similarity score?
+> Can another learned score beat cosine?
 
 It should ask:
 
-> Which relation is being requested, what independent evidence says that relation exists in this representation, what baseline could explain the result more simply, and when must the system refuse to answer?
+> When cosine fails, what independently verified relational evidence remains in the representation, what simpler baseline could explain the recovery, how do we know the evidence is supported, and when must the system refuse to act?

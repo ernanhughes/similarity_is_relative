@@ -14,9 +14,7 @@ from relate.evidence.hashing import sha256_bytes
 from relate.evidence.sqlite import enforce_wal_pragmas
 
 CACHE_SCHEMA: Final = "option-c0-embedding-cache-v1"
-DEFAULT_CACHE_PATH: Final = Path(
-    ".writer/option-c0/cache/option-c0-embeddings-v1.sqlite3"
-)
+DEFAULT_CACHE_PATH: Final = Path(".writer/option-c0/cache/option-c0-embeddings-v1.sqlite3")
 
 
 def canonical_json_sha256(value: Any) -> str:

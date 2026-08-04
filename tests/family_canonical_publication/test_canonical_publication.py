@@ -27,7 +27,7 @@ from relate.family.canonical_publication_authorization import (
     make_canonical_family_publication_request,
 )
 from relate.family.review import family_review_packet_from_record
-from tests_current.family_publication_authorization.test_publication_authorization import (
+from tests.family_publication_authorization.test_publication_authorization import (
     _stage2i_inputs,
 )
 
@@ -48,9 +48,7 @@ def _chain(tmp_path: Path):
     candidate = make_canonical_family_publication_candidate(
         execution_review_bundle=bundle,
         execution_review_bundle_file_sha256=sha256_file(bundle_path),
-        canonical_execution_review_packet=family_review_packet_from_record(
-            _read(packet_path)
-        ),
+        canonical_execution_review_packet=family_review_packet_from_record(_read(packet_path)),
         canonical_execution_review_packet_file_sha256=sha256_file(packet_path),
     )
     candidate_path = tmp_path / "candidate.json"
@@ -183,13 +181,9 @@ def test_v2_validation_and_successful_one_shot_execution(tmp_path: Path) -> None
     assert not (audit / "canonical-publication-failure.json").exists()
     receipt = _read(audit / "canonical-publication-receipt.json")
     trace = _read(audit / "canonical-publication-trace.json")
-    assert receipt["trace_file_sha256"] == sha256_file(
-        audit / "canonical-publication-trace.json"
-    )
+    assert receipt["trace_file_sha256"] == sha256_file(audit / "canonical-publication-trace.json")
     assert "RECEIPT_PERSISTED" not in {event["event_type"] for event in trace["events"]}
-    assert result.receipt_file_sha256 == sha256_file(
-        audit / "canonical-publication-receipt.json"
-    )
+    assert result.receipt_file_sha256 == sha256_file(audit / "canonical-publication-receipt.json")
     with pytest.raises(ValueError, match="already exists"):
         execute_authorized_canonical_publication(
             repo_root=chain["repo"],
@@ -282,63 +276,72 @@ def test_post_claim_destination_race_writes_failure_without_replace(tmp_path: Pa
 
 def test_cli_v1_rejection_and_success(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     chain = _chain(tmp_path)
-    assert main(
-        [
-            "execute-authorized-canonical-publication",
-            "--repo-root",
-            str(chain["repo"]),
-            "--stage-2j-request",
-            str(chain["stage2j_request_path"]),
-            "--stage-2j-authorization",
-            str(chain["stage2j_auth_path"]),
-            "--request",
-            str(chain["stage2j_request_path"]),
-            "--authorization",
-            str(chain["stage2j_auth_path"]),
-            "--candidate",
-            str(chain["candidate_path"]),
-            "--execution-review-bundle",
-            str(chain["bundle_path"]),
-        ]
-    ) == EXIT_FAILURE
-    assert main(
-        [
-            "verify-executable-canonical-publication-authorization",
-            "--repo-root",
-            str(chain["repo"]),
-            "--stage-2j-request",
-            str(chain["stage2j_request_path"]),
-            "--stage-2j-authorization",
-            str(chain["stage2j_auth_path"]),
-            "--request",
-            str(chain["exec_request_path"]),
-            "--authorization",
-            str(chain["exec_auth_path"]),
-            "--candidate",
-            str(chain["candidate_path"]),
-            "--execution-review-bundle",
-            str(chain["bundle_path"]),
-        ]
-    ) == EXIT_OK
-    assert main(
-        [
-            "execute-authorized-canonical-publication",
-            "--repo-root",
-            str(chain["repo"]),
-            "--stage-2j-request",
-            str(chain["stage2j_request_path"]),
-            "--stage-2j-authorization",
-            str(chain["stage2j_auth_path"]),
-            "--request",
-            str(chain["exec_request_path"]),
-            "--authorization",
-            str(chain["exec_auth_path"]),
-            "--candidate",
-            str(chain["candidate_path"]),
-            "--execution-review-bundle",
-            str(chain["bundle_path"]),
-        ]
-    ) == EXIT_OK
+    assert (
+        main(
+            [
+                "execute-authorized-canonical-publication",
+                "--repo-root",
+                str(chain["repo"]),
+                "--stage-2j-request",
+                str(chain["stage2j_request_path"]),
+                "--stage-2j-authorization",
+                str(chain["stage2j_auth_path"]),
+                "--request",
+                str(chain["stage2j_request_path"]),
+                "--authorization",
+                str(chain["stage2j_auth_path"]),
+                "--candidate",
+                str(chain["candidate_path"]),
+                "--execution-review-bundle",
+                str(chain["bundle_path"]),
+            ]
+        )
+        == EXIT_FAILURE
+    )
+    assert (
+        main(
+            [
+                "verify-executable-canonical-publication-authorization",
+                "--repo-root",
+                str(chain["repo"]),
+                "--stage-2j-request",
+                str(chain["stage2j_request_path"]),
+                "--stage-2j-authorization",
+                str(chain["stage2j_auth_path"]),
+                "--request",
+                str(chain["exec_request_path"]),
+                "--authorization",
+                str(chain["exec_auth_path"]),
+                "--candidate",
+                str(chain["candidate_path"]),
+                "--execution-review-bundle",
+                str(chain["bundle_path"]),
+            ]
+        )
+        == EXIT_OK
+    )
+    assert (
+        main(
+            [
+                "execute-authorized-canonical-publication",
+                "--repo-root",
+                str(chain["repo"]),
+                "--stage-2j-request",
+                str(chain["stage2j_request_path"]),
+                "--stage-2j-authorization",
+                str(chain["stage2j_auth_path"]),
+                "--request",
+                str(chain["exec_request_path"]),
+                "--authorization",
+                str(chain["exec_auth_path"]),
+                "--candidate",
+                str(chain["candidate_path"]),
+                "--execution-review-bundle",
+                str(chain["bundle_path"]),
+            ]
+        )
+        == EXIT_OK
+    )
     assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["status"] == "COMPLETED"
 
 
@@ -346,11 +349,7 @@ def test_stage_2k_static_boundaries() -> None:
     path = Path("src/relate/family/canonical_publication.py")
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(path))
-    imports = {
-        node.module or ""
-        for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom)
-    }
+    imports = {node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)}
     assert "relate.experiments" not in imports
     forbidden = {
         "execute_authorized_canonical_family",

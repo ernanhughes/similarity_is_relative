@@ -205,7 +205,11 @@ class TestGraphCompleteness:
 
     def test_incomplete_metadata_records_is_passed_through(self) -> None:
         completeness = graph_completeness(
-            [], protocol_sha256=PROTOCOL_SHA, candidates={}, dispositions={}, source_records={},
+            [],
+            protocol_sha256=PROTOCOL_SHA,
+            candidates={},
+            dispositions={},
+            source_records={},
             incomplete_metadata_records=3,
         )
         assert completeness["incomplete_metadata_records"] == 3

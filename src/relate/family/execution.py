@@ -36,9 +36,7 @@ from relate.family.workflow.models import FamilyEvidenceBundle, evidence_bundle_
 from relate.workflows import WorkflowExecutionError, WorkflowRunner, WorkflowRunStatus
 from relate.workflows.trace import WorkflowTraceEvent, WorkflowTraceSink
 
-CANONICAL_EXECUTION_SCOPE: Final = (
-    "AUTHORIZED_CANONICAL_INPUT_EXECUTION_TO_NONCANONICAL_STAGING"
-)
+CANONICAL_EXECUTION_SCOPE: Final = "AUTHORIZED_CANONICAL_INPUT_EXECUTION_TO_NONCANONICAL_STAGING"
 CANONICAL_RUN_SCHEMA_ID: Final = "relate-family-authorized-canonical-run-v1"
 AUTHORIZED_RUNNER_SOURCE_SCHEMA_ID: Final = "relate-family-authorized-runner-source-v1"
 CANONICAL_EXECUTION_CLAIM_SCHEMA_ID: Final = "relate-family-canonical-execution-claim-v1"
@@ -195,9 +193,7 @@ def _claim_record(
         "requested_run_id": request_record["requested_run_id"],
         "family_protocol_sha256": request_record["family_protocol_sha256"],
         "workflow_source_identity": request_record["workflow_source_identity"],
-        "canonical_executor_source_identity": request_record[
-            "canonical_executor_source_identity"
-        ],
+        "canonical_executor_source_identity": request_record["canonical_executor_source_identity"],
         "intended_store_path": store_path,
         "prohibitions": list(request_record["prohibitions"]),
     }
@@ -269,9 +265,7 @@ def _receipt_record(
         "workflow_version": FAMILY_GRAPH_WORKFLOW_VERSION,
         "requested_run_id": request_record["requested_run_id"],
         "workflow_source_identity": request_record["workflow_source_identity"],
-        "canonical_executor_source_identity": request_record[
-            "canonical_executor_source_identity"
-        ],
+        "canonical_executor_source_identity": request_record["canonical_executor_source_identity"],
         "authorised_runner_source_identity": plan.store_spec.identity.family_runner_source_identity,
         "canonical_execution_request_commitment": request_commitment,
         "canonical_execution_authorization_id": authorization_id,
@@ -280,9 +274,7 @@ def _receipt_record(
         "staging_work_directory": _relative(repo_root, plan.context.work_dir),
         "staging_store_path": _relative(repo_root, plan.store_spec.path),
         "store_identity_mapping": plan.store_spec.identity.as_mapping(),
-        "workflow_run_identity_commitment": plan.context.identity[
-            "family_workflow_run_identity"
-        ],
+        "workflow_run_identity_commitment": plan.context.identity["family_workflow_run_identity"],
         "ordered_steps": step_records,
         "continuing_prohibitions": list(request_record["prohibitions"]),
         **(

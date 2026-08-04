@@ -37,12 +37,8 @@ from relate.experiments import option_c0_discovery_runner as discovery_runner
 AUDIT_SCHEMA: Final = "option-c0-d1-integrity-audit-v1"
 CACHE_SCHEMA: Final = "option-c0-d1-integrity-cache-v1"
 CONTEXT_SCHEMA: Final = "option-c0-d1-integrity-context-v1"
-DEFAULT_CACHE_PATH: Final = Path(
-    ".writer/option-c0/cache/option-c0-d1-integrity-v1.sqlite3"
-)
-REGISTERED_CANDIDATE_IMPLEMENTATION_COMMIT: Final = (
-    "d36436209d95eca555215a83856f042d241a90f4"
-)
+DEFAULT_CACHE_PATH: Final = Path(".writer/option-c0/cache/option-c0-d1-integrity-v1.sqlite3")
+REGISTERED_CANDIDATE_IMPLEMENTATION_COMMIT: Final = "d36436209d95eca555215a83856f042d241a90f4"
 V1_RUNTIME_SOURCE_COMMIT: Final = "13466976195abeed56367a449ebd5a6678e3ef7e"
 V1_RESULT_PUBLICATION_COMMIT: Final = "07cf6fc5ea9c261b10df272215a8afb404612e76"
 CANONICAL_SOURCE_IDENTITY_SHA256: Final = (
@@ -146,6 +142,7 @@ D1_CONTEXT_SOURCE_PATHS: Final = (
     "src/relate/experiments/option_c0_selective_baselines.py",
 )
 
+
 def _row_payload(row: VisibleAuditRow) -> dict[str, Any]:
     return {
         "role": row.role,
@@ -182,10 +179,7 @@ def near_pair_commitment(pairs: Sequence[tuple[str, str, int]]) -> str:
     ordered = sorted((left, right, int(distance)) for left, right, distance in pairs)
     payload = b"".join(
         (
-            _canonical_json(
-                {"left": left, "right": right, "hamming_distance": distance}
-            )
-            + "\n"
+            _canonical_json({"left": left, "right": right, "hamming_distance": distance}) + "\n"
         ).encode()
         for left, right, distance in ordered
     )
@@ -275,9 +269,8 @@ class VisibleAuditRow:
         for digest in (self.code_sha256, self.normalized_ast_sha256):
             if len(digest) != 64 or any(item not in "0123456789abcdef" for item in digest):
                 raise ValueError("visible audit row digests must be SHA-256 hexadecimal")
-        if (
-            len(self.simhash_hex) != 16
-            or any(item not in "0123456789abcdef" for item in self.simhash_hex)
+        if len(self.simhash_hex) != 16 or any(
+            item not in "0123456789abcdef" for item in self.simhash_hex
         ):
             raise ValueError("visible audit row SimHash must be 64-bit lowercase hexadecimal")
 
@@ -835,8 +828,7 @@ def token_simhash(code: str, *, shingle_size: int = SIMHASH_SHINGLE_SIZE) -> str
         tokens = ("<empty>",)
     width = max(1, min(shingle_size, len(tokens)))
     shingles = Counter(
-        "\0".join(tokens[index : index + width])
-        for index in range(len(tokens) - width + 1)
+        "\0".join(tokens[index : index + width]) for index in range(len(tokens) - width + 1)
     )
     weights = [0] * SIMHASH_BITS
     for shingle, frequency in shingles.items():
@@ -953,9 +945,7 @@ def validate_d1_contract(path: Path) -> dict[str, Any]:
         raise ValueError("D1 contract visible roles changed")
     commits = value.get("v1_commit_identities", {})
     expected = {
-        "registered_candidate_implementation_commit": (
-            REGISTERED_CANDIDATE_IMPLEMENTATION_COMMIT
-        ),
+        "registered_candidate_implementation_commit": (REGISTERED_CANDIDATE_IMPLEMENTATION_COMMIT),
         "v1_runtime_source_commit": V1_RUNTIME_SOURCE_COMMIT,
         "v1_result_publication_commit": V1_RESULT_PUBLICATION_COMMIT,
     }
@@ -1064,9 +1054,7 @@ def load_or_reconstruct_visible_rows(
     reporter: ProgressReporter,
 ) -> tuple[tuple[VisibleAuditRow, ...], dict[str, Any]]:
     expected = sum(
-        int(item["row_count"])
-        for item in assignments
-        if str(item["role"]) in VISIBLE_ROLES
+        int(item["row_count"]) for item in assignments if str(item["role"]) in VISIBLE_ROLES
     )
     cached = cache.visible_row_count(context.sha256)
     phase_metadata = cache.phase_metadata(context.sha256, "visible_rows")
@@ -1088,9 +1076,7 @@ def load_or_reconstruct_visible_rows(
                 "phase_commitment": actual_metadata,
             }
     if cached:
-        reporter.message(
-            f"discarding incomplete visible-row cache: {cached:,}/{expected:,} rows"
-        )
+        reporter.message(f"discarding incomplete visible-row cache: {cached:,}/{expected:,} rows")
         cache.clear_visible_rows(context.sha256)
 
     started = time.perf_counter()
@@ -1574,10 +1560,9 @@ def near_duplicate_report(
     ):
         reporter.message("near-duplicate cache: completed scan hit")
         candidate_count, candidate_sha = cache.candidate_pair_commitment(context.sha256)
-        if (
-            candidate_count != int(cached_metadata.get("candidate_pair_count", -1))
-            or candidate_sha != cached_metadata.get("ordered_candidate_pair_sha256")
-        ):
+        if candidate_count != int(
+            cached_metadata.get("candidate_pair_count", -1)
+        ) or candidate_sha != cached_metadata.get("ordered_candidate_pair_sha256"):
             raise ValueError("candidate-pair cache commitment mismatch")
         pairs = cache.load_near_pairs(context.sha256)
         if near_pair_commitment(pairs) != cached_metadata.get("ordered_near_pair_sha256"):
@@ -1851,12 +1836,9 @@ def run_d1_integrity_audit(
     if near_max_bucket < 1 or near_max_pairs < 1 or near_max_candidate_pairs < 1:
         raise ValueError("near duplicate limits must be positive")
     if (
-        (
-            v1_runtime_source_commit != V1_RUNTIME_SOURCE_COMMIT
-            or v1_result_publication_commit != V1_RESULT_PUBLICATION_COMMIT
-        )
-        and not allow_test_fixture_provenance
-    ):
+        v1_runtime_source_commit != V1_RUNTIME_SOURCE_COMMIT
+        or v1_result_publication_commit != V1_RESULT_PUBLICATION_COMMIT
+    ) and not allow_test_fixture_provenance:
         raise ValueError("D1 provenance refs must match the frozen contract values")
     active_reporter = reporter or ProgressReporter()
     overall_started = time.perf_counter()
@@ -1929,9 +1911,7 @@ def run_d1_integrity_audit(
 
     active_reporter.message("computing allocation-metadata repository-family candidates")
     family = repository_family_report(assignments)
-    exact_overlap_found = bool(
-        exact_code["cross_role_hashes"] or exact_ast["cross_role_hashes"]
-    )
+    exact_overlap_found = bool(exact_code["cross_role_hashes"] or exact_ast["cross_role_hashes"])
     near_complete = bool(near["near_duplicate_scan_complete"])
     source_manifest_complete = bool(
         execution["v1_runtime_source_manifest_complete"]
@@ -1962,9 +1942,7 @@ def run_d1_integrity_audit(
         "platform": platform.platform(),
         "os": platform.system(),
         "machine": platform.machine(),
-        "package_versions": _package_versions(
-            ("numpy", "datasets", "transformers", "tokenizers")
-        ),
+        "package_versions": _package_versions(("numpy", "datasets", "transformers", "tokenizers")),
         "git_head": head,
         "git_branch": branch,
         "worktree_status": dirty_lines,
@@ -1996,9 +1974,7 @@ def run_d1_integrity_audit(
         },
         "visible_rows": {
             "rows": len(rows),
-            "roles": {
-                role: sum(row.role == role for row in rows) for role in VISIBLE_ROLES
-            },
+            "roles": {role: sum(row.role == role for row in rows) for role in VISIBLE_ROLES},
             "repositories": {
                 role: len({row.repository for row in rows if row.role == role})
                 for role in VISIBLE_ROLES

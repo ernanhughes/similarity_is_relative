@@ -35,9 +35,7 @@ from relate.family.review import reject_canonical_path
 from relate.family.sources import parse_timestamp, validate_source_identity
 from relate.family.workflow.models import validate_sha256_identity
 
-EXECUTABLE_PUBLICATION_REQUEST_SCHEMA_ID: Final = (
-    "relate-family-canonical-publication-request-v2"
-)
+EXECUTABLE_PUBLICATION_REQUEST_SCHEMA_ID: Final = "relate-family-canonical-publication-request-v2"
 EXECUTABLE_PUBLICATION_AUTHORIZATION_SCHEMA_ID: Final = (
     "relate-family-canonical-publication-authorization-v2"
 )
@@ -46,13 +44,9 @@ CANONICAL_PUBLISHER_SOURCE_MANIFEST_SCHEMA_ID: Final = (
 )
 PUBLICATION_CLAIM_SCHEMA_ID: Final = "relate-family-canonical-publication-claim-v1"
 PUBLICATION_TRACE_SCHEMA_ID: Final = "relate-family-canonical-publication-trace-v1"
-PUBLICATION_RECEIPT_SCHEMA_ID: Final = (
-    "relate-family-authorized-canonical-publication-receipt-v1"
-)
+PUBLICATION_RECEIPT_SCHEMA_ID: Final = "relate-family-authorized-canonical-publication-receipt-v1"
 PUBLICATION_FAILURE_SCHEMA_ID: Final = "relate-family-canonical-publication-failure-v1"
-EXECUTABLE_PUBLICATION_SCOPE: Final = (
-    "EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
-)
+EXECUTABLE_PUBLICATION_SCOPE: Final = "EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
 PAYLOAD_POLICY: Final = "PUBLISH_EXACT_AUTHORIZED_CANDIDATE_FILE_BYTES"
 AUTHORIZE_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION: Final = (
     "AUTHORIZE_EXACT_ONE_SHOT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
@@ -288,9 +282,7 @@ def _verify_stage_2j_chain(
         ),
         "stage_2j_authorization_id": authorization_record["authorization_id"],
         "candidate_commitment": canonical_family_publication_candidate_commitment(candidate),
-        "bundle_commitment": canonical_execution_review_bundle_commitment(
-            execution_review_bundle
-        ),
+        "bundle_commitment": canonical_execution_review_bundle_commitment(execution_review_bundle),
         "request": request_record,
         "candidate": candidate_record,
     }
@@ -347,15 +339,9 @@ def make_executable_canonical_family_publication_request_v2(
         "accepted_execution_review_bundle_file_sha256": execution_review_bundle_file_sha256,
         "execution_review_report_commitment": source["execution_review_report_commitment"],
         "execution_review_disposition_id": source["execution_review_disposition_id"],
-        "canonical_execution_request_commitment": source[
-            "canonical_execution_request_commitment"
-        ],
-        "canonical_execution_authorization_id": source[
-            "canonical_execution_authorization_id"
-        ],
-        "canonical_execution_receipt_commitment": source[
-            "canonical_execution_receipt_commitment"
-        ],
+        "canonical_execution_request_commitment": source["canonical_execution_request_commitment"],
+        "canonical_execution_authorization_id": source["canonical_execution_authorization_id"],
+        "canonical_execution_receipt_commitment": source["canonical_execution_receipt_commitment"],
         "canonical_execution_review_packet_commitment": request_record[
             "canonical_execution_review_packet_commitment"
         ],
@@ -426,9 +412,9 @@ def executable_canonical_publication_request_v2_from_record(
 def executable_canonical_publication_request_commitment(
     request: ExecutableCanonicalFamilyPublicationRequest,
 ) -> str:
-    return executable_canonical_publication_request_v2_from_record(
-        request.as_record()
-    ).as_record()["request_commitment"]
+    return executable_canonical_publication_request_v2_from_record(request.as_record()).as_record()[
+        "request_commitment"
+    ]
 
 
 def make_executable_canonical_family_publication_authorization_v2(
@@ -613,12 +599,8 @@ def validate_executable_canonical_publication_authorization(
         authorization_id=auth_record["authorization_id"],
         candidate_commitment=chain["candidate_commitment"],
         intended_canonical_destination=destination,
-        intended_noncanonical_audit_work_dir=request_record[
-            "intended_noncanonical_audit_work_dir"
-        ],
-        canonical_publisher_source_identity=request_record[
-            "canonical_publisher_source_identity"
-        ],
+        intended_noncanonical_audit_work_dir=request_record["intended_noncanonical_audit_work_dir"],
+        canonical_publisher_source_identity=request_record["canonical_publisher_source_identity"],
         executable_publication_authority=authorized,
     )
 
@@ -640,9 +622,7 @@ def _claim(request: dict[str, Any], auth: dict[str, Any]) -> dict[str, Any]:
         "stage_2j_publication_request_commitment": request[
             "stage_2j_publication_request_commitment"
         ],
-        "stage_2j_publication_authorization_id": request[
-            "stage_2j_publication_authorization_id"
-        ],
+        "stage_2j_publication_authorization_id": request["stage_2j_publication_authorization_id"],
         "family_protocol_sha256": request["family_protocol_sha256"],
         "canonical_publication_candidate_commitment": request[
             "canonical_publication_candidate_commitment"
@@ -684,9 +664,7 @@ def _write_failure(
         "stage_2j_publication_request_commitment": request[
             "stage_2j_publication_request_commitment"
         ],
-        "stage_2j_publication_authorization_id": request[
-            "stage_2j_publication_authorization_id"
-        ],
+        "stage_2j_publication_authorization_id": request["stage_2j_publication_authorization_id"],
         "canonical_destination": request["intended_canonical_destination"],
         "canonical_publication_candidate_commitment": request[
             "canonical_publication_candidate_commitment"
@@ -813,9 +791,10 @@ def execute_authorized_canonical_publication(
         atomic_write_json(audit_dir / "canonical-publication-claim.json", claim)
         claim_persisted = True
         events.append(_event("CLAIM_PERSISTED"))
-        if compute_canonical_publisher_source_identity(root) != request_record[
-            "canonical_publisher_source_identity"
-        ]:
+        if (
+            compute_canonical_publisher_source_identity(root)
+            != request_record["canonical_publisher_source_identity"]
+        ):
             raise ValueError("canonical publisher source identity mismatch")
         events.append(_event("PUBLISHER_IDENTITY_VERIFIED"))
         created_parents = _create_parent_chain(root, request_record["intended_canonical_parent"])
@@ -833,9 +812,7 @@ def execute_authorized_canonical_publication(
         events.append(
             _event(
                 "CANDIDATE_BYTES_VERIFIED",
-                candidate_file_sha256=request_record[
-                    "canonical_publication_candidate_file_sha256"
-                ],
+                candidate_file_sha256=request_record["canonical_publication_candidate_file_sha256"],
             )
         )
         validate_intended_canonical_destination(

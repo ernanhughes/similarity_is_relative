@@ -20,7 +20,7 @@ It may:
 - move or copy implementation behind compatibility facades;
 - replace hidden global mutation with explicit dependencies;
 - consolidate generic infrastructure;
-- introduce new tests under `tests_current/`;
+- introduce new tests under `tests/`;
 - deprecate historical runtime entrypoints after an explicit migration decision.
 
 It may not, without a separate prospective scientific or remediation contract:
@@ -91,7 +91,7 @@ The PR description must state:
 - which production behaviour is intended to remain unchanged;
 - which old modules remain authoritative during the PR;
 - which new modules become authoritative after merge;
-- which active tests exist under `tests_current/`;
+- which active tests exist under `tests/`;
 - which historical tests or artifacts informed the migration;
 - whether canonical regeneration was attempted;
 - whether any scientific execution occurred.
@@ -153,9 +153,9 @@ Until replacement tests exist, refactor PRs must use the strongest applicable co
 - hash comparison;
 - command import and argument-parsing checks;
 - explicit code review of old-to-new delegation;
-- new focused tests under `tests_current/`.
+- new focused tests under `tests/`.
 
-A green `pytest` means only that the active `tests_current/` suite passed.
+A green `pytest` means only that the active `tests/` suite passed.
 
 ## Regeneration policy
 

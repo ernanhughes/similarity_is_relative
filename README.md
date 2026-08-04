@@ -17,7 +17,7 @@ Claims begin as falsifiable questions, become executable contracts and are promo
 ```text
 E01                              CLOSED
 Option B                         PASSED AND INDEPENDENTLY VERIFIED
-B-PREM-001                       INDEPENDLY VERIFIED REAL-DOMAIN PREMISE
+B-PREM-001                       INDEPENDENTLY VERIFIED REAL-DOMAIN PREMISE
 historical Option C0/C1 route    CLOSED BEFORE CONFIRMATION
 C0 selection                     NOT ACCESSED
 C1 reserve                       NOT ACCESSED

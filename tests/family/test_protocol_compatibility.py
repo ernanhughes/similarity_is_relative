@@ -34,9 +34,7 @@ CANONICAL_ARTIFACT = Path(
     "artifacts/canonical/option-c0/review-v1/family-protocol-v1/"
     "option-c0-family-connected-allocation-contract-v1.json"
 )
-CANONICAL_PROTOCOL_SHA = (
-    "a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08"
-)
+CANONICAL_PROTOCOL_SHA = "a36b37728c0630a0de5f2c75628cf0409796f8902cd547277f3ad087c7876c08"
 
 
 # ---------------------------------------------------------------------------
@@ -237,7 +235,9 @@ class TestEvidenceCandidateEquality:
             "snapshot_status": "COMPLETE",
         }
         return module_make(
-            LEFT, RIGHT, "DECLARED_GITHUB_FORK",
+            LEFT,
+            RIGHT,
+            "DECLARED_GITHUB_FORK",
             evidence_sources=evidence_sources,
             evidence_payload=payload,
         )
@@ -316,7 +316,9 @@ class TestResolvedEdgeEquality:
             "snapshot_status": "COMPLETE",
         }
         return clean_edges.make_evidence_candidate(
-            LEFT, RIGHT, "DECLARED_GITHUB_FORK",
+            LEFT,
+            RIGHT,
+            "DECLARED_GITHUB_FORK",
             evidence_sources=evidence_sources,
             evidence_payload=payload,
         )
@@ -365,22 +367,27 @@ class TestProtocolContractEquality:
 class TestDependencyDirection:
     def test_family_models_does_not_import_experiments(self) -> None:
         import relate.family.models as m
+
         _assert_no_experiments_import(m)
 
     def test_family_rules_does_not_import_experiments(self) -> None:
         import relate.family.rules as r
+
         _assert_no_experiments_import(r)
 
     def test_family_repositories_does_not_import_experiments(self) -> None:
         import relate.family.repositories as r
+
         _assert_no_experiments_import(r)
 
     def test_family_sources_does_not_import_experiments(self) -> None:
         import relate.family.sources as s
+
         _assert_no_experiments_import(s)
 
     def test_family_edges_does_not_import_experiments(self) -> None:
         import relate.family.edges as e
+
         _assert_no_experiments_import(e)
 
 
@@ -389,6 +396,4 @@ def _assert_no_experiments_import(module) -> None:
     for name, obj in vars(module).items():
         mod = getattr(obj, "__module__", None) or ""
         if "relate.experiments" in mod:
-            raise AssertionError(
-                f"{module.__name__}.{name} is from {mod} (forbidden)"
-            )
+            raise AssertionError(f"{module.__name__}.{name} is from {mod} (forbidden)")

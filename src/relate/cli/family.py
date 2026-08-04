@@ -213,9 +213,7 @@ def _cmd_run_noncanonical(args: argparse.Namespace) -> int:
 def _cmd_make_publication_disposition(args: argparse.Namespace) -> int:
     packet = _load_packet(args.packet)
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     disposition = make_family_publication_disposition(
         packet=packet,
@@ -282,9 +280,7 @@ def _cmd_make_canonical_authorization(args: argparse.Namespace) -> int:
         else canonical_execution_request_from_record(raw)
     )
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     if request.as_record().get("schema_id") == CANONICAL_EXECUTION_REQUEST_V2_SCHEMA_ID:
         authorization = make_canonical_execution_authorization_v2(
@@ -406,9 +402,7 @@ def _cmd_review_authorized_canonical_execution(args: argparse.Namespace) -> int:
 
 def _cmd_make_execution_review_disposition(args: argparse.Namespace) -> int:
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     disposition = make_canonical_execution_review_disposition(
         report=_load_execution_review_report(args.report),
@@ -450,9 +444,7 @@ def _cmd_create_canonical_publication_candidate(args: argparse.Namespace) -> int
     _emit(
         {
             "status": "CREATED",
-            "candidate_commitment": canonical_family_publication_candidate_commitment(
-                candidate
-            ),
+            "candidate_commitment": canonical_family_publication_candidate_commitment(candidate),
             "candidate_file_sha256": sha256_file(args.output),
         }
     )
@@ -462,9 +454,7 @@ def _cmd_create_canonical_publication_candidate(args: argparse.Namespace) -> int
 def _cmd_create_canonical_publication_request(args: argparse.Namespace) -> int:
     repo_root = args.repo_root.resolve(strict=False)
     _reject_canonical_output(args.output, repo_root, "canonical publication request")
-    candidate = canonical_family_publication_candidate_from_record(
-        read_json_object(args.candidate)
-    )
+    candidate = canonical_family_publication_candidate_from_record(read_json_object(args.candidate))
     bundle = _load_execution_review_bundle(args.execution_review_bundle)
     request = make_canonical_family_publication_request(
         repo_root=repo_root,
@@ -489,14 +479,10 @@ def _cmd_make_canonical_publication_authorization(args: argparse.Namespace) -> i
     repo_root = args.repo_root.resolve(strict=False)
     _reject_canonical_output(args.output, repo_root, "canonical publication authorization")
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     request_record = read_json_object(args.request)
-    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(
-        args.candidate
-    ):
+    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(args.candidate):
         raise ValueError("canonical publication candidate file SHA mismatch")
     if request_record["accepted_execution_review_bundle_file_sha256"] != sha256_file(
         args.execution_review_bundle
@@ -521,9 +507,7 @@ def _cmd_make_canonical_publication_authorization(args: argparse.Namespace) -> i
 
 def _cmd_verify_canonical_publication_authorization(args: argparse.Namespace) -> int:
     request_record = read_json_object(args.request)
-    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(
-        args.candidate
-    ):
+    if request_record["canonical_publication_candidate_file_sha256"] != sha256_file(args.candidate):
         raise ValueError("canonical publication candidate file SHA mismatch")
     if request_record["accepted_execution_review_bundle_file_sha256"] != sha256_file(
         args.execution_review_bundle
@@ -577,9 +561,7 @@ def _cmd_create_executable_canonical_publication_request(args: argparse.Namespac
     _emit(
         {
             "status": "CREATED",
-            "request_commitment": executable_canonical_publication_request_commitment(
-                request
-            ),
+            "request_commitment": executable_canonical_publication_request_commitment(request),
         }
     )
     return EXIT_OK
@@ -592,9 +574,7 @@ def _cmd_make_executable_canonical_publication_authorization(
         read_json_object(args.request)
     )
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     authorization = make_executable_canonical_family_publication_authorization_v2(
         request=request,
@@ -651,9 +631,7 @@ def _cmd_execute_authorized_canonical_publication(args: argparse.Namespace) -> i
         stage_2j_authorization=_load_stage_2j_publication_authorization(
             args.stage_2j_authorization
         ),
-        executable_request=executable_canonical_publication_request_v2_from_record(
-            raw_request
-        ),
+        executable_request=executable_canonical_publication_request_v2_from_record(raw_request),
         executable_authorization=executable_canonical_publication_authorization_v2_from_record(
             raw_auth
         ),
@@ -695,9 +673,7 @@ def _cmd_review_canonical_publication_evidence(args: argparse.Namespace) -> int:
             "status": record["terminal_status"],
             "report_commitment": record["report_commitment"],
             "canonical_destination": record["canonical_destination"],
-            "canonical_destination_file_sha256": record[
-                "canonical_destination_file_sha256"
-            ],
+            "canonical_destination_file_sha256": record["canonical_destination_file_sha256"],
         }
     )
     return (
@@ -709,9 +685,7 @@ def _cmd_review_canonical_publication_evidence(args: argparse.Namespace) -> int:
 
 def _cmd_make_canonical_publication_closure_disposition(args: argparse.Namespace) -> int:
     reason = (
-        args.reason
-        if args.reason is not None
-        else args.reason_file.read_text(encoding="utf-8")
+        args.reason if args.reason is not None else args.reason_file.read_text(encoding="utf-8")
     )
     disposition = make_canonical_publication_closure_disposition(
         report=canonical_publication_evidence_review_report_from_record(
@@ -758,9 +732,7 @@ def _cmd_verify_canonical_publication_closure_bundle(args: argparse.Namespace) -
             "bundle_commitment": record["bundle_commitment"],
             "terminal_status": record["terminal_status"],
             "canonical_destination": record["canonical_destination"],
-            "canonical_destination_file_sha256": record[
-                "canonical_destination_file_sha256"
-            ],
+            "canonical_destination_file_sha256": record["canonical_destination_file_sha256"],
         }
     )
     return EXIT_OK
@@ -952,9 +924,7 @@ def build_parser() -> argparse.ArgumentParser:
     pub_exec_verify.add_argument("--authorization", type=Path, required=True)
     pub_exec_verify.add_argument("--candidate", type=Path, required=True)
     pub_exec_verify.add_argument("--execution-review-bundle", type=Path, required=True)
-    pub_exec_verify.set_defaults(
-        func=_cmd_verify_executable_canonical_publication_authorization
-    )
+    pub_exec_verify.set_defaults(func=_cmd_verify_executable_canonical_publication_authorization)
 
     pub_execute = sub.add_parser("execute-authorized-canonical-publication")
     pub_execute.add_argument("--repo-root", type=Path, required=True)

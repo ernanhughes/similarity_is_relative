@@ -65,16 +65,16 @@ relate-family = "relate.cli.family:main"
 where = ["src"]
 
 [tool.pytest.ini_options]
-# The historical suite is preserved under tests/ but intentionally not collected
-# while the package is reorganized. New tests belong under tests_current/.
-testpaths = ["tests_current"]
+# The active suite is collected from tests/. The historical suite is preserved
+# under tests_deprecated/ but intentionally excluded from normal validation.
+testpaths = ["tests"]
 addopts = "-q"
 
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-# Historical tests are reference material during the architecture reset.
-extend-exclude = ["tests"]
+# Historical tests are preserved as reference material.
+extend-exclude = ["tests_deprecated"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

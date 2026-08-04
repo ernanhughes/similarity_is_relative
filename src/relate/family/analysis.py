@@ -292,9 +292,7 @@ def role_crossing_analysis_commitment(
     )
 
 
-def bounded_family_outcome_commitment(
-    outcome: Mapping[str, Any], *, protocol_sha256: str
-) -> str:
+def bounded_family_outcome_commitment(outcome: Mapping[str, Any], *, protocol_sha256: str) -> str:
     """Versioned scientific commitment for the frozen bounded family outcome."""
     return sha256_text(
         canonical_json(

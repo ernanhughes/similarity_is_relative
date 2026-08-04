@@ -163,12 +163,18 @@ class TestMakeEvidenceCandidate:
         evidence_sources, _ = _fork_sources()
         payload = _fork_payload(evidence_sources)
         c1 = make_evidence_candidate(
-            LEFT, RIGHT, "DECLARED_GITHUB_FORK",
-            evidence_sources=evidence_sources, evidence_payload=payload,
+            LEFT,
+            RIGHT,
+            "DECLARED_GITHUB_FORK",
+            evidence_sources=evidence_sources,
+            evidence_payload=payload,
         )
         c2 = make_evidence_candidate(
-            RIGHT, LEFT, "DECLARED_GITHUB_FORK",
-            evidence_sources=evidence_sources, evidence_payload=payload,
+            RIGHT,
+            LEFT,
+            "DECLARED_GITHUB_FORK",
+            evidence_sources=evidence_sources,
+            evidence_payload=payload,
         )
         assert c1.candidate_id == c2.candidate_id
         assert c1.left_repository <= c1.right_repository
@@ -178,15 +184,21 @@ class TestMakeEvidenceCandidate:
         payload = _fork_payload(evidence_sources)
         with pytest.raises(ValueError, match="distinct"):
             make_evidence_candidate(
-                LEFT, LEFT, "DECLARED_GITHUB_FORK",
-                evidence_sources=evidence_sources, evidence_payload=payload,
+                LEFT,
+                LEFT,
+                "DECLARED_GITHUB_FORK",
+                evidence_sources=evidence_sources,
+                evidence_payload=payload,
             )
 
     def test_unknown_edge_type_rejected(self) -> None:
         with pytest.raises(ValueError, match="unknown"):
             make_evidence_candidate(
-                LEFT, RIGHT, "NONEXISTENT_TYPE",
-                evidence_sources={}, evidence_payload={},
+                LEFT,
+                RIGHT,
+                "NONEXISTENT_TYPE",
+                evidence_sources={},
+                evidence_payload={},
             )
 
     def test_wrong_rule_version_rejected(self) -> None:
@@ -194,7 +206,9 @@ class TestMakeEvidenceCandidate:
         payload = _fork_payload(evidence_sources)
         with pytest.raises(ValueError, match="rule version"):
             make_evidence_candidate(
-                LEFT, RIGHT, "DECLARED_GITHUB_FORK",
+                LEFT,
+                RIGHT,
+                "DECLARED_GITHUB_FORK",
                 evidence_sources=evidence_sources,
                 evidence_payload=payload,
                 rule_version="old-version",
@@ -206,8 +220,11 @@ class TestMakeEvidenceCandidate:
         payload["source_body"] = "x"
         with pytest.raises(ValueError, match="forbidden"):
             make_evidence_candidate(
-                LEFT, RIGHT, "DECLARED_GITHUB_FORK",
-                evidence_sources=evidence_sources, evidence_payload=payload,
+                LEFT,
+                RIGHT,
+                "DECLARED_GITHUB_FORK",
+                evidence_sources=evidence_sources,
+                evidence_payload=payload,
             )
 
 
@@ -363,7 +380,9 @@ class TestResolveEvidenceCandidate:
             "visible_role_right": "c0_iteration",
         }
         cand = make_evidence_candidate(
-            LEFT, RIGHT, "EXACT_FUNCTION_SOURCE_MATCH",
+            LEFT,
+            RIGHT,
+            "EXACT_FUNCTION_SOURCE_MATCH",
             evidence_sources=evidence_sources,
             evidence_payload=payload,
         )
@@ -383,7 +402,9 @@ class TestResolveEvidenceCandidate:
             "visible_role_right": "c0_iteration",
         }
         cand = make_evidence_candidate(
-            LEFT, RIGHT, "EXACT_FUNCTION_SOURCE_MATCH",
+            LEFT,
+            RIGHT,
+            "EXACT_FUNCTION_SOURCE_MATCH",
             evidence_sources=evidence_sources,
             evidence_payload=payload,
         )
@@ -408,7 +429,9 @@ class TestMakeEvidenceEdge:
         evidence_sources, _ = _fork_sources()
         payload = _fork_payload(evidence_sources)
         edge = make_evidence_edge(
-            LEFT, RIGHT, "DECLARED_GITHUB_FORK",
+            LEFT,
+            RIGHT,
+            "DECLARED_GITHUB_FORK",
             protocol_sha256=FAKE_PROTOCOL_SHA,
             evidence_sources=evidence_sources,
             evidence_payload=payload,
@@ -428,7 +451,9 @@ class TestMakeEvidenceEdge:
         }
         with pytest.raises(ValueError, match="disposition"):
             make_evidence_edge(
-                LEFT, RIGHT, "VERIFIED_REPOSITORY_SUCCESSION",
+                LEFT,
+                RIGHT,
+                "VERIFIED_REPOSITORY_SUCCESSION",
                 protocol_sha256=FAKE_PROTOCOL_SHA,
                 evidence_sources=evidence_sources,
                 evidence_payload=payload,
@@ -439,7 +464,9 @@ class TestMakeEvidenceEdge:
         payload = _fork_payload(evidence_sources)
         # Use evidence_sources kwarg
         edge = make_evidence_edge(
-            LEFT, RIGHT, "DECLARED_GITHUB_FORK",
+            LEFT,
+            RIGHT,
+            "DECLARED_GITHUB_FORK",
             protocol_sha256=FAKE_PROTOCOL_SHA,
             evidence_sources=evidence_sources,
             evidence_payload=payload,
@@ -483,7 +510,9 @@ class TestValidateResolvedEdge:
         edge = resolve_evidence_candidate(cand, None, protocol_sha256=FAKE_PROTOCOL_SHA)
         with pytest.raises(ValueError, match="outside the allocation"):
             validate_resolved_edge(
-                edge, cand, None,
+                edge,
+                cand,
+                None,
                 protocol_sha256=FAKE_PROTOCOL_SHA,
                 allocation_repositories={"other/repo"},
             )

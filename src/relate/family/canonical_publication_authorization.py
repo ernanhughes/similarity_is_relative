@@ -30,9 +30,7 @@ from relate.family.workflow.models import validate_sha256_identity
 CANONICAL_PUBLICATION_CANDIDATE_SCHEMA_ID: Final = (
     "relate-family-canonical-publication-candidate-v1"
 )
-CANONICAL_PUBLICATION_REQUEST_SCHEMA_ID: Final = (
-    "relate-family-canonical-publication-request-v1"
-)
+CANONICAL_PUBLICATION_REQUEST_SCHEMA_ID: Final = "relate-family-canonical-publication-request-v1"
 CANONICAL_PUBLICATION_AUTHORIZATION_SCHEMA_ID: Final = (
     "relate-family-canonical-publication-authorization-v1"
 )
@@ -43,9 +41,7 @@ CANONICAL_PUBLICATION_CONTRACT_SOURCE_MANIFEST_SCHEMA_ID: Final = (
     "relate-family-canonical-publication-contract-source-manifest-v1"
 )
 CANONICAL_PUBLICATION_SCOPE: Final = "CANONICAL_BOUNDED_FAMILY_RESULT_ONLY"
-CANONICAL_PUBLICATION_REQUEST_SCOPE: Final = (
-    "EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
-)
+CANONICAL_PUBLICATION_REQUEST_SCOPE: Final = "EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
 AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION: Final = (
     "AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION"
 )
@@ -263,9 +259,10 @@ def make_canonical_family_publication_candidate(
     )
     report, disposition = _accepted_bundle(execution_review_bundle)
     packet = _validate_packet_against_report(canonical_execution_review_packet, report)
-    if canonical_execution_review_packet_file_sha256 != report["file_sha256"][
-        "canonical_execution_review_packet"
-    ]:
+    if (
+        canonical_execution_review_packet_file_sha256
+        != report["file_sha256"]["canonical_execution_review_packet"]
+    ):
         raise ValueError("review packet file SHA mismatch")
     bundle_commitment = canonical_execution_review_bundle_commitment(execution_review_bundle)
     payload = {
@@ -284,9 +281,7 @@ def make_canonical_family_publication_candidate(
             "canonical_execution_request_commitment": report[
                 "canonical_execution_request_commitment"
             ],
-            "canonical_execution_authorization_id": report[
-                "canonical_execution_authorization_id"
-            ],
+            "canonical_execution_authorization_id": report["canonical_execution_authorization_id"],
             "canonical_execution_receipt_commitment": report["receipt_commitment"],
             "execution_review_report_commitment": report["report_commitment"],
             "execution_review_disposition_id": disposition["disposition_id"],
@@ -369,13 +364,12 @@ def make_canonical_family_publication_request(
     bundle_commitment = canonical_execution_review_bundle_commitment(execution_review_bundle)
     if bundle_commitment != candidate_record["accepted_execution_review_bundle_commitment"]:
         raise ValueError("request bundle does not match candidate")
-    if execution_review_bundle_file_sha256 != candidate_record[
-        "accepted_execution_review_bundle_file_sha256"
-    ]:
+    if (
+        execution_review_bundle_file_sha256
+        != candidate_record["accepted_execution_review_bundle_file_sha256"]
+    ):
         raise ValueError("request bundle file SHA does not match candidate")
-    destination = validate_intended_canonical_destination(
-        repo_root, intended_canonical_destination
-    )
+    destination = validate_intended_canonical_destination(repo_root, intended_canonical_destination)
     parent = str(Path(destination).parent).replace("\\", "/")
     source_identity = compute_canonical_publication_contract_source_identity(repo_root)
     source = candidate_record["source_execution_identity"]
@@ -390,15 +384,9 @@ def make_canonical_family_publication_request(
         "accepted_execution_review_bundle_file_sha256": execution_review_bundle_file_sha256,
         "execution_review_report_commitment": source["execution_review_report_commitment"],
         "execution_review_disposition_id": source["execution_review_disposition_id"],
-        "canonical_execution_request_commitment": source[
-            "canonical_execution_request_commitment"
-        ],
-        "canonical_execution_authorization_id": source[
-            "canonical_execution_authorization_id"
-        ],
-        "canonical_execution_receipt_commitment": source[
-            "canonical_execution_receipt_commitment"
-        ],
+        "canonical_execution_request_commitment": source["canonical_execution_request_commitment"],
+        "canonical_execution_authorization_id": source["canonical_execution_authorization_id"],
+        "canonical_execution_receipt_commitment": source["canonical_execution_receipt_commitment"],
         "canonical_execution_review_packet_commitment": candidate_record[
             "bounded_family_review_packet_commitment"
         ],
@@ -513,9 +501,7 @@ def make_canonical_family_publication_authorization(
         "accepted_execution_review_bundle_commitment": request_record[
             "accepted_execution_review_bundle_commitment"
         ],
-        "execution_review_report_commitment": request_record[
-            "execution_review_report_commitment"
-        ],
+        "execution_review_report_commitment": request_record["execution_review_report_commitment"],
         "execution_review_disposition_id": request_record["execution_review_disposition_id"],
         "intended_canonical_destination": request_record["intended_canonical_destination"],
         "publication_scope": CANONICAL_PUBLICATION_SCOPE,
@@ -637,9 +623,7 @@ def validate_canonical_family_publication_authorization(
         "accepted_execution_review_bundle_commitment": request_record[
             "accepted_execution_review_bundle_commitment"
         ],
-        "execution_review_report_commitment": request_record[
-            "execution_review_report_commitment"
-        ],
+        "execution_review_report_commitment": request_record["execution_review_report_commitment"],
         "execution_review_disposition_id": request_record["execution_review_disposition_id"],
         "intended_canonical_destination": request_record["intended_canonical_destination"],
         "publication_scope": CANONICAL_PUBLICATION_SCOPE,
@@ -649,8 +633,7 @@ def validate_canonical_family_publication_authorization(
             raise ValueError(f"canonical publication authorization {key} mismatch")
     status = (
         "AUTHORIZED"
-        if auth_record["disposition"]
-        == AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION
+        if auth_record["disposition"] == AUTHORIZE_EXACT_CANONICAL_BOUNDED_FAMILY_RESULT_PUBLICATION
         else "WITHHELD"
     )
     return CanonicalPublicationAuthorizationValidation(

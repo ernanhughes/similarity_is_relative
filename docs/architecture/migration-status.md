@@ -465,7 +465,7 @@ No reverse imports. No circular imports inside `relate.family`.
 
 | Caller | Uses | Action |
 |---|---|---|
-| `tests_current/integration/test_family_graph_cache_evidence.py` | `FamilyGraphCache`, `FamilyGraphCacheIdentity` | Both kept in historical module; no change required |
+| `tests/integration/test_family_graph_cache_evidence.py` | `FamilyGraphCache`, `FamilyGraphCacheIdentity` | Both kept in historical module; no change required |
 | `src/relate/evidence/canonical_json.py` | Reference in comments only | No action |
 
 ---
@@ -488,7 +488,7 @@ No external caller required modification.
 ### Tests added
 
 ```text
-tests_current/family/
+tests/family/
   __init__.py
   test_repositories.py   — normalize, owner, commitment, manifest, validation
   test_rules.py          — taxonomy ordering, partition, required fields, contract
@@ -606,7 +606,7 @@ To avoid that:
   actually executes the run) rather than inheriting the historical
   experiment module's identity. See capability-continuity.md item 2.
 
-Verified in `tests_current/family/test_store_identity.py::TestHistoricalDefaultWrapper`:
+Verified in `tests/family/test_store_identity.py::TestHistoricalDefaultWrapper`:
 `default_cache_identity`'s `family_runner_source_identity` equals
 `sha256_file(Path(historical.__file__))` and is different from
 `sha256_file(Path(relate.family.store.__file__))`.
@@ -641,7 +641,7 @@ This mirrors the same design principle as the cache-identity source-identity
 fix: a clean store must not hold an implicit opinion about which frozen
 protocol produced its expected values — it reads that from the identity it
 was explicitly constructed with. Verified in
-`tests_current/family/test_store_records.py::TestAllocationRegistration`,
+`tests/family/test_store_records.py::TestAllocationRegistration`,
 which computes the expected SHA-256 directly from the canonical manifest
 file rather than importing the historical constant.
 
@@ -665,7 +665,7 @@ file rather than importing the historical constant.
 ### Tests added
 
 ```text
-tests_current/family/
+tests/family/
   test_store_identity.py       — identity mapping, reopen accept/reject, explicit
                                   constructor vs. historical source-sensitive wrapper
   test_store_schema.py         — exact table set, columns, keys, WAL pragmas
@@ -889,7 +889,7 @@ defensive tuple copy; `NullTraceSink` discards everything.
 
 ### Dependency-boundary verification
 
-- `tests_current/workflows/test_dependency_boundaries.py` parses every
+- `tests/workflows/test_dependency_boundaries.py` parses every
   `.py` file under `src/relate/workflows/` with `ast` and asserts no import
   of `relate.experiments`, `relate.family`, or `relate.cli`.
 - Manual grep confirms the same; the only textual mentions of
@@ -901,7 +901,7 @@ defensive tuple copy; `NullTraceSink` discards everything.
 ### Tests added
 
 ```text
-tests_current/workflows/
+tests/workflows/
   test_models.py                — immutable context, defensive copies, workflow/step
                                    validation, JSON-value validation, result invariants
   test_commitments.py           — determinism, mapping-order independence, prior-step
@@ -1070,7 +1070,7 @@ edges`, `unresolved candidates`, `metadata completeness`. Findings:
   module defines or calls any of them.
 - `component_id` also appears as a SQLite **column name** in the
   `component_memberships` table (`relate/family/store.py`) and in one test
-  assertion (`tests_current/family/test_store_schema.py:94`) — unrelated to
+  assertion (`tests/family/test_store_schema.py:94`) — unrelated to
   the Python function of the same name; not a caller.
 - "cross_role" appears extensively in `option_c0_d1_integrity_audit.py` and
   `option_c0_d1_overlap_classification.py`, but those are D1 duplicate/
@@ -1129,7 +1129,7 @@ No `CREATE TABLE` statement changed. `git diff` on `_create_schema()` is empty.
 ### Tests added
 
 ```text
-tests_current/family/
+tests/family/
   test_graph.py               — UnionFind, component_id, build_components: isolated
                                  repos, connecting/nonconnecting/rejected edges,
                                  transitive closure, ordering, duplicates, unknown

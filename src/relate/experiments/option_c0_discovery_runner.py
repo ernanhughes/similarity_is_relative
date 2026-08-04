@@ -148,11 +148,7 @@ class DiscoveryPlan:
             )
             for item in value.get("candidates", ())
         )
-        expected = {
-            (family, query_id)
-            for family in CANDIDATE_FAMILIES
-            for query_id in QUERY_ORDER
-        }
+        expected = {(family, query_id) for family in CANDIDATE_FAMILIES for query_id in QUERY_ORDER}
         observed = {(item.family, item.query_id) for item in candidates}
         if observed != expected or len(candidates) != len(expected):
             raise ValueError("candidate plan must register both families for all queries")
@@ -174,9 +170,7 @@ class DiscoveryPlan:
             "residual_mass_beta_grid",
         )
         anchors = tuple(float(item) for item in value.get("coverage_anchors", ()))
-        if tuple(sorted(set(anchors))) != anchors or any(
-            not 0.0 < item <= 1.0 for item in anchors
-        ):
+        if tuple(sorted(set(anchors))) != anchors or any(not 0.0 < item <= 1.0 for item in anchors):
             raise ValueError("coverage anchors must be unique and ascending")
         fraction = float(value.get("fit_calibration_fraction", 0.0))
         if not 0.0 < fraction < 0.5:
@@ -476,9 +470,7 @@ def _group_folds(repositories: Sequence[str], folds: int) -> np.ndarray:
         raise ValueError("not enough repositories for grouped ridge folds")
     ordered = sorted(
         unique,
-        key=lambda repository: hashlib.sha256(
-            f"{FOLD_DOMAIN}\0{repository}".encode()
-        ).hexdigest(),
+        key=lambda repository: hashlib.sha256(f"{FOLD_DOMAIN}\0{repository}".encode()).hexdigest(),
     )
     owner = {repository: index % folds for index, repository in enumerate(ordered)}
     return np.asarray([owner[item] for item in repositories], dtype=np.int64)
@@ -570,9 +562,7 @@ def empirical_residual_mass_decision(
     accepted = ((probability <= beta) | (probability >= 1.0 - beta)).astype(np.bool_)
     confidence = np.maximum(probability, 1.0 - probability)
     reasons = tuple(
-        "accepted_empirical_support_mass"
-        if item
-        else "refused_empirical_support_disagreement"
+        "accepted_empirical_support_mass" if item else "refused_empirical_support_disagreement"
         for item in accepted
     )
     return SelectiveDecision(predictions, accepted, confidence, reasons)
@@ -787,9 +777,7 @@ def run_discovery_iteration(
         cache_dir=cache_dir,
     )
     _, fit_primitives, fit_repositories = _record_arrays(prepared.fit_model)
-    _, calibration_primitives, calibration_repositories = _record_arrays(
-        prepared.fit_calibration
-    )
+    _, calibration_primitives, calibration_repositories = _record_arrays(prepared.fit_calibration)
     _, iteration_primitives, iteration_repositories = _record_arrays(prepared.iteration)
     primitive_model = fit_primitive_models(
         embeddings["fit_model"],
@@ -798,9 +786,7 @@ def run_discovery_iteration(
         alphas=plan.ridge_alphas,
         folds=plan.ridge_folds,
     )
-    calibration_prediction = predict_primitives(
-        primitive_model, embeddings["fit_calibration"]
-    )
+    calibration_prediction = predict_primitives(primitive_model, embeddings["fit_calibration"])
     iteration_prediction = predict_primitives(primitive_model, embeddings["iteration"])
     transform = fit_query_transform(fit_primitives)
     fit_true_margins = to_signed_margins(fit_primitives, transform)
@@ -902,8 +888,7 @@ def validate_discovery_setup(
         "query_forms": [item.to_dict() for item in plan.query_forms],
         "candidate_families": list(CANDIDATE_FAMILIES),
         "visible_repositories": {
-            role: sum(item["role"] == role for item in assignments)
-            for role in VISIBLE_ROLES
+            role: sum(item["role"] == role for item in assignments) for role in VISIBLE_ROLES
         },
         "next_allowed_action": "REVIEWED_ONE_TIME_C0_ITERATION_EXECUTION",
     }
@@ -921,9 +906,7 @@ def main() -> None:
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
     if args.validate_only:
-        result = validate_discovery_setup(
-            args.plan, args.registry, args.canonical_firewall_dir
-        )
+        result = validate_discovery_setup(args.plan, args.registry, args.canonical_firewall_dir)
     else:
         if args.identity is None or args.output_dir is None:
             parser.error("--identity and --output-dir are required unless --validate-only is used")

@@ -401,9 +401,7 @@ def publish_allocation_bundle(output_dir: Path, allocation: Mapping[str, Any]) -
         exclusion_metadata = report["option_b_exclusion"]
         if len(excluded_repositories) != exclusion_metadata["repository_count"]:
             raise ValueError("Option B exclusion count does not match the repository list")
-        if _commit_string_set(excluded_repositories) != exclusion_metadata[
-            "repository_commitment"
-        ]:
+        if _commit_string_set(excluded_repositories) != exclusion_metadata["repository_commitment"]:
             raise ValueError("Option B exclusion commitment does not match the repository list")
         exclusion_name = "option-c0-option-b-excluded-repositories-v1.jsonl"
         exclusion_path = temporary_dir / exclusion_name
@@ -438,9 +436,7 @@ def publish_allocation_bundle(output_dir: Path, allocation: Mapping[str, Any]) -
 def verify_allocation_bundle(output_dir: Path) -> dict[str, Any]:
     report_path = output_dir / "option-c0-data-firewall-v1.json"
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    expected_status = (
-        "C0_REPOSITORY_ALLOCATION_GENERATED_PENDING_INDEPENDENT_VERIFICATION"
-    )
+    expected_status = "C0_REPOSITORY_ALLOCATION_GENERATED_PENDING_INDEPENDENT_VERIFICATION"
     if report.get("status") != expected_status:
         raise ValueError("unexpected C0 allocation status")
     for field in ("scientific_result_observed", "mechanism_result_observed", "c1_rows_selected"):
@@ -451,9 +447,7 @@ def verify_allocation_bundle(output_dir: Path) -> dict[str, Any]:
     payload = manifest_path.read_bytes()
     if _sha256_bytes(payload) != artifact["file_sha256"]:
         raise ValueError("repository allocation hash mismatch")
-    assignments = [
-        json.loads(line) for line in payload.decode().splitlines() if line.strip()
-    ]
+    assignments = [json.loads(line) for line in payload.decode().splitlines() if line.strip()]
     if len(assignments) != artifact["rows"]:
         raise ValueError("repository allocation row-count mismatch")
     verify_role_disjointness(assignments)
@@ -463,9 +457,7 @@ def verify_allocation_bundle(output_dir: Path) -> dict[str, Any]:
     if _sha256_bytes(exclusion_payload) != exclusion_artifact["file_sha256"]:
         raise ValueError("Option B exclusion manifest hash mismatch")
     exclusion_rows = [
-        json.loads(line)
-        for line in exclusion_payload.decode().splitlines()
-        if line.strip()
+        json.loads(line) for line in exclusion_payload.decode().splitlines() if line.strip()
     ]
     if len(exclusion_rows) != exclusion_artifact["rows"]:
         raise ValueError("Option B exclusion manifest row-count mismatch")
@@ -643,9 +635,7 @@ def prepare_c0_allocation(
         dataset_by_split=dataset_by_split,
         tokenizer=tokenizer,
     )
-    option_b_repositories, exclusion = load_option_b_repository_exclusions(
-        option_b_selection_dir
-    )
+    option_b_repositories, exclusion = load_option_b_repository_exclusions(option_b_selection_dir)
     allocation = allocate_repositories(
         rows,
         option_b_repositories,
@@ -912,9 +902,7 @@ def append_discovery(path: Path, discovery: Mapping[str, Any]) -> dict[str, Any]
         raise ValueError("c1_contract_relevance must be boolean")
     if not str(discovery["fresh_evidence_requirement"]).strip():
         raise ValueError("fresh_evidence_requirement must be non-empty")
-    existing = [
-        entry["payload"] for entry in _read_chain(path, DISCOVERY_LEDGER_SCHEMA)
-    ]
+    existing = [entry["payload"] for entry in _read_chain(path, DISCOVERY_LEDGER_SCHEMA)]
     if any(entry["discovery_id"] == discovery_id for entry in existing):
         raise AppendOnlyViolation(f"discovery ID already exists: {discovery_id}")
     payload = {

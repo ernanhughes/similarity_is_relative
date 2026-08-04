@@ -49,19 +49,13 @@ from relate.family.workflow.models import (
     validate_sha256_identity,
 )
 
-EXECUTION_REVIEW_REPORT_SCHEMA_ID: Final = (
-    "relate-family-canonical-execution-review-report-v1"
-)
+EXECUTION_REVIEW_REPORT_SCHEMA_ID: Final = "relate-family-canonical-execution-review-report-v1"
 EXECUTION_REVIEW_DISPOSITION_SCHEMA_ID: Final = (
     "relate-family-canonical-execution-review-disposition-v1"
 )
-EXECUTION_REVIEW_BUNDLE_SCHEMA_ID: Final = (
-    "relate-family-canonical-execution-review-bundle-v1"
-)
+EXECUTION_REVIEW_BUNDLE_SCHEMA_ID: Final = "relate-family-canonical-execution-review-bundle-v1"
 EXECUTION_REVIEW_SCOPE: Final = "CANONICAL_EXECUTION_EVIDENCE_INTEGRITY_ONLY"
-BOUNDED_SCIENTIFIC_PAYLOAD_SCHEMA_ID: Final = (
-    "relate-family-bounded-scientific-payload-v1"
-)
+BOUNDED_SCIENTIFIC_PAYLOAD_SCHEMA_ID: Final = "relate-family-bounded-scientific-payload-v1"
 FAILURE_SCHEMA_ID: Final = "relate-family-canonical-execution-failure-v1"
 TRACE_SCHEMA_ID: Final = "relate-family-canonical-execution-trace-v1"
 ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW: Final = (
@@ -219,9 +213,7 @@ def canonical_execution_failure_from_record(record: dict[str, Any]) -> dict[str,
     if not isinstance(data["canonical_execution_authorization_id"], str):
         raise ValueError("authorization ID must be a string")
     failed_step = data.get("failed_step")
-    if failed_step is not None and (
-        not isinstance(failed_step, str) or len(failed_step) > 120
-    ):
+    if failed_step is not None and (not isinstance(failed_step, str) or len(failed_step) > 120):
         raise ValueError("failed_step is malformed")
     for key in ("bounded_exception_type", "bounded_message"):
         if not isinstance(data.get(key), str) or len(data[key]) > 500:
@@ -428,13 +420,15 @@ def inspect_authorized_canonical_execution(
     ):
         if auth_record[key] != request_record[key]:
             raise ValueError(f"authorization {key} mismatch")
-    if family_review_packet_commitment(authorization_review_packet) != request_record[
-        "review_packet_commitment"
-    ]:
+    if (
+        family_review_packet_commitment(authorization_review_packet)
+        != request_record["review_packet_commitment"]
+    ):
         raise ValueError("authorization review packet commitment mismatch")
-    if evidence_bundle_commitment(evidence_bundle) != request_record[
-        "prepared_evidence_bundle_commitment"
-    ]:
+    if (
+        evidence_bundle_commitment(evidence_bundle)
+        != request_record["prepared_evidence_bundle_commitment"]
+    ):
         raise ValueError("evidence bundle commitment mismatch")
     _validate_work_dir(repo_root=root, request_record=request_record, work_dir=work_dir)
 
@@ -456,9 +450,10 @@ def inspect_authorized_canonical_execution(
             d1_1_classification_sha256=inputs["d1_1_classification_sha256"],
         ),
     )
-    if sha256_file(root / inputs["firewall_publication_path"]) != inputs[
-        "firewall_publication_sha256"
-    ]:
+    if (
+        sha256_file(root / inputs["firewall_publication_path"])
+        != inputs["firewall_publication_sha256"]
+    ):
         raise ValueError("firewall publication file SHA mismatch")
 
     claim_raw, claim_file_sha = _optional_artifact(work_dir / "canonical-execution-claim.json")
@@ -563,14 +558,16 @@ def inspect_authorized_canonical_execution(
                 raise ValueError(f"receipt {key} mismatch")
         if receipt["staging_work_directory"] != _relative(root, work_dir):
             raise ValueError("receipt work directory mismatch")
-        if receipt["staging_store_path"] != request_record["intended_noncanonical_staging"][
-            "fresh_store_path"
-        ]:
+        if (
+            receipt["staging_store_path"]
+            != request_record["intended_noncanonical_staging"]["fresh_store_path"]
+        ):
             raise ValueError("receipt store path mismatch")
         receipt_summary = _validate_receipt_steps(receipt)
-        if execution_packet_commitment is not None and receipt.get(
-            "canonical_run_review_packet_commitment"
-        ) != execution_packet_commitment:
+        if (
+            execution_packet_commitment is not None
+            and receipt.get("canonical_run_review_packet_commitment") != execution_packet_commitment
+        ):
             raise ValueError("receipt review-packet commitment mismatch")
 
     trace_summary = _validate_trace_against_receipt(trace, receipt)
@@ -802,8 +799,7 @@ def canonical_execution_review_disposition_from_record(
             if data[key] != report_record[key]:
                 raise ValueError(f"execution review disposition {key} mismatch")
         if (
-            data["disposition"]
-            == ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW
+            data["disposition"] == ACCEPT_EXECUTION_EVIDENCE_FOR_PUBLICATION_AUTHORIZATION_REVIEW
             and not report_record["eligible_for_publication_authorization_review"]
         ):
             raise ValueError("execution review report is not eligible for acceptance")
@@ -841,9 +837,7 @@ def make_canonical_execution_review_bundle(
         "execution_review_report": report_record,
         "execution_review_report_commitment": report.report_commitment,
         "execution_review_disposition": disposition_record,
-        "execution_review_disposition_commitment": sha256_text(
-            canonical_json(disposition_record)
-        ),
+        "execution_review_disposition_commitment": sha256_text(canonical_json(disposition_record)),
     }
     return {**payload, "bundle_commitment": sha256_text(canonical_json(payload))}
 

@@ -194,9 +194,7 @@ def _receipt(request, auth, claim, *, status: str, packet_commitment: str | None
         )
     )
     for index, name in enumerate(names):
-        step_status = (
-            "BLOCKED" if status == "BLOCKED" and index == len(names) - 1 else "COMPLETED"
-        )
+        step_status = "BLOCKED" if status == "BLOCKED" and index == len(names) - 1 else "COMPLETED"
         steps.append(
             {
                 "step_name": name,
@@ -230,9 +228,7 @@ def _receipt(request, auth, claim, *, status: str, packet_commitment: str | None
             "allocation_manifest_sha256": record["canonical_inputs"]["allocation_manifest_sha256"],
             "allocation_context_sha256": record["canonical_inputs"]["allocation_context_sha256"],
             "d1_audit_result_sha256": record["canonical_inputs"]["d1_result_sha256"],
-            "d1_1_classification_sha256": record["canonical_inputs"][
-                "d1_1_classification_sha256"
-            ],
+            "d1_1_classification_sha256": record["canonical_inputs"]["d1_1_classification_sha256"],
             "cache_schema_version": CACHE_SCHEMA_ID,
             "family_runner_source_identity": "1" * 64,
         },
